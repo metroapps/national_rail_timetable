@@ -6,6 +6,7 @@ namespace Miklcct\NationalRailJourneyPlanner\Models;
 abstract class IntermediatePoint extends TimingPoint {
     public function __construct(
         string $location
+        , string $locationSuffix
         , string $platform
         , public readonly string $path
         , public readonly string $line
@@ -13,6 +14,6 @@ abstract class IntermediatePoint extends TimingPoint {
         , array $activity
         , public readonly ?ServiceProperty $servicePropertyChange
     ) {
-        parent::__construct($location, $platform, $activity);
+        parent::__construct($location, $locationSuffix, $platform, $activity);
     }
 }

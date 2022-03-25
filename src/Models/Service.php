@@ -3,8 +3,11 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
+use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\BankHoliday;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
+use RuntimeException;
+use function substr;
 use const PHP_INT_MAX;
 
 class Service extends ServiceEntry {
@@ -47,5 +50,29 @@ class Service extends ServiceEntry {
             }
         }
         return $result;
+    }
+
+    public function getAssociationTime(Association $association) : Time {
+        $secondary = $association->secondaryUid === $this->uid;
+        foreach ($this->points as $point) {
+            if (
+                $point->locationSuffix === (
+                $secondary
+                    ? $association->secondarySuffix
+                    : $association->primarySuffix
+                ) && $point->location === $association->location
+            ) {
+                /** @noinspection PhpPossiblePolymorphicInvocationInspection */
+                return match ($association->category) {
+                    AssociationCategory::NEXT, AssociationCategory::DIVIDE => $secondary
+                        ? $point->getPublicDeparture() ?? $point->workingDeparture
+                        : $point->getPublicArrival() ?? $point->workingArrival,
+                    AssociationCategory::JOIN => $secondary
+                        ? $point->getPublicArrival() ?? $point->workingArrival
+                        : $point->getPublicDeparture() ?? $point->workingDeparture,
+                };
+            }
+        }
+        throw new RuntimeException('Invalid association location');
     }
 }

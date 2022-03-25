@@ -78,6 +78,8 @@ class TimetableParser {
         );
         $primaryUid = $columns[2];
         $secondaryUid = $columns[3];
+        $primarySuffix = $columns[10];
+        $secondarySuffix = $columns[11];
         $period = new Period(
             $this->parseYymmdd($columns[4])
             , $this->parseYymmdd($columns[5])
@@ -89,6 +91,8 @@ class TimetableParser {
             ? new AssociationCancellation(
                 $primaryUid
                 , $secondaryUid
+                , $primarySuffix
+                , $secondarySuffix
                 , $period
                 , $location
                 , $shortTermPlanning
@@ -96,6 +100,8 @@ class TimetableParser {
             : new Association(
                 $primaryUid
                 , $secondaryUid
+                , $primarySuffix
+                , $secondarySuffix
                 , $period
                 , $location
                 , AssociationCategory::from($columns[7])
@@ -222,8 +228,10 @@ class TimetableParser {
             $line
             , [2, 8, 5, 4, 3, 3, 2, 2, 12, 2]
         );
+        $location_columns = $this->helper->parseLine($columns[1], [7, 1]);
         return new OriginPoint(
-            location: $columns[1]
+            location: $location_columns[0]
+            , locationSuffix: $location_columns[1]
             , workingDeparture: Time::fromHhmm($columns[2])
             , publicDeparture: $this->parsePublicTime($columns[3], null)
             , platform: $columns[4]
@@ -245,9 +253,11 @@ class TimetableParser {
             $line
             , [2, 8, 5, 5, 5, 4, 4, 3, 3, 3, 12, 2, 2, 2]
         );
+        $location_columns = $this->helper->parseLine($columns[1], [7, 1]);
         return $columns[4] !== ''
             ? new PassingPoint(
-                location: $columns[1]
+                location: $location_columns[0]
+                , locationSuffix: $location_columns[1]
                 , pass: Time::fromHhmm($columns[4], $last_call)
                 , platform: $columns[7]
                 , line: $columns[8]
@@ -259,7 +269,8 @@ class TimetableParser {
                 , servicePropertyChange: $change
             )
             : new CallingPoint(
-                location: $columns[1]
+                location: $location_columns[0]
+                , locationSuffix: $location_columns[1]
                 , workingArrival: Time::fromHhmm($columns[2], $last_call)
                 , workingDeparture: Time::fromHhmm($columns[3], $last_call)
                 , publicArrival: $this->parsePublicTime($columns[5], $last_call)
@@ -282,8 +293,10 @@ class TimetableParser {
             $line
             , [2, 8, 5, 4, 3, 3, 12]
         );
+        $location_columns = $this->helper->parseLine($columns[1], [7, 1]);
         return new DestinationPoint(
-            location: $columns[1]
+            location: $location_columns[0]
+            , locationSuffix: $location_columns[1]
             , workingArrival: Time::fromHhmm($columns[2], $last_call)
             , publicArrival: $this->parsePublicTime($columns[3], $last_call)
             , platform: $columns[4]

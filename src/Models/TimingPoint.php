@@ -8,6 +8,7 @@ use Miklcct\NationalRailJourneyPlanner\Enums\Activity;
 class TimingPoint {
     public function __construct(
         public readonly string $location
+        , public readonly string $locationSuffix
         , public readonly string $platform
         , array $activity
     ) {

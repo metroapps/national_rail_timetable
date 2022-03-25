@@ -6,6 +6,7 @@ namespace Miklcct\NationalRailJourneyPlanner\Models;
 class OriginPoint extends TimingPoint {
     public function __construct(
         string $location
+        , string $locationSuffix
         , string $platform
         , public readonly string $line
         , public readonly Time $workingDeparture
@@ -13,7 +14,7 @@ class OriginPoint extends TimingPoint {
         , public readonly int $allowanceHalfMinutes
         , array $activities
     ) {
-        parent::__construct($location, $platform, $activities);
+        parent::__construct($location, $locationSuffix, $platform, $activities);
     }
 
     public function getPublicDeparture() : ?Time {

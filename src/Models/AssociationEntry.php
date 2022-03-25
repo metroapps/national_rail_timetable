@@ -9,6 +9,8 @@ abstract class AssociationEntry {
     public function __construct(
         public readonly string $primaryUid
         , public readonly string $secondaryUid
+        , public readonly string $primarySuffix
+        , public readonly string $secondarySuffix
         , public readonly Period $period
         , public readonly string $location
         , public readonly ShortTermPlanning $shortTermPlanning

@@ -12,6 +12,8 @@ class Association extends AssociationEntry {
     public function __construct(
         string $primaryUid
         , string $secondaryUid
+        , string $primarySuffix
+        , string $secondarySuffix
         , Period $period
         , string $location
         , public readonly AssociationCategory $category
@@ -22,6 +24,8 @@ class Association extends AssociationEntry {
         parent::__construct(
             $primaryUid
             , $secondaryUid
+            , $primarySuffix
+            , $secondarySuffix
             , $period
             , $location
             , $shortTermPlanning
