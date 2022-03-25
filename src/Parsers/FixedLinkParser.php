@@ -9,13 +9,11 @@ use Miklcct\NationalRailJourneyPlanner\Models\FixedLinks;
 use Miklcct\NationalRailJourneyPlanner\Models\Stations;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
 use Safe\DateTimeImmutable;
-use function array_map;
 use function explode;
 use function fgetcsv;
-use function Miklcct\NationalRailJourneyPlanner\array_rotate;
-use function str_split;
 
 class FixedLinkParser {
+    public function __construct(private readonly Helper $helper) {}
 
     /**
      * @param resource $file additional fixed links file (name ends with .ALF)
@@ -77,12 +75,8 @@ class FixedLinkParser {
                     )->setTime(0, 0);
                     break;
                 case 'R':
-                    $weekdays = array_map(
-                        static fn(string $char) => $char !== '0'
-                        , str_split($fields[1])
-                    );
-                    // make Sunday at offset 0 instead of Monday
-                    $weekdays = array_rotate($weekdays, -1);
+                    $weekdays = $this->helper->parseWeekdays($fields[1]);
+                    break;
                 }
             }
             $fixed_link = new FixedLink(
