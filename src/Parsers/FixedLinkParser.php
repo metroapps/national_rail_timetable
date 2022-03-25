@@ -16,6 +16,12 @@ use function Miklcct\NationalRailJourneyPlanner\array_rotate;
 use function str_split;
 
 class FixedLinkParser {
+
+    /**
+     * @param resource $file additional fixed links file (name ends with .ALF)
+     * @param Stations $stations
+     * @return FixedLinks
+     */
     public function parseFile($file, Stations $stations) : FixedLinks {
         /** @var array<string, array<string, FixedLink[]>> */
         $fixedLinksByOriginCrs = [];
