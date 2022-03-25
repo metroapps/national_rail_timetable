@@ -41,13 +41,7 @@ class StationParser {
         // skip file header record
         fgets($msn_file);
 
-        // parse stations
-        /** @var array<string, Station> $stationsByCrs */
-        $stationsByCrs = [];
-        /** @var array<string, Station> $stationsByTiploc */
-        $stationsByTiploc = [];
-        /** @var array<string, Station> $stationsByName */
-        $stationsByName = [];
+        $stations = [];
 
         for (
             $line = fgets($msn_file);
@@ -57,10 +51,12 @@ class StationParser {
             $columns = $this->helper->parseLine(
                 $line, [1, 4, 26, 4, 1, 7, 3, 3, 3, 5, 1, 5, 2, 1, 1, 11, 3]
             );
-            $station = new Station(
-                crsCode: $columns[8]
+            $stations[] = new Station(
+                tiploc: $columns[5]
+                , crsCode: $columns[8]
                 , name: $columns[2]
                 , interchange: (int)$columns[4]
+                , minorCrsCode: $columns[6]
                 , easting: ((int)$columns[9] - 10000) * 100
                 , northing: ((int)$columns[11] - 60000) * 100
                 , minimumConnectionTime: (int)$columns[12]
@@ -72,29 +68,17 @@ class StationParser {
                     )
                 )
             );
-            $crsAndMinorCrsBeingTheSame = $columns[6] === $columns[8];
-            if ($crsAndMinorCrsBeingTheSame) {
-                $stationsByTiploc[$columns[5]] = $station;
-                if (
-                    !isset($stationsByCrs[$station->crsCode])
-                    || $stationsByCrs[$station->crsCode]->interchange === 9
-                        && $station->interchange !== 9
-                ) {
-                    $stationsByCrs[$station->crsCode] = $station;
-                    $stationsByName[$station->name] = $station;
-                }
-            }
+
         }
 
+        $aliases = [];
         // parse aliases
         while (str_starts_with($line, 'L')) {
             $columns = $this->helper->parseLine($line, [1, 4, 26, 5, 26, 20]);
-            if (isset($stationsByName[$columns[2]])) {
-                $stationsByName[$columns[4]] = $stationsByName[$columns[2]];
-            }
+            $aliases[$columns[4]] = $columns[2];
             $line = fgets($msn_file);
         }
 
-        return new Stations($stationsByCrs, $stationsByName, $stationsByTiploc);
+        return new Stations($stations, $aliases);
     }
 }

@@ -62,7 +62,7 @@ class Time {
     public function toString(int $format = self::TWENTY_FOUR_HOUR_CLOCK)
     : string {
         return sprintf(
-            "%d:%d"
+            "%02d:%02d"
             , $format === self::THIRTY_HOUR_CLOCK
                 ? $this->hours
                 : $this->hours % 24

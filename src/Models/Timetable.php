@@ -86,6 +86,8 @@ class Timetable {
         return $result;
     }
 
+    public Stations $stations;
+
     /** @var array<string, ServiceEntry[]> */
     private array $services = [];
 

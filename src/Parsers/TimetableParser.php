@@ -27,6 +27,8 @@ use Miklcct\NationalRailJourneyPlanner\Models\Service;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCancellation;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceProperty;
+use Miklcct\NationalRailJourneyPlanner\Models\Location;
+use Miklcct\NationalRailJourneyPlanner\Models\Stations;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
 use Miklcct\NationalRailJourneyPlanner\Models\Timetable;
 use Safe\DateTimeImmutable;
@@ -46,6 +48,7 @@ class TimetableParser {
      */
     public function parseFile($file) : Timetable {
         $timetable = new Timetable();
+        $stations = [];
         while (($line = fgets($file)) !== false) {
             switch (substr($line, 0, 2)) {
             case 'AA':
@@ -54,8 +57,14 @@ class TimetableParser {
             case 'BS':
                 $timetable->insertService($this->parseService($file, $line));
                 break;
+            case 'TI':
+                $station = $this->parseStation($line);
+                if ($station !== null) {
+                    $stations[] = $station;
+                }
             }
         }
+        $timetable->stations = new Stations($stations, []);
         return $timetable;
     }
 
@@ -356,5 +365,17 @@ class TimetableParser {
             ->setTimezone($timezone)
             ->setDate($year, $month, $day)
             ->setTime(0, 0);
+    }
+
+    private function parseStation(string $line) : Location {
+        $columns = $this->helper->parseLine(
+            $line
+            , [2, 7, 2, 6, 1, 26, 5, 4, 3, 16]
+        );
+        return new Location(
+            tiploc: $columns[1]
+            , name: $columns[6]
+            , crsCode: $columns[8] === '' ? null : $columns[8]
+        );
     }
 }
