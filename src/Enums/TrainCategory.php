@@ -3,7 +3,8 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Enums;
 
-// only scheduled passenger trains in National Rail system are listed here
+// Currently, only scheduled passenger trains in National Rail system
+// are listed here.
 enum TrainCategory : string {
     case NONE = '';
     case METRO = 'OL';
@@ -13,4 +14,8 @@ enum TrainCategory : string {
     case REPLACEMENT_BUS = 'BR';
     case BUS = 'BS';
     case SHIP = 'SS';
+
+    public function isPassengerTrain() : bool {
+        return true;
+    }
 }

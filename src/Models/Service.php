@@ -5,6 +5,7 @@ namespace Miklcct\NationalRailJourneyPlanner\Models;
 
 use Miklcct\NationalRailJourneyPlanner\Enums\BankHoliday;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
+use const PHP_INT_MAX;
 
 class Service extends ServiceEntry {
     public function __construct(
@@ -27,4 +28,24 @@ class Service extends ServiceEntry {
 
     /** @var TimingPoint[] */
     public readonly array $points;
+
+    public function getServicePropertyAtTime(Time $time) : ServiceProperty {
+        $result = $this->serviceProperty;
+        foreach ($this->points as $point) {
+            if (
+                $point instanceof IntermediatePoint
+                && $point->servicePropertyChange !== null
+                && ($point instanceof PassingPoint
+                    ? $point->pass->toHalfMinutes()
+                    : ($point instanceof CallingPoint
+                        ? $point->workingArrival->toHalfMinutes()
+                        : PHP_INT_MAX
+                    )
+                ) < $time->toHalfMinutes()
+            ) {
+                $result = $point->servicePropertyChange;
+            }
+        }
+        return $result;
+    }
 }
