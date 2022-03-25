@@ -11,5 +11,11 @@ class Station {
         , public readonly int $easting
         , public readonly int $northing
         , public readonly int $minimumConnectionTime
-    ) {}
+        , array $tocConnectionTimes
+    ) {
+        $this->tocConnectionTimes = $tocConnectionTimes;
+    }
+
+    /** @var TocInterchange[] */
+    public readonly array $tocConnectionTimes;
 }

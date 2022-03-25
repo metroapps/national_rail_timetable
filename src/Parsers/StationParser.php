@@ -5,6 +5,9 @@ namespace Miklcct\NationalRailJourneyPlanner\Parsers;
 
 use Miklcct\NationalRailJourneyPlanner\Models\Station;
 use Miklcct\NationalRailJourneyPlanner\Models\Stations;
+use Miklcct\NationalRailJourneyPlanner\Models\TocInterchange;
+use function array_filter;
+use function fgetcsv;
 use function fgets;
 use function str_starts_with;
 
@@ -12,14 +15,31 @@ class StationParser {
     public function __construct(private readonly Helper $helper) {
     }
 
-    public function parseFile($file) : Stations {
+    /**
+     * Parse station info
+     *
+     * @param resource $msn_file master station names file (name ends in .MSN)
+     * @param resource $tsi_file TOC interchanges file (name ends in .TSI)
+     * @return Stations
+     */
+    public function parseFile($msn_file, $tsi_file) : Stations {
+        // parse TOC interchanges
+        $toc_interchanges = [];
+        while (($columns = fgetcsv($tsi_file)) !== false) {
+            assert(is_array($columns));
+            $toc_interchanges[] = [
+                $columns[0],
+                new TocInterchange($columns[1], $columns[2], (int)$columns[3]),
+            ];
+        }
+
         // skip headers
         do {
-            $line = fgets($file);
+            $line = fgets($msn_file);
         } while (str_starts_with($line, '/!!'));
 
         // skip file header record
-        fgets($file);
+        fgets($msn_file);
 
         // parse stations
         /** @var array<string, Station> $stationsByCrs */
@@ -30,9 +50,9 @@ class StationParser {
         $stationsByName = [];
 
         for (
-            $line = fgets($file);
+            $line = fgets($msn_file);
             str_starts_with($line, 'A');
-            $line = fgets($file)
+            $line = fgets($msn_file)
         ) {
             $columns = $this->helper->parseLine(
                 $line, [1, 4, 26, 4, 1, 7, 3, 3, 3, 5, 1, 5, 2, 1, 1, 11, 3]
@@ -44,6 +64,13 @@ class StationParser {
                 , easting: ((int)$columns[9] - 10000) * 100
                 , northing: ((int)$columns[11] - 60000) * 100
                 , minimumConnectionTime: (int)$columns[12]
+                , tocConnectionTimes: array_values(
+                    array_filter(
+                        $toc_interchanges
+                        , static fn(array $entry) : bool
+                            => $entry[0] === $columns[8]
+                    )
+                )
             );
             $crsAndMinorCrsBeingTheSame = $columns[6] === $columns[8];
             if ($crsAndMinorCrsBeingTheSame) {
@@ -65,7 +92,7 @@ class StationParser {
             if (isset($stationsByName[$columns[2]])) {
                 $stationsByName[$columns[4]] = $stationsByName[$columns[2]];
             }
-            $line = fgets($file);
+            $line = fgets($msn_file);
         }
 
         return new Stations($stationsByCrs, $stationsByName, $stationsByTiploc);
