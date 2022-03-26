@@ -7,6 +7,7 @@ use DateInterval;
 use DateTimeImmutable;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationDay;
+use Miklcct\NationalRailJourneyPlanner\Enums\AssociationType;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
 use function array_filter;
 use function array_keys;
@@ -50,6 +51,7 @@ class Timetable {
     public function getServices(
         DateTimeImmutable $from
         , DateTimeImmutable $to
+        , bool $include_non_passenger = false
     ) : array {
         static $one_day = null;
         if ($one_day === null) {
@@ -65,15 +67,13 @@ class Timetable {
                 $service = $this->getUidOnDate($uid, $date);
                 if (
                     $service instanceof Service
-                    && $service->serviceProperty->trainCategory
-                        ->isPassengerTrain()
+                    && ($include_non_passenger
+                        || $service->serviceProperty->trainCategory->isPassengerTrain())
                 ) {
                     $origin = $service->getOrigin();
                     $destination = $service->getDestination();
-                    $departure_time = $origin->getPublicDeparture()
-                        ?? $origin->workingDeparture;
-                    $arrival_time = $destination->getPublicArrival()
-                        ?? $destination->workingArrival;
+                    $departure_time = $origin->getPublicDeparture() ?? $origin->workingDeparture;
+                    $arrival_time = $destination->getPublicArrival() ?? $destination->workingArrival;
                     if (
                         $arrival_time->getDateTimeOnDate($date) > $from
                         && $departure_time->getDateTimeOnDate($date) < $to
@@ -110,13 +110,17 @@ class Timetable {
         DatedService $dated_service
         , ?Time $from = null
         , ?Time $to = null
+        , bool $include_non_passenger = false
     ) : array {
         $service = $dated_service->service;
         $departure_date = $dated_service->date;
         $one_day = new DateInterval('P1D');
         $results = [];
         foreach ($this->associations[$service->uid] ?? [] as $association) {
-            if ($association instanceof Association) {
+            if (
+                $association instanceof Association
+                && ($include_non_passenger || $association->type === AssociationType::PASSENGER)
+            ) {
                 $primary_departure_date
                     = $association->secondaryUid === $service->uid
                         ? match ($association->day) {
