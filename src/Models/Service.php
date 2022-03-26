@@ -7,6 +7,7 @@ use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\BankHoliday;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
 use RuntimeException;
+use function array_filter;
 use const PHP_INT_MAX;
 
 class Service extends ServiceEntry {
@@ -81,5 +82,21 @@ class Service extends ServiceEntry {
 
     public function getDestination() : DestinationPoint {
         return $this->points[count($this->points) - 1];
+    }
+
+    /**
+     * @return TimingPoint[]
+     */
+    public function getPublicCalls(Stations $stations) : array {
+        return array_values(
+            array_filter(
+                $this->points
+                , static fn(TimingPoint $point) =>
+                    $stations->stationsByTiploc[$point->location]?->crsCode !== null
+                    && ($point->getPublicDeparture() !== null
+                        || $point->getPublicArrival() !== null)
+
+            )
+        );
     }
 }
