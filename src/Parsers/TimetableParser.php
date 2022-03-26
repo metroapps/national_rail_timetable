@@ -44,11 +44,12 @@ class TimetableParser {
 
     /**
      * @param resource $file timetable file (ends with .MCA)
+     * @param Stations $stations existing stations data to be merged into the timetable
      * @return Timetable
      */
-    public function parseFile($file) : Timetable {
+    public function parseFile($file, ?Stations $stations) : Timetable {
         $timetable = new Timetable();
-        $stations = [];
+        $parsed_stations_list = [];
         while (($line = fgets($file)) !== false) {
             switch (substr($line, 0, 2)) {
             case 'AA':
@@ -60,11 +61,12 @@ class TimetableParser {
             case 'TI':
                 $station = $this->parseStation($line);
                 if ($station !== null) {
-                    $stations[] = $station;
+                    $parsed_stations_list[] = $station;
                 }
             }
         }
-        $timetable->stations = new Stations($stations, []);
+        $parsed_stations = new Stations($parsed_stations_list, []);
+        $timetable->stations = $stations === null ? $parsed_stations : $stations->merge($parsed_stations);
         return $timetable;
     }
 
