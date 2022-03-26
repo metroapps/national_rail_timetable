@@ -154,8 +154,11 @@ class Timetable {
             }
         );
 
+        $from_results = null;
+        $to_results = null;
+
         if ($from !== null) {
-            $results = $service instanceof Service
+            $from_results = $service instanceof Service
                 ? array_filter(
                     $results
                     , static fn(DatedAssociation $association) =>
@@ -165,13 +168,14 @@ class Timetable {
                         && match ($association->associationEntry->category) {
                             AssociationCategory::DIVIDE, AssociationCategory::NEXT =>
                                 $service->uid === $association->associationEntry->primaryUid,
-                            AssociationCategory::JOIN => $service->uid === $association->associationEntry->secondaryUid,
+                            AssociationCategory::JOIN =>
+                                $service->uid === $association->associationEntry->secondaryUid,
                         }
                 )
                 : [];
         }
         if ($to !== null) {
-            $results = $service instanceof Service
+            $to_results = $service instanceof Service
                 ? array_filter(
                     $results
                     , static fn(DatedAssociation $association) =>
@@ -181,13 +185,16 @@ class Timetable {
                     && match ($association->associationEntry->category) {
                         AssociationCategory::DIVIDE, AssociationCategory::NEXT =>
                             $service->uid === $association->associationEntry->secondaryUid,
-                        AssociationCategory::JOIN => $service->uid === $association->associationEntry->primaryUid,
+                        AssociationCategory::JOIN =>
+                            $service->uid === $association->associationEntry->primaryUid,
                     }
                 )
                 : [];
         }
 
-        return $results;
+        return $from_results !== null
+            ? array_merge($from_results, $to_results ?? [])
+            : ($to_results ?? $results);
     }
 
     /**
