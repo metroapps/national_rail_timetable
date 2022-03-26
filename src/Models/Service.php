@@ -7,7 +7,6 @@ use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\BankHoliday;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
 use RuntimeException;
-use function substr;
 use const PHP_INT_MAX;
 
 class Service extends ServiceEntry {
@@ -74,5 +73,13 @@ class Service extends ServiceEntry {
             }
         }
         throw new RuntimeException('Invalid association location');
+    }
+
+    public function getOrigin() : OriginPoint {
+        return $this->points[0];
+    }
+
+    public function getDestination() : DestinationPoint {
+        return $this->points[count($this->points) - 1];
     }
 }

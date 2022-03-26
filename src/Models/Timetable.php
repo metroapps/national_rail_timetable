@@ -5,7 +5,6 @@ namespace Miklcct\NationalRailJourneyPlanner\Models;
 
 use DateInterval;
 use DateTimeImmutable;
-use DateTimeZone;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationDay;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
@@ -46,8 +45,7 @@ class Timetable {
     /**
      * Get all public services which are active in the period specified
      *
-     * @return array<string, Service[]> where the key is the departure date
-     * in YYYY-MM-DD format
+     * @return DatedService[]
      */
     public function getServices(
         DateTimeImmutable $from
@@ -70,20 +68,17 @@ class Timetable {
                     && $service->serviceProperty->trainCategory
                         ->isPassengerTrain()
                 ) {
-                    $origin = $service->points[0];
-                    $destination
-                        = $service->points[count($service->points) - 1];
-                    $departure_time = $origin->getPublicDeparture();
-                    $arrival_time = $destination->getPublicArrival();
-                    // We assume that the origin and destination of a passenger
-                    // train is always for passenger use.
-                    assert($departure_time instanceof Time);
-                    assert($arrival_time instanceof Time);
+                    $origin = $service->getOrigin();
+                    $destination = $service->getDestination();
+                    $departure_time = $origin->getPublicDeparture()
+                        ?? $origin->workingDeparture;
+                    $arrival_time = $destination->getPublicArrival()
+                        ?? $destination->workingArrival;
                     if (
                         $arrival_time->getDateTimeOnDate($date) > $from
                         && $departure_time->getDateTimeOnDate($date) < $to
                     ) {
-                        $result[$date->format('Y-m-d')][] = $service;
+                        $result[] = new DatedService($service, $date);
                     }
                 }
             }
@@ -94,21 +89,30 @@ class Timetable {
     /**
      * Get associations of the specified service
      *
-     * If $from or $to is specified, only associations happening between them
-     * are returned.
+     * If $from is specified, only the following associations happening after
+     * it will be returned.
+     * - joining another train
+     * - dividing to form another train
+     * - forming another service at the end
      *
-     * @param string $uid
-     * @param DateTimeImmutable $departure_date
+     * If $to is specified, only the following associations happening before it
+     * will be returned.
+     * - another train joining
+     * - dividing from another train
+     * - formed from another service at the beginning
+     *
+     * @param DatedService $dated_service
      * @param Time|null $from
      * @param Time|null $to
-     * @return Association[]
+     * @return DatedAssociation[]
      */
     public function getAssociations(
-        Service $service
-        , DateTimeImmutable $departure_date
+        DatedService $dated_service
         , ?Time $from = null
         , ?Time $to = null
     ) : array {
+        $service = $dated_service->service;
+        $departure_date = $dated_service->date;
         $one_day = new DateInterval('P1D');
         $results = [];
         foreach ($this->associations[$service->uid] ?? [] as $association) {
@@ -122,48 +126,61 @@ class Timetable {
                         }
                         : $departure_date;
                 if ($association->period->isActive($primary_departure_date)) {
-                    $results[$primary_departure_date->format('Y-m-d')][] = $association;
+                    $results[] = new DatedAssociation($association, $primary_departure_date);
                 }
             }
         }
 
-        foreach ($this->associations[$service->uid] ?? [] as $stp_association) {
-            if ($stp_association->shortTermPlanning !== ShortTermPlanning::PERMANENT) {
-                foreach ($results as $date_string => &$associations) {
-                    $date = new \Safe\DateTimeImmutable($date_string, new DateTimeZone('Europe/London'));
-                    if ($stp_association->period->isActive($date)) {
-                        $associations = array_values(
-                            array_filter(
-                                $associations
-                                , static fn(Association $association)
-                                    => !($association->primaryUid === $stp_association->primaryUid
-                                        && $association->secondaryUid === $stp_association->secondaryUid
-                                        && $association->location === $stp_association->location
-                                        && $association->primarySuffix === $stp_association->primarySuffix
-                                        && $association->secondarySuffix === $stp_association->secondarySuffix
-                                        && $association->shortTermPlanning === ShortTermPlanning::PERMANENT)
-                            )
-                        );
-                    }
-                }
-                unset($associations);
+        $results = array_filter(
+            $results
+            , function (DatedAssociation $dated_association) use ($service) : bool {
+                $association = $dated_association->associationEntry;
+                return $dated_association->associationEntry->shortTermPlanning !== ShortTermPlanning::PERMANENT
+                    || [] === array_filter(
+                        $this->associations[$service->uid] ?? []
+                        , static fn(AssociationEntry $other) : bool =>
+                            $association->primaryUid === $other->primaryUid
+                            && $association->secondaryUid === $other->secondaryUid
+                            && $association->location === $other->location
+                            && $association->primarySuffix === $other->primarySuffix
+                            && $association->secondarySuffix === $other->secondarySuffix
+                            && $other->shortTermPlanning !== ShortTermPlanning::PERMANENT
+                            && $other->period->isActive($dated_association->date)
+                );
             }
-        }
+        );
 
-        $results = array_merge(...array_values($results));
         if ($from !== null) {
-            $results = array_filter(
-                $results
-                , static fn(Association $association) =>
-                    $service->getAssociationTime($association)->toHalfMinutes() > $from->toHalfMinutes()
-            );
+            $results = $service instanceof Service
+                ? array_filter(
+                    $results
+                    , static fn(DatedAssociation $association) =>
+                        $association->associationEntry instanceof Association
+                        && $service->getAssociationTime($association->associationEntry)->toHalfMinutes()
+                            > $from->toHalfMinutes()
+                        && match ($association->associationEntry->category) {
+                            AssociationCategory::DIVIDE, AssociationCategory::NEXT =>
+                                $service->uid === $association->associationEntry->primaryUid,
+                            AssociationCategory::JOIN => $service->uid === $association->associationEntry->secondaryUid,
+                        }
+                )
+                : [];
         }
         if ($to !== null) {
-            $results = array_filter(
-                $results
-                , static fn(Association $association) =>
-                    $service->getAssociationTime($association)->toHalfMinutes() < $to->toHalfMinutes()
-            );
+            $results = $service instanceof Service
+                ? array_filter(
+                    $results
+                    , static fn(DatedAssociation $association) =>
+                        $association->associationEntry instanceof Association
+                        && $service->getAssociationTime($association->associationEntry)->toHalfMinutes()
+                            < $to->toHalfMinutes()
+                    && match ($association->associationEntry->category) {
+                        AssociationCategory::DIVIDE, AssociationCategory::NEXT =>
+                            $service->uid === $association->associationEntry->secondaryUid,
+                        AssociationCategory::JOIN => $service->uid === $association->associationEntry->primaryUid,
+                    }
+                )
+                : [];
         }
 
         return $results;
@@ -172,65 +189,60 @@ class Timetable {
     /**
      * Get the "real" destination of the train, taking joins and splits into account.
      *
-     * @param Service $service
-     * @param DateTimeImmutable $departure_date
+     * @param DatedService $dated_service
      * @param ?Time $time
      * @return DestinationPoint[]
      */
     public function getRealDestinations(
-        Service $service
-        , DateTimeImmutable $departure_date
+        DatedService $dated_service
         , ?Time $time = null
     ) : array {
-        $associations = $this->getAssociations($service, $departure_date, $time);
-        $joining_train = null;
-        $joining_date = null;
-        $one_day = new DateInterval('P1D');
-        $dividing_trains = [];
-        foreach ($associations as $association) {
-            if (
-                $association->category === AssociationCategory::DIVIDE
-                && $association->primaryUid === $service->uid
-            ) {
-                $dividing_date = match ($association->day) {
-                    AssociationDay::YESTERDAY => $departure_date->sub($one_day),
-                    AssociationDay::TODAY => $departure_date,
-                    AssociationDay::TOMORROW => $departure_date->add($one_day),
-                };
-                $dividing_trains[] = [
-                    $this->getUidOnDate(
-                        $association->secondaryUid
-                        , $dividing_date
-                    )
-                    , $dividing_date
-                ];
-            }
-
-            if (
-                $association->category === AssociationCategory::JOIN
-                && $association->secondaryUid === $service->uid
-            ) {
-                $joining_date = match ($association->day) {
-                    AssociationDay::YESTERDAY => $departure_date->add($one_day),
-                    AssociationDay::TODAY => $departure_date,
-                    AssociationDay::TOMORROW => $departure_date->sub($one_day),
-                };
-                $joining_train = $this->getUidOnDate(
-                    $association->primaryUid
-                    , $joining_date
-                );
-                if (!$joining_train instanceof Service) {
-                    $joining_train = null;
-                }
-            }
+        $service = $dated_service->service;
+        if (!$service instanceof Service) {
+            return [];
         }
+        $associations = $this->getAssociations(
+            $dated_service
+            , $time ?? $service->getOrigin()->workingDeparture
+        );
+        $join = array_filter(
+            $associations
+            , static fn(DatedAssociation $association) =>
+                $association->associationEntry instanceof Association
+                && $association->associationEntry->category === AssociationCategory::JOIN
+        )[0] ?? null;
+        $divides = array_filter(
+            $associations
+            , static fn(DatedAssociation $association) =>
+                $association->associationEntry instanceof Association
+                && $association->associationEntry->category === AssociationCategory::DIVIDE
+        );
         return array_merge(
-            $joining_train === null
-                ? [$service->points[count($service->points) - 1]->location]
-                : $this->getRealDestinations($joining_train, $joining_date)
+            $join === null
+                ? [$service->getDestination()->location]
+                : $this->getRealDestinations(
+                    new DatedService(
+                        $this->getUidOnDate($join->associationEntry->primaryUid, $join->date)
+                        , $join->date
+                    )
+                )
             , ...array_map(
-                fn(array $arg) => $this->getRealDestinations($arg[0], $arg[1])
-                , $dividing_trains
+                function (DatedAssociation $divide) {
+                    assert($divide->associationEntry instanceof Association);
+                    $one_day = new DateInterval('P1D');
+                    $secondary_date = match ($divide->associationEntry->day) {
+                        AssociationDay::YESTERDAY => $divide->date->sub($one_day),
+                        AssociationDay::TODAY => $divide->date,
+                        AssociationDay::TOMORROW => $divide->date->add($one_day),
+                    };
+                    return $this->getRealDestinations(
+                        new DatedService(
+                            $this->getUidOnDate($divide->associationEntry->secondaryUid, $secondary_date)
+                            , $secondary_date
+                        )
+                    );
+                }
+                , $divides
             )
         );
     }
