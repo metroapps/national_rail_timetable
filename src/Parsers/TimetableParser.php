@@ -40,38 +40,45 @@ use function str_split;
 use function str_starts_with;
 
 class TimetableParser {
-    public function __construct(private readonly Helper $helper) {}
+    public function __construct(
+        private readonly Helper $helper
+        , private readonly ServiceRepositoryInterface $serviceRepository
+        , private readonly LocationRepositoryInterface $locationRepository
+    ) {
+    }
 
     /**
      * @param resource $file timetable file (ends with .MCA)
-     * @param LocationRepositoryInterface $location_repository
-     * @return ServiceRepositoryInterface
      */
-    public function parseFile(
-        $file
-        , ServiceRepositoryInterface $service_repository
-        , LocationRepositoryInterface $location_repository
-    ) : ServiceRepositoryInterface {
+    public function parseFile($file) : void {
         $services = [];
         $locations = [];
         $associations = [];
         while (($line = fgets($file)) !== false) {
-            switch (substr($line, 0, 2)) {
+            switch (($transaction_type = substr($line, 0, 2))) {
             case 'AA':
-                $associations[] = $this->parseAssociation($line);
-                break;
             case 'BS':
-                $services[] = $this->parseService($file, $line);
+                if ($locations !== []) {
+                    $this->locationRepository->insertLocations($locations);
+                    $locations = [];
+                }
+                switch ($transaction_type) {
+                case 'AA':
+                    $associations[] = $this->parseAssociation($line);
+                    break;
+                case 'BS':
+                    $services[] = $this->parseService($file, $line);
+                    break;
+                }
                 break;
             case 'TI':
                 $locations[] = $this->parseStation($line);
                 break;
             }
         }
-        $service_repository->insertServices($services);
-        $service_repository->insertAssociations($associations);
-        $location_repository->insertLocations($locations);
-        return $service_repository;
+        $this->serviceRepository->insertServices($services);
+        $this->serviceRepository->insertAssociations($associations);
+        $this->locationRepository->insertLocations($locations);
     }
 
     private function parseAssociation(string $line) : AssociationEntry {
@@ -91,7 +98,7 @@ class TimetableParser {
             , $this->parseYymmdd($columns[5])
             , $this->helper->parseWeekdays($columns[6])
         );
-        $location = $columns[9];
+        $location = $this->locationRepository->getLocationByTiploc($columns[9]);
         $shortTermPlanning = ShortTermPlanning::from($columns[15]);
         return $shortTermPlanning === ShortTermPlanning::CANCEL
             ? new AssociationCancellation(
@@ -236,7 +243,7 @@ class TimetableParser {
         );
         $location_columns = $this->helper->parseLine($columns[1], [7, 1]);
         return new OriginPoint(
-            location: $location_columns[0]
+            location: $this->locationRepository->getLocationByTiploc($location_columns[0])
             , locationSuffix: $location_columns[1]
             , workingDeparture: Time::fromHhmm($columns[2])
             , publicDeparture: $this->parsePublicTime($columns[3], null)
@@ -262,7 +269,7 @@ class TimetableParser {
         $location_columns = $this->helper->parseLine($columns[1], [7, 1]);
         return $columns[4] !== ''
             ? new PassingPoint(
-                location: $location_columns[0]
+                location: $this->locationRepository->getLocationByTiploc($location_columns[0])
                 , locationSuffix: $location_columns[1]
                 , pass: Time::fromHhmm($columns[4], $last_call)
                 , platform: $columns[7]
@@ -275,7 +282,7 @@ class TimetableParser {
                 , servicePropertyChange: $change
             )
             : new CallingPoint(
-                location: $location_columns[0]
+                location: $this->locationRepository->getLocationByTiploc($location_columns[0])
                 , locationSuffix: $location_columns[1]
                 , workingArrival: Time::fromHhmm($columns[2], $last_call)
                 , workingDeparture: Time::fromHhmm($columns[3], $last_call)
@@ -301,7 +308,7 @@ class TimetableParser {
         );
         $location_columns = $this->helper->parseLine($columns[1], [7, 1]);
         return new DestinationPoint(
-            location: $location_columns[0]
+            location: $this->locationRepository->getLocationByTiploc($location_columns[0])
             , locationSuffix: $location_columns[1]
             , workingArrival: Time::fromHhmm($columns[2], $last_call)
             , publicArrival: $this->parsePublicTime($columns[3], $last_call)

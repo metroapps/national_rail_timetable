@@ -5,7 +5,7 @@ namespace Miklcct\NationalRailJourneyPlanner\Models;
 
 class PassingPoint extends IntermediatePoint {
     public function __construct(
-        string $location
+        Location $location
         , string $locationSuffix
         , string $platform
         , string $path

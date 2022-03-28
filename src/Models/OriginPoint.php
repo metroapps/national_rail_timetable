@@ -5,7 +5,7 @@ namespace Miklcct\NationalRailJourneyPlanner\Models;
 
 class OriginPoint extends TimingPoint {
     public function __construct(
-        string $location
+        Location $location
         , string $locationSuffix
         , string $platform
         , public readonly string $line

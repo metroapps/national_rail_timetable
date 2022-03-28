@@ -12,7 +12,7 @@ abstract class AssociationEntry {
         , public readonly string $primarySuffix
         , public readonly string $secondarySuffix
         , public readonly Period $period
-        , public readonly string $location
+        , public readonly Location $location
         , public readonly ShortTermPlanning $shortTermPlanning
     ) {}
 }

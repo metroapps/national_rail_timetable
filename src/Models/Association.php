@@ -15,7 +15,7 @@ class Association extends AssociationEntry {
         , string $primarySuffix
         , string $secondarySuffix
         , Period $period
-        , string $location
+        , Location $location
         , public readonly AssociationCategory $category
         , public readonly AssociationDay $day
         , public readonly AssociationType $type

@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailJourneyPlanner\Parsers;
 
 use Miklcct\NationalRailJourneyPlanner\Models\Station;
-use Miklcct\NationalRailJourneyPlanner\Repositories\MemoryLocationRepository;
 use Miklcct\NationalRailJourneyPlanner\Models\TocInterchange;
 use Miklcct\NationalRailJourneyPlanner\Repositories\LocationRepositoryInterface;
 use function array_filter;
@@ -13,7 +12,10 @@ use function fgets;
 use function str_starts_with;
 
 class StationParser {
-    public function __construct(private readonly Helper $helper) {
+    public function __construct(
+        private readonly Helper $helper
+        , private readonly LocationRepositoryInterface $locationRepository
+    ) {
     }
 
     /**
@@ -21,9 +23,9 @@ class StationParser {
      *
      * @param resource $msn_file master station names file (name ends in .MSN)
      * @param resource $tsi_file TOC interchanges file (name ends in .TSI)
-     * @return LocationRepositoryInterface
+     * @return void
      */
-    public function parseFile($msn_file, $tsi_file, LocationRepositoryInterface $repository) : void {
+    public function parseFile($msn_file, $tsi_file) : void {
         // parse TOC interchanges
         $toc_interchanges = [];
         while (($columns = fgetcsv($tsi_file)) !== false) {
@@ -62,12 +64,11 @@ class StationParser {
                 , northing: ((int)$columns[11] - 60000) * 100
                 , minimumConnectionTime: (int)$columns[12]
                 , tocConnectionTimes: array_values(
-                    array_filter(
-                        $toc_interchanges
-                        , static fn(array $entry) : bool
-                            => $entry[0] === $columns[8]
-                    )
+                array_filter(
+                    $toc_interchanges
+                    , static fn(array $entry) : bool => $entry[0] === $columns[8]
                 )
+            )
             );
 
         }
@@ -80,7 +81,7 @@ class StationParser {
             $line = fgets($msn_file);
         }
 
-        $repository->insertLocations($stations);
-        $repository->insertAliases($aliases);
+        $this->locationRepository->insertLocations($stations);
+        $this->locationRepository->insertAliases($aliases);
     }
 }
