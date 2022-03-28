@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Models;
+namespace Miklcct\NationalRailJourneyPlanner\Repositories;
 
 use DateInterval;
 use DateTimeImmutable;
@@ -9,29 +9,41 @@ use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationDay;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationType;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
+use Miklcct\NationalRailJourneyPlanner\Models\Association;
+use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
+use Miklcct\NationalRailJourneyPlanner\Models\DatedAssociation;
+use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
+use Miklcct\NationalRailJourneyPlanner\Models\Service;
+use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
+use Miklcct\NationalRailJourneyPlanner\Models\Time;
+use Miklcct\NationalRailJourneyPlanner\Repositories\ServiceRepositoryInterface;
 use function array_filter;
 use function array_keys;
 use function array_merge;
 
-class Timetable {
-    public function insertService(ServiceEntry $entry) : void {
-        $this->services[$entry->uid][] = $entry;
+class MemoryServiceRepository implements ServiceRepositoryInterface {
+    public function insertServices(array $services) : void {
+        foreach ($services as $service) {
+            $this->services[$service->uid][] = $service;
+        }
     }
 
-    public function insertAssociation(AssociationEntry $entry) : void {
-        $this->associations[$entry->primaryUid][] = $entry;
-        $this->associations[$entry->secondaryUid][] = $entry;
+    public function insertAssociations(array $associations) : void {
+        foreach ($associations as $association) {
+            $this->associations[$association->primaryUid][] = $association;
+            $this->associations[$association->secondaryUid][] = $association;
+        }
     }
 
     public function getUidOnDate(
         string $uid
         , DateTimeImmutable $date
-        , bool $include_short_term_planning = true
+        , bool $permanent_only = false
     ) : ?ServiceEntry {
         $result = null;
         foreach ($this->services[$uid] ?? [] as $service) {
             if (
-                ($include_short_term_planning
+                (!$permanent_only
                     || $service->shortTermPlanning === ShortTermPlanning::PERMANENT)
                 && ($result === null
                     || $service->shortTermPlanning !== ShortTermPlanning::PERMANENT)
@@ -43,11 +55,6 @@ class Timetable {
         return $result;
     }
 
-    /**
-     * Get all public services which are active in the period specified
-     *
-     * @return DatedService[]
-     */
     public function getServices(
         DateTimeImmutable $from
         , DateTimeImmutable $to
@@ -86,26 +93,6 @@ class Timetable {
         return $result;
     }
 
-    /**
-     * Get associations of the specified service
-     *
-     * If $from is specified, only the following associations happening after
-     * it will be returned.
-     * - joining another train
-     * - dividing to form another train
-     * - forming another service at the end
-     *
-     * If $to is specified, only the following associations happening before it
-     * will be returned.
-     * - another train joining
-     * - dividing from another train
-     * - formed from another service at the beginning
-     *
-     * @param DatedService $dated_service
-     * @param Time|null $from
-     * @param Time|null $to
-     * @return DatedAssociation[]
-     */
     public function getAssociations(
         DatedService $dated_service
         , ?Time $from = null
@@ -194,16 +181,9 @@ class Timetable {
 
         return $from_results !== null
             ? array_merge($from_results, $to_results ?? [])
-            : ($to_results ?? $results);
+            : $to_results ?? $results;
     }
 
-    /**
-     * Get the "real" destination of the train, taking joins and splits into account.
-     *
-     * @param DatedService $dated_service
-     * @param ?Time $time
-     * @return DestinationPoint[]
-     */
     public function getRealDestinations(
         DatedService $dated_service
         , ?Time $time = null
@@ -257,8 +237,6 @@ class Timetable {
             )
         );
     }
-
-    public Stations $stations;
 
     /** @var array<string, ServiceEntry[]> */
     private array $services = [];

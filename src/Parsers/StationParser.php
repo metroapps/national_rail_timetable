@@ -4,8 +4,9 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailJourneyPlanner\Parsers;
 
 use Miklcct\NationalRailJourneyPlanner\Models\Station;
-use Miklcct\NationalRailJourneyPlanner\Models\Stations;
+use Miklcct\NationalRailJourneyPlanner\Repositories\MemoryLocationRepository;
 use Miklcct\NationalRailJourneyPlanner\Models\TocInterchange;
+use Miklcct\NationalRailJourneyPlanner\Repositories\LocationRepositoryInterface;
 use function array_filter;
 use function fgetcsv;
 use function fgets;
@@ -20,9 +21,9 @@ class StationParser {
      *
      * @param resource $msn_file master station names file (name ends in .MSN)
      * @param resource $tsi_file TOC interchanges file (name ends in .TSI)
-     * @return Stations
+     * @return LocationRepositoryInterface
      */
-    public function parseFile($msn_file, $tsi_file) : Stations {
+    public function parseFile($msn_file, $tsi_file, LocationRepositoryInterface $repository) : void {
         // parse TOC interchanges
         $toc_interchanges = [];
         while (($columns = fgetcsv($tsi_file)) !== false) {
@@ -79,6 +80,7 @@ class StationParser {
             $line = fgets($msn_file);
         }
 
-        return new Stations($stations, $aliases);
+        $repository->insertLocations($stations);
+        $repository->insertAliases($aliases);
     }
 }

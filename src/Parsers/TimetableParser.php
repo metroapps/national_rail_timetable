@@ -20,6 +20,7 @@ use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\CallingPoint;
 use Miklcct\NationalRailJourneyPlanner\Models\DestinationPoint;
 use Miklcct\NationalRailJourneyPlanner\Models\IntermediatePoint;
+use Miklcct\NationalRailJourneyPlanner\Models\Location;
 use Miklcct\NationalRailJourneyPlanner\Models\OriginPoint;
 use Miklcct\NationalRailJourneyPlanner\Models\PassingPoint;
 use Miklcct\NationalRailJourneyPlanner\Models\Period;
@@ -27,10 +28,9 @@ use Miklcct\NationalRailJourneyPlanner\Models\Service;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCancellation;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceProperty;
-use Miklcct\NationalRailJourneyPlanner\Models\Location;
-use Miklcct\NationalRailJourneyPlanner\Models\Stations;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
-use Miklcct\NationalRailJourneyPlanner\Models\Timetable;
+use Miklcct\NationalRailJourneyPlanner\Repositories\LocationRepositoryInterface;
+use Miklcct\NationalRailJourneyPlanner\Repositories\ServiceRepositoryInterface;
 use Safe\DateTimeImmutable;
 use function array_filter;
 use function array_map;
@@ -44,30 +44,34 @@ class TimetableParser {
 
     /**
      * @param resource $file timetable file (ends with .MCA)
-     * @param Stations $stations existing stations data to be merged into the timetable
-     * @return Timetable
+     * @param LocationRepositoryInterface $location_repository
+     * @return ServiceRepositoryInterface
      */
-    public function parseFile($file, ?Stations $stations) : Timetable {
-        $timetable = new Timetable();
-        $parsed_stations_list = [];
+    public function parseFile(
+        $file
+        , ServiceRepositoryInterface $service_repository
+        , LocationRepositoryInterface $location_repository
+    ) : ServiceRepositoryInterface {
+        $services = [];
+        $locations = [];
+        $associations = [];
         while (($line = fgets($file)) !== false) {
             switch (substr($line, 0, 2)) {
             case 'AA':
-                $timetable->insertAssociation($this->parseAssociation($line));
+                $associations[] = $this->parseAssociation($line);
                 break;
             case 'BS':
-                $timetable->insertService($this->parseService($file, $line));
+                $services[] = $this->parseService($file, $line);
                 break;
             case 'TI':
-                $station = $this->parseStation($line);
-                if ($station !== null) {
-                    $parsed_stations_list[] = $station;
-                }
+                $locations[] = $this->parseStation($line);
+                break;
             }
         }
-        $parsed_stations = new Stations($parsed_stations_list, []);
-        $timetable->stations = $stations === null ? $parsed_stations : $stations->merge($parsed_stations);
-        return $timetable;
+        $service_repository->insertServices($services);
+        $service_repository->insertAssociations($associations);
+        $location_repository->insertLocations($locations);
+        return $service_repository;
     }
 
     private function parseAssociation(string $line) : AssociationEntry {

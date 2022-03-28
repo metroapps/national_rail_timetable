@@ -1,0 +1,75 @@
+<?php
+declare(strict_types=1);
+
+namespace Miklcct\NationalRailJourneyPlanner\Repositories;
+
+use Miklcct\NationalRailJourneyPlanner\Models\Location;
+use Miklcct\NationalRailJourneyPlanner\Models\Station;
+use function is_string;
+
+class MemoryLocationRepository implements LocationRepositoryInterface {
+    public function getLocationByCrs(string $crs) : ?Location {
+        return $this->locationsByCrs[$crs] ?? null;
+    }
+
+    public function getLocationByName(string $name) : ?Location {
+        $result = $this->locationsByName[$name] ?? null;
+        return is_string($result) ? $this->getLocationByName($result) : $result;
+    }
+
+    public function getLocationByTiploc(string $tiploc) : ?Location {
+        return $this->locationsByTiploc[$tiploc] ?? null;
+    }
+
+    public function insertLocations(array $locations) : void {
+        foreach ($locations as $station) {
+            if ($station->crsCode !== null) {
+                $this->updateStation(
+                    $this->locationsByCrs
+                    , $station->crsCode
+                    , $station
+                );
+            }
+            $this->updateStation(
+                $this->locationsByName
+                , $station->name
+                , $station
+            );
+            $this->updateStation(
+                $this->locationsByTiploc
+                , $station->tiploc
+                , $station
+            );
+        }
+    }
+
+    public function insertAliases(array $aliases) : void {
+        $this->locationsByName += $aliases;
+    }
+
+    /** @var array<string, Location> */
+    private array $locationsByCrs = [];
+    /** @var array<string, string|Location> */
+    private array $locationsByName = [];
+    /** @var array<string, Location> */
+    private array $locationsByTiploc = [];
+
+    private function updateStation(
+        array &$bucket
+        , string $key
+        , Location $station
+    ) : void {
+        $existing = $bucket[$key] ?? null;
+        if (
+            $existing === null
+            || $station instanceof Station && (
+                !$existing instanceof Station
+                || $station->minorCrsCode === $station->crsCode
+                    && $existing->minorCrsCode !== $existing->crsCode
+                || $station->interchange !== 9 && $existing->interchange === 9
+            )
+        ) {
+            $bucket[$key] = $station;
+        }
+    }
+}

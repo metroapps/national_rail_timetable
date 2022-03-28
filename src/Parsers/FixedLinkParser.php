@@ -4,10 +4,13 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailJourneyPlanner\Parsers;
 
 use DateTimeZone;
+use LogicException;
 use Miklcct\NationalRailJourneyPlanner\Models\FixedLink;
-use Miklcct\NationalRailJourneyPlanner\Models\FixedLinks;
-use Miklcct\NationalRailJourneyPlanner\Models\Stations;
+use Miklcct\NationalRailJourneyPlanner\Models\Station;
+use Miklcct\NationalRailJourneyPlanner\Repositories\FixedLinkRepositoryInterface;
+use Miklcct\NationalRailJourneyPlanner\Repositories\MemoryFixedLinkRepository;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
+use Miklcct\NationalRailJourneyPlanner\Repositories\LocationRepositoryInterface;
 use Safe\DateTimeImmutable;
 use function explode;
 use function fgetcsv;
@@ -17,14 +20,15 @@ class FixedLinkParser {
 
     /**
      * @param resource $file additional fixed links file (name ends with .ALF)
-     * @param Stations $stations
-     * @return FixedLinks
+     * @param LocationRepositoryInterface $location_repository
+     * @param FixedLinkRepositoryInterface $fixed_link_repository
+     * @return void
      */
-    public function parseFile($file, Stations $stations) : FixedLinks {
-        /** @var array<string, array<string, FixedLink[]>> */
-        $fixedLinksByOriginCrs = [];
-        /** @var array<string, array<string, FixedLink[]>> */
-        $fixedLinksByDestinationCrs = [];
+    public function parseFile(
+        $file
+        , LocationRepositoryInterface $location_repository
+        , FixedLinkRepositoryInterface $fixed_link_repository
+    ) : void {
         while (($columns = fgetcsv($file)) !== false) {
             $mode = null;
             $origin = null;
@@ -43,10 +47,17 @@ class FixedLinkParser {
                     $mode = $fields[1];
                     break;
                 case 'O':
-                    $origin = $stations->stationsByCrs[$fields[1]];
+                    $origin = $location_repository->getLocationByCrs($fields[1]);
+                    if (!$origin instanceof Station) {
+                        throw new LogicException('Fixed links must start and end with a station.');
+                    }
                     break;
                 case 'D':
-                    $destination = $stations->stationsByCrs[$fields[1]];
+                    $destination = $location_repository->getLocationByCrs($fields[1]);
+                    if (!$destination instanceof Station) {
+                        throw new LogicException('Fixed links must start and end with a station.');
+                    }
+
                     break;
                 case 'T':
                     $transferTime = (int)$fields[1];
@@ -79,7 +90,7 @@ class FixedLinkParser {
                     break;
                 }
             }
-            $fixed_link = new FixedLink(
+            $fixed_links[] = new FixedLink(
                 $mode
                 , $origin
                 , $destination
@@ -91,9 +102,7 @@ class FixedLinkParser {
                 , $endDate
                 , $weekdays
             );
-            $fixedLinksByOriginCrs[$origin->crsCode][$destination->crsCode][] = $fixed_link;
-            $fixedLinksByDestinationCrs[$destination->crsCode][$origin->crsCode][] = $fixed_link;
         }
-        return new FixedLinks($fixedLinksByOriginCrs, $fixedLinksByDestinationCrs);
+        $fixed_link_repository->insert($fixed_links);
     }
 }

@@ -6,6 +6,7 @@ namespace Miklcct\NationalRailJourneyPlanner\Models;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\BankHoliday;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
+use Miklcct\NationalRailJourneyPlanner\Repositories\LocationRepositoryInterface;
 use RuntimeException;
 use function array_filter;
 use const PHP_INT_MAX;
@@ -87,12 +88,12 @@ class Service extends ServiceEntry {
     /**
      * @return TimingPoint[]
      */
-    public function getPublicCalls(Stations $stations) : array {
+    public function getPublicCalls(LocationRepositoryInterface $stations) : array {
         return array_values(
             array_filter(
                 $this->points
                 , static fn(TimingPoint $point) =>
-                    $stations->stationsByTiploc[$point->location]?->crsCode !== null
+                    $stations->getLocationByTiploc($point->location)?->crsCode !== null
                     && ($point->getPublicDeparture() !== null
                         || $point->getPublicArrival() !== null)
 
