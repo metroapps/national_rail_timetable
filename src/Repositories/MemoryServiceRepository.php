@@ -5,6 +5,7 @@ namespace Miklcct\NationalRailJourneyPlanner\Repositories;
 
 use DateInterval;
 use DateTimeImmutable;
+use DateTimeZone;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationDay;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationType;
@@ -13,13 +14,14 @@ use Miklcct\NationalRailJourneyPlanner\Models\Association;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedAssociation;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
+use Miklcct\NationalRailJourneyPlanner\Models\FullService;
 use Miklcct\NationalRailJourneyPlanner\Models\Service;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
-use Miklcct\NationalRailJourneyPlanner\Repositories\ServiceRepositoryInterface;
 use function array_filter;
 use function array_keys;
 use function array_merge;
+use function array_slice;
 
 class MemoryServiceRepository implements ServiceRepositoryInterface {
     public function insertServices(array $services) : void {
@@ -79,8 +81,8 @@ class MemoryServiceRepository implements ServiceRepositoryInterface {
                 ) {
                     $origin = $service->getOrigin();
                     $destination = $service->getDestination();
-                    $departure_time = $origin->getPublicDeparture() ?? $origin->workingDeparture;
-                    $arrival_time = $destination->getPublicArrival() ?? $destination->workingArrival;
+                    $departure_time = $origin->getPublicOrWorkingDeparture();
+                    $arrival_time = $destination->getPublicOrWorkingArrival();
                     if (
                         $arrival_time->getDateTimeOnDate($date) > $from
                         && $departure_time->getDateTimeOnDate($date) < $to
@@ -117,7 +119,24 @@ class MemoryServiceRepository implements ServiceRepositoryInterface {
                         }
                         : $departure_date;
                 if ($association->period->isActive($primary_departure_date)) {
-                    $results[] = new DatedAssociation($association, $primary_departure_date);
+                    if ($association->secondaryUid === $service->uid) {
+                        $primary_service = $this->getUidOnDate($association->primaryUid, $primary_departure_date);
+                        $secondary_departure_date = $departure_date;
+                        $secondary_service = $dated_service->service;
+                    } else {
+                        $primary_service = $dated_service->service;
+                        $secondary_departure_date = match ($association->day) {
+                            AssociationDay::YESTERDAY => $departure_date->sub($one_day),
+                            AssociationDay::TODAY => $departure_date,
+                            AssociationDay::TOMORROW => $departure_date->add($one_day),
+                        };
+                        $secondary_service = $this->getUidOnDate($association->secondaryUid, $secondary_departure_date);
+                    }
+                    $results[] = new DatedAssociation(
+                        $association
+                        , new DatedService($primary_service, $primary_departure_date)
+                        , new DatedService($secondary_service, $secondary_departure_date)
+                    );
                 }
             }
         }
@@ -136,7 +155,7 @@ class MemoryServiceRepository implements ServiceRepositoryInterface {
                             && $association->primarySuffix === $other->primarySuffix
                             && $association->secondarySuffix === $other->secondarySuffix
                             && $other->shortTermPlanning !== ShortTermPlanning::PERMANENT
-                            && $other->period->isActive($dated_association->date)
+                            && $other->period->isActive($dated_association->primaryService->date)
                 );
             }
         );
@@ -184,57 +203,84 @@ class MemoryServiceRepository implements ServiceRepositoryInterface {
             : $to_results ?? $results;
     }
 
-    public function getRealDestinations(
+    public function getFullService(
         DatedService $dated_service
-        , ?Time $time = null
-    ) : array {
-        $service = $dated_service->service;
-        if (!$service instanceof Service) {
-            return [];
-        }
-        $associations = $this->getAssociations(
+        , ?Time $boarding = null
+        , ?Time $alighting = null
+        , bool $include_non_passenger = false
+        , array $recursed_services = []
+    ) : FullService {
+        $dated_associations = $this->getAssociations(
             $dated_service
-            , $time ?? $service->getOrigin()->workingDeparture
+            , $alighting ?? $boarding
+            , $boarding ?? $alighting
+            , $include_non_passenger
         );
-        $join = array_filter(
-            $associations
-            , static fn(DatedAssociation $association) =>
-                $association->associationEntry instanceof Association
-                && $association->associationEntry->category === AssociationCategory::JOIN
+        $divide_from = array_filter(
+            $dated_associations
+            , static fn(DatedAssociation $dated_association) =>
+                $dated_service->service->uid === $dated_association->associationEntry->secondaryUid
+                && $dated_association->associationEntry instanceof Association
+                && $dated_association->associationEntry->category === AssociationCategory::DIVIDE
         )[0] ?? null;
-        $divides = array_filter(
-            $associations
-            , static fn(DatedAssociation $association) =>
-                $association->associationEntry instanceof Association
-                && $association->associationEntry->category === AssociationCategory::DIVIDE
+        $join_to = array_filter(
+            $dated_associations
+            , static fn(DatedAssociation $dated_association) =>
+                $dated_service->service->uid === $dated_association->associationEntry->secondaryUid
+                && $dated_association->associationEntry instanceof Association
+                && $dated_association->associationEntry->category === AssociationCategory::JOIN
+        )[0] ?? null;
+        $divides_and_joins = array_filter(
+            $dated_associations
+            , static fn(DatedAssociation $dated_association) =>
+                $dated_service->service->uid === $dated_association->associationEntry->primaryUid
+                && $dated_association->associationEntry instanceof Association
+                && $dated_association->associationEntry->category !== AssociationCategory::NEXT
         );
-        return array_merge(
-            $join === null
-                ? [$service->getDestination()->location]
-                : $this->getRealDestinations(
-                    new DatedService(
-                        $this->getUidOnDate($join->associationEntry->primaryUid, $join->date)
-                        , $join->date
-                    )
-                )
-            , ...array_map(
-                function (DatedAssociation $divide) {
-                    assert($divide->associationEntry instanceof Association);
-                    $one_day = new DateInterval('P1D');
-                    $secondary_date = match ($divide->associationEntry->day) {
-                        AssociationDay::YESTERDAY => $divide->date->sub($one_day),
-                        AssociationDay::TODAY => $divide->date,
-                        AssociationDay::TOMORROW => $divide->date->add($one_day),
-                    };
-                    return $this->getRealDestinations(
-                        new DatedService(
-                            $this->getUidOnDate($divide->associationEntry->secondaryUid, $secondary_date)
-                            , $secondary_date
+
+        /** @var array<DatedAssociation|null> $dated_associations */
+        $dated_associations = [$divide_from, ...$divides_and_joins, $join_to];
+
+        $recursed_services[] = $dated_service;
+        $timezone = new DateTimeZone('Europe/London');
+        foreach ($dated_associations as &$dated_association) {
+            if ($dated_association !== null) {
+                /** @var DatedService[] $services */
+                $services = [$dated_association->primaryService, $dated_association->secondaryService];
+                foreach ($services as &$service) {
+                    $recursed = array_values(
+                        array_filter(
+                            $recursed_services
+                            , static fn(DatedService $previous) =>
+                                $service->service->uid === $previous->service->uid
+                                && $service->date->setTimezone($timezone)->setTime(0, 0)
+                                    == $previous->date->setTimezone($timezone)->setTime(0, 0)
                         )
+                    )[0] ?? null;
+                    $service = $recursed ?? $this->getFullService(
+                        $service
+                        , $boarding
+                        , $alighting
+                        , $include_non_passenger
+                        , $recursed_services
                     );
                 }
-                , $divides
-            )
+                unset($service);
+                $dated_association = new DatedAssociation(
+                    $dated_association->associationEntry
+                    , $services[0]
+                    , $services[1]
+                );
+            }
+        }
+        unset($dated_association);
+
+        return new FullService(
+            $dated_service->service
+            , $dated_service->date
+            , $dated_associations[0]
+            , array_slice($dated_associations, 1, count($dated_associations) - 2)
+            , $dated_associations[count($dated_associations) - 1]
         );
     }
 

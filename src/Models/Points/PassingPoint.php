@@ -1,7 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Models;
+namespace Miklcct\NationalRailJourneyPlanner\Models\Points;
+
+use Miklcct\NationalRailJourneyPlanner\Models\Location;
+use Miklcct\NationalRailJourneyPlanner\Models\ServiceProperty;
+use Miklcct\NationalRailJourneyPlanner\Models\Time;
 
 class PassingPoint extends IntermediatePoint {
     public function __construct(

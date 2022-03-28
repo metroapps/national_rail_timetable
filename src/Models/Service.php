@@ -6,8 +6,14 @@ namespace Miklcct\NationalRailJourneyPlanner\Models;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\BankHoliday;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
+use Miklcct\NationalRailJourneyPlanner\Models\Points\CallingPoint;
+use Miklcct\NationalRailJourneyPlanner\Models\Points\DestinationPoint;
+use Miklcct\NationalRailJourneyPlanner\Models\Points\IntermediatePoint;
+use Miklcct\NationalRailJourneyPlanner\Models\Points\OriginPoint;
+use Miklcct\NationalRailJourneyPlanner\Models\Points\PassingPoint;
+use Miklcct\NationalRailJourneyPlanner\Models\Points\TimingPoint;
 use RuntimeException;
-use function array_filter;
+use function assert;
 use const PHP_INT_MAX;
 
 class Service extends ServiceEntry {
@@ -62,15 +68,29 @@ class Service extends ServiceEntry {
                     : $association->primarySuffix
                 ) && $point->location->tiploc === $association->location->tiploc
             ) {
-                /** @noinspection PhpPossiblePolymorphicInvocationInspection */
-                return match ($association->category) {
-                    AssociationCategory::NEXT, AssociationCategory::DIVIDE => $secondary
-                        ? $point->getPublicDeparture() ?? $point->workingDeparture
-                        : $point->getPublicArrival() ?? $point->workingArrival,
-                    AssociationCategory::JOIN => $secondary
-                        ? $point->getPublicArrival() ?? $point->workingArrival
-                        : $point->getPublicDeparture() ?? $point->workingDeparture,
-                };
+                if ($secondary) {
+                    switch ($association->category) {
+                    case AssociationCategory::NEXT:
+                    case AssociationCategory::DIVIDE:
+                        assert($point instanceof OriginPoint);
+                        return $point->getPublicOrWorkingDeparture();
+                    case AssociationCategory::JOIN:
+                        assert($point instanceof DestinationPoint);
+                        return $point->getPublicOrWorkingArrival();
+                    }
+                } else {
+                    switch ($association->category) {
+                    case AssociationCategory::NEXT:
+                        assert($point instanceof DestinationPoint);
+                        return $point->getPublicOrWorkingArrival();
+                    case AssociationCategory::DIVIDE:
+                        assert($point instanceof CallingPoint);
+                        return $point->getPublicOrWorkingArrival();
+                    case AssociationCategory::JOIN:
+                        assert($point instanceof CallingPoint);
+                        return $point->getPublicOrWorkingDeparture();
+                    }
+                }
             }
         }
         throw new RuntimeException('Invalid association location');
@@ -82,21 +102,5 @@ class Service extends ServiceEntry {
 
     public function getDestination() : DestinationPoint {
         return $this->points[count($this->points) - 1];
-    }
-
-    /**
-     * @return TimingPoint[]
-     */
-    public function getPublicCalls() : array {
-        return array_values(
-            array_filter(
-                $this->points
-                , static fn(TimingPoint $point) =>
-                    $point->location->crsCode !== null
-                    && ($point->getPublicDeparture() !== null
-                        || $point->getPublicArrival() !== null)
-
-            )
-        );
     }
 }

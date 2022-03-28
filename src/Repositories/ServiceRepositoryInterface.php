@@ -7,7 +7,7 @@ use DateTimeImmutable;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedAssociation;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
-use Miklcct\NationalRailJourneyPlanner\Models\DestinationPoint;
+use Miklcct\NationalRailJourneyPlanner\Models\FullService;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
 
@@ -59,21 +59,21 @@ interface ServiceRepositoryInterface {
      * @param DatedService $dated_service
      * @param Time|null $from
      * @param Time|null $to
+     * @param bool $include_non_passenger
      * @return DatedAssociation[]
      */
     public function getAssociations(
-        DatedService $dated_service,
-        ?Time $from = null,
-        ?Time $to = null,
-        bool $include_non_passenger = false
+        DatedService $dated_service
+        , ?Time $from = null
+        , ?Time $to = null
+        , bool $include_non_passenger = false
     ) : array;
 
-    /**
-     * Get the "real" destination of the train, taking joins and splits into account.
-     *
-     * @param DatedService $dated_service
-     * @param ?Time $time
-     * @return DestinationPoint[]
-     */
-    public function getRealDestinations(DatedService $dated_service, ?Time $time = null) : array;
+    public function getFullService(
+        DatedService $dated_service
+        , ?Time $boarding = null
+        , ?Time $alighting = null
+        , bool $include_non_passenger = false
+        , array $recursed_services = []
+    ) : FullService;
 }
