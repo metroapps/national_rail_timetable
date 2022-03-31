@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
-use DateTimeImmutable;
-
 class FixedLink {
     public function __construct(
         public readonly string $mode
@@ -14,8 +12,8 @@ class FixedLink {
         , public readonly Time $startTime
         , public readonly Time $endTime
         , public readonly int $priority
-        , public readonly ?DateTimeImmutable $startDate
-        , public readonly ?DateTimeImmutable $endDate
+        , public readonly ?Date $startDate
+        , public readonly ?Date $endDate
         , ?array $weekdays
     ) {
         $this->weekdays = $weekdays;

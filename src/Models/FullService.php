@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
-use DateTimeImmutable;
 use LogicException;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\DestinationPoint;
@@ -14,7 +13,7 @@ use function array_merge;
 class FullService extends DatedService {
     public function __construct(
         ServiceEntry $service
-        , DateTimeImmutable $date
+        , Date $date
         , public readonly ?DatedAssociation $divideFrom
         , array $dividesJoinsEnRoute
         , public readonly ?DatedAssociation $joinTo

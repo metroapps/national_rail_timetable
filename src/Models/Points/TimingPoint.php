@@ -3,11 +3,12 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models\Points;
 
+use JsonSerializable;
 use Miklcct\NationalRailJourneyPlanner\Enums\Activity;
 use Miklcct\NationalRailJourneyPlanner\Models\Location;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
 
-class TimingPoint {
+abstract class TimingPoint implements JsonSerializable {
     public function __construct(
         public readonly Location $location
         , public readonly string $locationSuffix
@@ -33,4 +34,10 @@ class TimingPoint {
 
     /** @var Activity[] */
     public readonly array $activity;
+
+    public function jsonSerialize() : array {
+        $result = (array)$this + ['__class__' => static::class];
+        $result['location'] = $this->location->tiploc;
+        return $result;
+    }
 }

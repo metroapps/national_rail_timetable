@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
-use DateTimeImmutable;
-use DateTimeZone;
 use Miklcct\NationalRailJourneyPlanner\Enums\BankHoliday;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
 
@@ -16,9 +14,7 @@ abstract class ServiceEntry {
         , public readonly ShortTermPlanning $shortTermPlanning
     ) {}
 
-    public function runsOnDate(DateTimeImmutable $date) : bool {
-        static $timezone = new DateTimeZone('Europe/London');
-        $date = $date->setTimezone($timezone);
+    public function runsOnDate(Date $date) : bool {
         return $this->period->isActive($date)
             && !$this->excludeBankHoliday->isActive($date);
     }

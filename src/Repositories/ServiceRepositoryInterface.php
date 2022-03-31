@@ -5,6 +5,7 @@ namespace Miklcct\NationalRailJourneyPlanner\Repositories;
 
 use DateTimeImmutable;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
+use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedAssociation;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
 use Miklcct\NationalRailJourneyPlanner\Models\FullService;
@@ -26,7 +27,7 @@ interface ServiceRepositoryInterface {
 
     public function getUidOnDate(
         string $uid,
-        DateTimeImmutable $date,
+        Date $date,
         bool $permanent_only = false
     ) : ?ServiceEntry;
 

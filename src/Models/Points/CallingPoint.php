@@ -8,8 +8,8 @@ use Miklcct\NationalRailJourneyPlanner\Models\ServiceProperty;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
 
 class CallingPoint extends IntermediatePoint implements HasDeparture, HasArrival {
-    use DepartureTrait;
     use ArrivalTrait;
+    use DepartureTrait;
 
     public function __construct(
         Location $location

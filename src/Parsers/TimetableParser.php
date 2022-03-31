@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Parsers;
 
-use DateTimeZone;
 use Miklcct\NationalRailJourneyPlanner\Enums\Activity;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationDay;
@@ -17,6 +16,7 @@ use Miklcct\NationalRailJourneyPlanner\Enums\TrainCategory;
 use Miklcct\NationalRailJourneyPlanner\Models\Association;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationCancellation;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
+use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\Location;
 use Miklcct\NationalRailJourneyPlanner\Models\Period;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\CallingPoint;
@@ -31,7 +31,6 @@ use Miklcct\NationalRailJourneyPlanner\Models\ServiceProperty;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
 use Miklcct\NationalRailJourneyPlanner\Repositories\LocationRepositoryInterface;
 use Miklcct\NationalRailJourneyPlanner\Repositories\ServiceRepositoryInterface;
-use Safe\DateTimeImmutable;
 use function array_filter;
 use function array_map;
 use function fgets;
@@ -381,16 +380,12 @@ class TimetableParser {
         );
     }
 
-    private function parseYymmdd(string $string) : \DateTimeImmutable {
-        static $timezone = new DateTimeZone('Europe/London');
+    private function parseYymmdd(string $string) : Date {
         $columns = $this->helper->parseLine($string, [2, 2, 2]);
         $year = (int)$columns[0] + 2000;
         $month = (int)$columns[1];
         $day = (int)$columns[2];
-        return (new DateTimeImmutable())
-            ->setTimezone($timezone)
-            ->setDate($year, $month, $day)
-            ->setTime(0, 0);
+        return new Date($year, $month, $day);
     }
 
     private function parseStation(string $line) : Location {

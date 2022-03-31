@@ -3,15 +3,14 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Repositories;
 
-use DateInterval;
 use DateTimeImmutable;
-use DateTimeZone;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationDay;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationType;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
 use Miklcct\NationalRailJourneyPlanner\Models\Association;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
+use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedAssociation;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
 use Miklcct\NationalRailJourneyPlanner\Models\FullService;
@@ -39,7 +38,7 @@ class MemoryServiceRepository implements ServiceRepositoryInterface {
 
     public function getUidOnDate(
         string $uid
-        , DateTimeImmutable $date
+        , Date $date
         , bool $permanent_only = false
     ) : ?ServiceEntry {
         $result = null;
@@ -62,15 +61,11 @@ class MemoryServiceRepository implements ServiceRepositoryInterface {
         , DateTimeImmutable $to
         , bool $include_non_passenger = false
     ) : array {
-        static $one_day = null;
-        if ($one_day === null) {
-            $one_day = new DateInterval('P1D');
-        }
         $result = [];
         for (
-            $date = $from->sub($one_day);
-            $date < $to;
-            $date = $date->add($one_day)
+            $date = Date::fromDateTimeInterface($from)->addDays(-1);
+            $date->toDateTimeImmutable() < $to;
+            $date = $date->addDays(1)
         ) {
             foreach (array_keys($this->services) as $uid) {
                 $service = $this->getUidOnDate($uid, $date);
@@ -84,8 +79,8 @@ class MemoryServiceRepository implements ServiceRepositoryInterface {
                     $departure_time = $origin->getPublicOrWorkingDeparture();
                     $arrival_time = $destination->getPublicOrWorkingArrival();
                     if (
-                        $arrival_time->getDateTimeOnDate($date) > $from
-                        && $departure_time->getDateTimeOnDate($date) < $to
+                        $date->toDateTimeImmutable($arrival_time) > $from
+                        && $date->toDateTimeImmutable($departure_time) < $to
                     ) {
                         $result[] = new DatedService($service, $date);
                     }
@@ -103,7 +98,6 @@ class MemoryServiceRepository implements ServiceRepositoryInterface {
     ) : array {
         $service = $dated_service->service;
         $departure_date = $dated_service->date;
-        $one_day = new DateInterval('P1D');
         $results = [];
         foreach ($this->associations[$service->uid] ?? [] as $association) {
             if (
@@ -113,9 +107,9 @@ class MemoryServiceRepository implements ServiceRepositoryInterface {
                 $primary_departure_date
                     = $association->secondaryUid === $service->uid
                         ? match ($association->day) {
-                            AssociationDay::YESTERDAY => $departure_date->add($one_day),
+                            AssociationDay::YESTERDAY => $departure_date->addDays(1),
                             AssociationDay::TODAY => $departure_date,
-                            AssociationDay::TOMORROW => $departure_date->sub($one_day),
+                            AssociationDay::TOMORROW => $departure_date->addDays(-1),
                         }
                         : $departure_date;
                 if ($association->period->isActive($primary_departure_date)) {
@@ -126,9 +120,9 @@ class MemoryServiceRepository implements ServiceRepositoryInterface {
                     } else {
                         $primary_service = $dated_service->service;
                         $secondary_departure_date = match ($association->day) {
-                            AssociationDay::YESTERDAY => $departure_date->sub($one_day),
+                            AssociationDay::YESTERDAY => $departure_date->addDays(-1),
                             AssociationDay::TODAY => $departure_date,
-                            AssociationDay::TOMORROW => $departure_date->add($one_day),
+                            AssociationDay::TOMORROW => $departure_date->addDays(1),
                         };
                         $secondary_service = $this->getUidOnDate($association->secondaryUid, $secondary_departure_date);
                     }
@@ -242,7 +236,6 @@ class MemoryServiceRepository implements ServiceRepositoryInterface {
         $dated_associations = [$divide_from, ...$divides_and_joins, $join_to];
 
         $recursed_services[] = $dated_service;
-        $timezone = new DateTimeZone('Europe/London');
         foreach ($dated_associations as &$dated_association) {
             if ($dated_association !== null) {
                 /** @var DatedService[] $services */
@@ -253,8 +246,8 @@ class MemoryServiceRepository implements ServiceRepositoryInterface {
                             $recursed_services
                             , static fn(DatedService $previous) =>
                                 $service->service->uid === $previous->service->uid
-                                && $service->date->setTimezone($timezone)->setTime(0, 0)
-                                    == $previous->date->setTimezone($timezone)->setTime(0, 0)
+                                && $service->date->toDateTimeImmutable()
+                                    == $previous->date->toDateTimeImmutable()
                         )
                     )[0] ?? null;
                     $service = $recursed ?? $this->getFullService(
