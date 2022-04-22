@@ -3,10 +3,13 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models\Points;
 
+use Miklcct\NationalRailJourneyPlanner\Models\BsonSerializeTrait;
 use Miklcct\NationalRailJourneyPlanner\Models\Location;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceProperty;
 
 abstract class IntermediatePoint extends TimingPoint {
+    use BsonSerializeTrait;
+
     public function __construct(
         Location $location
         , string $locationSuffix

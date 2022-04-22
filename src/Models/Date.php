@@ -8,9 +8,12 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use JsonSerializable;
+use MongoDB\BSON\Persistable;
 use UnexpectedValueException;
 
-class Date implements JsonSerializable {
+class Date implements JsonSerializable, Persistable {
+    use BsonSerializeTrait;
+
     final public function __construct(
         public readonly int $year
         , public readonly int $month

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
+use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\BankHoliday;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
@@ -17,6 +18,8 @@ use function assert;
 use const PHP_INT_MAX;
 
 class Service extends ServiceEntry {
+    use BsonSerializeTrait;
+
     public function __construct(
         string $uid
         , Period $period
@@ -36,6 +39,7 @@ class Service extends ServiceEntry {
     }
 
     /** @var TimingPoint[] */
+    #[ElementType(TimingPoint::class)]
     public readonly array $points;
 
     public function getServicePropertyAtTime(Time $time) : ServiceProperty {

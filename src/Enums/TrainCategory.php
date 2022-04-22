@@ -5,6 +5,7 @@ namespace Miklcct\NationalRailJourneyPlanner\Enums;
 
 // Currently, only scheduled passenger trains in National Rail system
 // are listed here.
+
 enum TrainCategory : string {
     case NONE = '';
     case METRO = 'OL';

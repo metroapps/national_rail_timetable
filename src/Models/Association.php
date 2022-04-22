@@ -9,6 +9,8 @@ use Miklcct\NationalRailJourneyPlanner\Enums\AssociationType;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
 
 class Association extends AssociationEntry {
+    use BsonSerializeTrait;
+
     public function __construct(
         string $primaryUid
         , string $secondaryUid

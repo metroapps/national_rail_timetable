@@ -3,7 +3,12 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
-class Period {
+use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
+use MongoDB\BSON\Persistable;
+
+class Period implements Persistable {
+    use BsonSerializeTrait;
+
     public function __construct(
         public readonly Date $from
         , public readonly Date $to
@@ -13,6 +18,7 @@ class Period {
     }
 
     /** @var bool[] 7 bits specifying if it is active on each of the weekdays */
+    #[ElementType('bool')]
     public readonly array $weekdays;
 
     public function isActive(Date $date) : bool {

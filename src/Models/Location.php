@@ -6,19 +6,13 @@ namespace Miklcct\NationalRailJourneyPlanner\Models;
 use MongoDB\BSON\Persistable;
 
 class Location implements Persistable {
+    use BsonSerializeTrait;
+
     public function __construct(
         public readonly string $tiploc
         , public readonly ?string $crsCode
         , public readonly string $name
     ) {}
-
-    public function bsonSerialize() : array {
-        return (array)$this;
-    }
-
-    public function bsonUnserialize(array $data) : void {
-        $this->__construct($data['tiploc'], $data['crsCode'], $data['name']);
-    }
 
     public function isSuperior(?Location $existing) : bool {
         return $existing === null

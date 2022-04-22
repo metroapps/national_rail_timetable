@@ -4,8 +4,11 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
 use JsonSerializable;
+use MongoDB\BSON\Persistable;
 
-class Time implements JsonSerializable {
+class Time implements JsonSerializable, Persistable {
+    use BsonSerializeTrait;
+
     public const TWENTY_FOUR_HOUR_CLOCK = 0;
     public const THIRTY_HOUR_CLOCK = 1;
     public const SHOW_PLUS_DAYS = 2;

@@ -3,11 +3,13 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models\Points;
 
+use Miklcct\NationalRailJourneyPlanner\Models\BsonSerializeTrait;
 use Miklcct\NationalRailJourneyPlanner\Models\Location;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceProperty;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
 
 class CallingPoint extends IntermediatePoint implements HasDeparture, HasArrival {
+    use BsonSerializeTrait;
     use ArrivalTrait;
     use DepartureTrait;
 

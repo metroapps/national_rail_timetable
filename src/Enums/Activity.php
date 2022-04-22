@@ -5,6 +5,7 @@ namespace Miklcct\NationalRailJourneyPlanner\Enums;
 
 // This list is not complete.
 // Only activities relevant to passenger operations are listed here.
+
 enum Activity : string {
     case DETACH = '-D';
     case ATTACH_DETACH = '-T';

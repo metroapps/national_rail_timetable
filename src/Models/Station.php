@@ -3,7 +3,11 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
+use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
+
 class Station extends Location {
+    use BsonSerializeTrait;
+
     public function __construct(
         string $tiploc
         , string $crsCode
@@ -20,20 +24,6 @@ class Station extends Location {
     }
 
     /** @var TocInterchange[] */
+    #[ElementType(TocInterchange::class)]
     public readonly array $tocConnectionTimes;
-
-    public function bsonUnserialize(array $data) : void {
-        $this->__construct(
-            $data['tiploc']
-            , $data['crsCode']
-            , $data['name']
-            , $data['minorCrsCode']
-            , $data['interchange']
-            , $data['easting']
-            , $data['northing']
-            , $data['minimumConnectionTime']
-            , $data['tocConnectionTimes']
-        );
-    }
-
 }

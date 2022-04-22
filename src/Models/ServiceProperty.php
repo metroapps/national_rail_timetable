@@ -3,12 +3,17 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
+use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
 use Miklcct\NationalRailJourneyPlanner\Enums\Catering;
 use Miklcct\NationalRailJourneyPlanner\Enums\Power;
 use Miklcct\NationalRailJourneyPlanner\Enums\Reservation;
 use Miklcct\NationalRailJourneyPlanner\Enums\TrainCategory;
+use MongoDB\BSON\Persistable;
+use stdClass;
 
-class ServiceProperty {
+class ServiceProperty implements Persistable {
+    use BsonSerializeTrait;
+
     public function __construct(
         public readonly TrainCategory $trainCategory
         , public readonly string $identity
@@ -29,12 +34,32 @@ class ServiceProperty {
         $this->caterings = $caterings;
     }
 
+    public function bsonUnserialize(array $data) : void {
+        $this->__construct(
+            TrainCategory::from($data['trainCategory']->value)
+            , $data['identity']
+            , $data['headcode']
+            , $data['portionId']
+            , Power::from($data['power']->value)
+            , $data['timingLoad']
+            , $data['speedMph']
+            , $data['doo']
+            , (array)$data['seatingClasses']
+            , (array)$data['sleeperClasses']
+            , Reservation::from($data['reservation']->value)
+            , array_map(
+                static fn(stdClass $item) => Catering::from($item->value)
+                , $data['caterings']
+            )
+            , $data['rsid']
+        );
+    }
+
     /** @var Catering[] */
+    #[ElementType(Catering::class)]
     public readonly array $caterings;
     /** @var array<int, bool> key 1 for first class, key 2 for standard class */
     public readonly array $seatingClasses;
     /** @var array<int, bool> key 1 for first class, key 2 for standard class */
     public readonly array $sleeperClasses;
-
-
 }

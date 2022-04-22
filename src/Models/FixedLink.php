@@ -3,7 +3,12 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
-class FixedLink {
+use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
+use MongoDB\BSON\Persistable;
+
+class FixedLink implements Persistable {
+    use BsonSerializeTrait;
+
     public function __construct(
         public readonly string $mode
         , public readonly Station $origin
@@ -20,5 +25,6 @@ class FixedLink {
     }
 
     /** @var bool[] 7 bits specifying if it is active on each of the weekdays */
+    #[ElementType('bool')]
     public readonly array $weekdays;
 }

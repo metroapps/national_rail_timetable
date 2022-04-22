@@ -3,19 +3,23 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models\Points;
 
-use JsonSerializable;
+use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
 use Miklcct\NationalRailJourneyPlanner\Enums\Activity;
+use Miklcct\NationalRailJourneyPlanner\Models\BsonSerializeTrait;
 use Miklcct\NationalRailJourneyPlanner\Models\Location;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
+use MongoDB\BSON\Persistable;
 
-abstract class TimingPoint implements JsonSerializable {
+abstract class TimingPoint implements Persistable {
+    use BsonSerializeTrait;
+
     public function __construct(
         public readonly Location $location
         , public readonly string $locationSuffix
         , public readonly string $platform
-        , array $activity
+        , array $activities
     ) {
-        $this->activity = $activity;
+        $this->activities = $activities;
     }
 
     public function getPublicDeparture() : ?Time {
@@ -33,11 +37,6 @@ abstract class TimingPoint implements JsonSerializable {
     }
 
     /** @var Activity[] */
-    public readonly array $activity;
-
-    public function jsonSerialize() : array {
-        $result = (array)$this + ['__class__' => static::class];
-        $result['location'] = $this->location->tiploc;
-        return $result;
-    }
+    #[ElementType(Activity::class)]
+    public readonly array $activities;
 }

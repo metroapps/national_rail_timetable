@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models\Points;
 
+use Miklcct\NationalRailJourneyPlanner\Models\BsonSerializeTrait;
 use Miklcct\NationalRailJourneyPlanner\Models\Location;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
 
 class DestinationPoint extends TimingPoint implements HasArrival {
+    use BsonSerializeTrait;
     use ArrivalTrait;
 
     public function __construct(
