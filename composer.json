@@ -4,7 +4,9 @@
     "license" : "AGPL-3.0-or-later",
     "require" : {
         "php" : "^8.1",
-        "thecodingmachine/safe": "^2.1"
+        "thecodingmachine/safe": "^2.1",
+        "mongodb/mongodb": "^1.12",
+        "ext-mongodb" : "*"
     },
     "require-dev" : {
         "roave/security-advisories" : "dev-latest",

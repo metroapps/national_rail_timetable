@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailJourneyPlanner\Repositories;
 
 use Miklcct\NationalRailJourneyPlanner\Models\Location;
-use Miklcct\NationalRailJourneyPlanner\Models\Station;
 use function is_string;
 
 class MemoryLocationRepository implements LocationRepositoryInterface {
@@ -60,15 +59,7 @@ class MemoryLocationRepository implements LocationRepositoryInterface {
         , Location $station
     ) : void {
         $existing = $bucket[$key] ?? null;
-        if (
-            $existing === null
-            || $station instanceof Station && (
-                !$existing instanceof Station
-                || $station->minorCrsCode === $station->crsCode
-                    && $existing->minorCrsCode !== $existing->crsCode
-                || $station->interchange !== 9 && $existing->interchange === 9
-            )
-        ) {
+        if ($station->isSuperior($existing)) {
             $bucket[$key] = $station;
         }
     }

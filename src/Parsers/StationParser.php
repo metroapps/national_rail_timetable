@@ -64,11 +64,14 @@ class StationParser {
                 , northing: ((int)$columns[11] - 60000) * 100
                 , minimumConnectionTime: (int)$columns[12]
                 , tocConnectionTimes: array_values(
-                array_filter(
-                    $toc_interchanges
-                    , static fn(array $entry) : bool => $entry[0] === $columns[8]
+                    array_map(
+                        static fn(array $item) => $item[1]
+                        , array_filter(
+                            $toc_interchanges
+                            , static fn(array $entry) : bool => $entry[0] === $columns[8]
+                        )
+                    )
                 )
-            )
             );
 
         }

@@ -21,4 +21,19 @@ class Station extends Location {
 
     /** @var TocInterchange[] */
     public readonly array $tocConnectionTimes;
+
+    public function bsonUnserialize(array $data) : void {
+        $this->__construct(
+            $data['tiploc']
+            , $data['crsCode']
+            , $data['name']
+            , $data['minorCrsCode']
+            , $data['interchange']
+            , $data['easting']
+            , $data['northing']
+            , $data['minimumConnectionTime']
+            , $data['tocConnectionTimes']
+        );
+    }
+
 }
