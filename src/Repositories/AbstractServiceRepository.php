@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Repositories;
 
-use DateTimeImmutable;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationDay;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationType;
@@ -20,32 +19,39 @@ use Miklcct\NationalRailJourneyPlanner\Models\Time;
 
 abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
     /**
-     * @return ServiceEntry[]
+     * @return array<string, ServiceEntry[]>
      */
-    abstract protected function getServicesByUid(string $uid) : iterable;
-
-    /**
-     * @return string[]
-     */
-    abstract protected function listAllUids() : iterable;
+    abstract protected function getServiceEntries(array $uids, Date $date, bool $three_days = false) : array;
 
     /**
      * @return AssociationEntry[]
      */
-    abstract protected function getAssociationsByUid(string $uid) : array;
+    abstract protected function getAssociationEntries(string $uid, Date $date) : array;
 
-    public function getUidOnDate(
-        string $uid
+    public function getServicesByUids(
+        array $uids
         , Date $date
+        , bool $three_days = false
         , bool $permanent_only = false
-    ) : ?ServiceEntry {
-        $result = null;
-        foreach ($this->getServicesByUid($uid) as $service) {
-            if ($service->isSuperior($result, $permanent_only) && $service->runsOnDate($date)) {
-                $result = $service;
+    ) : array {
+        $services = $this->getServiceEntries($uids, $date, $three_days);
+        $results = [];
+        foreach ($uids as $uid) {
+            $results[$uid] = [];
+            foreach ($three_days ? [-1, 0, 1] : [0] as $date_offset) {
+                $result = null;
+                foreach ($services[$uid] as $service) {
+                    $actual_date = $date->addDays($date_offset);
+                    if ($service->isSuperior($result, $permanent_only) && $service->runsOnDate($actual_date)) {
+                        $result = $service;
+                    }
+                }
+                if ($result !== null) {
+                    $results[$uid][$date_offset] = new DatedService($result, $actual_date);
+                }
             }
         }
-        return $result;
+        return $results;
     }
 
     public function getFullService(
@@ -128,104 +134,87 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
         );
     }
 
-    public function getServices(
-        DateTimeImmutable $from
-        , DateTimeImmutable $to
-        , bool $include_non_passenger = false
-    ) : array {
-        $result = [];
-        for (
-            $date = Date::fromDateTimeInterface($from)->addDays(-1);
-            $date->toDateTimeImmutable() < $to;
-            $date = $date->addDays(1)
-        ) {
-            foreach ($this->listAllUids() as $uid) {
-                $service = $this->getUidOnDate($uid, $date);
-                if (
-                    $service instanceof Service
-                    && ($include_non_passenger
-                        || $service->serviceProperty->trainCategory->isPassengerTrain())
-                ) {
-                    $origin = $service->getOrigin();
-                    $destination = $service->getDestination();
-                    $departure_time = $origin->getPublicOrWorkingDeparture();
-                    $arrival_time = $destination->getPublicOrWorkingArrival();
-                    if (
-                        $date->toDateTimeImmutable($arrival_time) > $from
-                        && $date->toDateTimeImmutable($departure_time) < $to
-                    ) {
-                        $result[] = new DatedService($service, $date);
-                    }
-                }
-            }
-        }
-        return $result;
-    }
-
     public function getAssociations(
         DatedService $dated_service
         , ?Time $from = null
         , ?Time $to = null
         , bool $include_non_passenger = false
+        , bool $permanent_only = false
     ) : array {
         $service = $dated_service->service;
         $departure_date = $dated_service->date;
         $results = [];
         $uid = $service->uid;
-        $associations = $this->getAssociationsByUid($uid);
-        foreach ($associations as $association) {
-            if (
-                $association instanceof Association
-                && ($include_non_passenger || $association->type === AssociationType::PASSENGER)
-            ) {
-                $primary_departure_date
-                    = $association->secondaryUid === $uid
-                    ? match ($association->day) {
-                        AssociationDay::YESTERDAY => $departure_date->addDays(1),
-                        AssociationDay::TODAY => $departure_date,
-                        AssociationDay::TOMORROW => $departure_date->addDays(-1),
+        $association_entries = $this->getAssociationEntries($uid, $departure_date);
+
+        // process overlay
+        $overlaid_associations = [-1 => [], 0 => [], 1 => []];
+        foreach ($overlaid_associations as $date_offset => &$associations) {
+            foreach ($association_entries as $association) {
+                $association_date = $departure_date->addDays($date_offset);
+                if ($association->period->isActive($association_date)) {
+                    $found = false;
+                    foreach ($associations as &$existing) {
+                        if ($association->isSame($existing)) {
+                            if ($association->isSuperior($existing, $permanent_only)) {
+                                $existing = $association;
+                            }
+                            $found = true;
+                        }
                     }
-                    : $departure_date;
-                if ($association->period->isActive($primary_departure_date)) {
-                    if ($association->secondaryUid === $uid) {
-                        $primary_service = $this->getUidOnDate($association->primaryUid, $primary_departure_date);
-                        $secondary_departure_date = $departure_date;
-                        $secondary_service = $dated_service->service;
-                    } else {
-                        $primary_service = $dated_service->service;
-                        $secondary_departure_date = match ($association->day) {
-                            AssociationDay::YESTERDAY => $departure_date->addDays(-1),
-                            AssociationDay::TODAY => $departure_date,
-                            AssociationDay::TOMORROW => $departure_date->addDays(1),
-                        };
-                        $secondary_service = $this->getUidOnDate($association->secondaryUid, $secondary_departure_date);
+                    unset($existing);
+                    if (!$found && (!$permanent_only || $association->shortTermPlanning === ShortTermPlanning::PERMANENT)) {
+                        $associations[] = $association;
                     }
-                    $results[] = new DatedAssociation(
-                        $association
-                        , new DatedService($primary_service, $primary_departure_date)
-                        , new DatedService($secondary_service, $secondary_departure_date)
-                    );
                 }
             }
         }
+        unset($associations);
 
-        $results = array_filter(
-            $results
-            , function (DatedAssociation $dated_association) use ($associations) : bool {
-            $association = $dated_association->associationEntry;
-            return $dated_association->associationEntry->shortTermPlanning !== ShortTermPlanning::PERMANENT
-                || [] === array_filter(
-                    $associations
-                    , static fn(AssociationEntry $other) : bool => $association->primaryUid === $other->primaryUid
-                    && $association->secondaryUid === $other->secondaryUid
-                    && $association->location === $other->location
-                    && $association->primarySuffix === $other->primarySuffix
-                    && $association->secondarySuffix === $other->secondarySuffix
-                    && $other->shortTermPlanning !== ShortTermPlanning::PERMANENT
-                    && $other->period->isActive($dated_association->primaryService->date)
-                );
+        foreach ($overlaid_associations as $date_offset => $associations) {
+            foreach ($associations as $association) {
+                if (
+                    $association instanceof Association
+                    && ($include_non_passenger || $association->type === AssociationType::PASSENGER)
+                ) {
+                    $correct_date = $date_offset === (
+                        $association->secondaryUid === $uid
+                            ? match ($association->day) {
+                                AssociationDay::YESTERDAY => 1,
+                                AssociationDay::TODAY => 0,
+                                AssociationDay::TOMORROW => -1,
+                            }
+                            : 0
+                    );
+                    if ($correct_date) {
+                        $primary_departure_date = $departure_date->addDays($date_offset);
+                        if ($association->secondaryUid === $uid) {
+                            $primary_service = $this->getServicesByUids(
+                                [$association->primaryUid]
+                                , $primary_departure_date
+                            )[$association->primaryUid][0];
+                            $secondary_service = $dated_service;
+                        } else {
+                            $primary_service = $dated_service;
+                            $secondary_departure_date = match ($association->day) {
+                                AssociationDay::YESTERDAY => $departure_date->addDays(-1),
+                                AssociationDay::TODAY => $departure_date,
+                                AssociationDay::TOMORROW => $departure_date->addDays(1),
+                            };
+                            $secondary_service = $this->getServicesByUids(
+                                [$association->secondaryUid]
+                                , $secondary_departure_date
+                            )[$association->secondaryUid][0];
+                        }
+                        $results[] = new DatedAssociation(
+                            $association
+                            , $primary_service
+                            , $secondary_service
+                        );
+                    }
+                }
+            }
         }
-        );
 
         $from_results = null;
         $to_results = null;
@@ -235,14 +224,14 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
                 ? array_filter(
                     $results
                     , static fn(DatedAssociation $association) => $association->associationEntry instanceof Association
-                    && $service->getAssociationTime($association->associationEntry)->toHalfMinutes()
-                    > $from->toHalfMinutes()
-                    && match ($association->associationEntry->category) {
-                        AssociationCategory::DIVIDE, AssociationCategory::NEXT =>
-                            $service->uid === $association->associationEntry->primaryUid,
-                        AssociationCategory::JOIN =>
-                            $service->uid === $association->associationEntry->secondaryUid,
-                    }
+                        && $service->getAssociationTime($association->associationEntry)->toHalfMinutes()
+                            > $from->toHalfMinutes()
+                        && match ($association->associationEntry->category) {
+                            AssociationCategory::DIVIDE, AssociationCategory::NEXT =>
+                                $service->uid === $association->associationEntry->primaryUid,
+                            AssociationCategory::JOIN =>
+                                $service->uid === $association->associationEntry->secondaryUid,
+                        }
                 )
                 : [];
         }
@@ -251,14 +240,14 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
                 ? array_filter(
                     $results
                     , static fn(DatedAssociation $association) => $association->associationEntry instanceof Association
-                    && $service->getAssociationTime($association->associationEntry)->toHalfMinutes()
-                    < $to->toHalfMinutes()
-                    && match ($association->associationEntry->category) {
-                        AssociationCategory::DIVIDE, AssociationCategory::NEXT =>
-                            $service->uid === $association->associationEntry->secondaryUid,
-                        AssociationCategory::JOIN =>
-                            $service->uid === $association->associationEntry->primaryUid,
-                    }
+                        && $service->getAssociationTime($association->associationEntry)->toHalfMinutes()
+                            < $to->toHalfMinutes()
+                        && match ($association->associationEntry->category) {
+                            AssociationCategory::DIVIDE, AssociationCategory::NEXT =>
+                                $service->uid === $association->associationEntry->secondaryUid,
+                            AssociationCategory::JOIN =>
+                                $service->uid === $association->associationEntry->primaryUid,
+                        }
                 )
                 : [];
         }

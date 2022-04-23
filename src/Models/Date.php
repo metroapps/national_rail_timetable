@@ -9,11 +9,10 @@ use DateTimeInterface;
 use DateTimeZone;
 use JsonSerializable;
 use MongoDB\BSON\Persistable;
+use MongoDB\BSON\UTCDateTime;
 use UnexpectedValueException;
 
 class Date implements JsonSerializable, Persistable {
-    use BsonSerializeTrait;
-
     final public function __construct(
         public readonly int $year
         , public readonly int $month
@@ -86,5 +85,24 @@ class Date implements JsonSerializable, Persistable {
             $interval->invert = 1;
         }
         return static::fromDateTimeInterface($this->toDateTimeImmutable(null, $utc)->add($interval));
+    }
+
+    public function compare(Date $other) : int {
+        return $this->year === $other->year
+            ? $this->month === $other->month
+                ? $this->day <=> $other->day
+                : $this->month <=> $other->month
+            : $this->year <=> $other->year;
+    }
+
+    public function bsonSerialize() : array {
+        return ['date' => new UTCDateTime($this->toDateTimeImmutable(null, new DateTimeZone('UTC')))];
+    }
+
+    public function bsonUnserialize(array $data) : void {
+        /** @var UTCDateTime $date */
+        $date = $data['date'];
+        $date_time = $date->toDateTime()->setTimezone(new DateTimeZone('UTC'));
+        $this->__construct((int)$date_time->format('Y'), (int)$date_time->format('m'), (int)$date_time->format('d'));
     }
 }

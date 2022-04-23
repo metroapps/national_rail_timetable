@@ -28,7 +28,7 @@ class FullService extends DatedService {
     /**
      * @return OriginPoint[]
      */
-    public function getAllOrigins() : array {
+    public function getAllOrigins(?Time $time = null) : array {
         if ($this->divideFrom === null) {
             $base = $this->service instanceof Service ? $this->service->getOrigin() : [];
             $portions = [];
@@ -46,6 +46,12 @@ class FullService extends DatedService {
                         , static fn(DatedAssociation $association) =>
                             $association->associationEntry instanceof Association
                             && $association->associationEntry->category === AssociationCategory::JOIN
+                            && (
+                                $time === null
+                                || $this->service instanceof Service
+                                    && $this->service->getAssociationTime($association->associationEntry)->toHalfMinutes()
+                                        <= $time->toHalfMinutes()
+                            )
                     )
                 )
             )
@@ -67,7 +73,7 @@ class FullService extends DatedService {
     /**
      * @return DestinationPoint[]
      */
-    public function getAllDestinations() : array {
+    public function getAllDestinations(?Time $time = null) : array {
         if ($this->joinTo === null) {
             $base = $this->service instanceof Service ? [$this->service->getDestination()] : [];
             $portions = [];
@@ -82,9 +88,15 @@ class FullService extends DatedService {
                 , array_values(
                     array_filter(
                         $this->dividesJoinsEnRoute
-                        , static fn(DatedAssociation $association) =>
+                        , fn(DatedAssociation $association) =>
                             $association->associationEntry instanceof Association
                             && $association->associationEntry->category === AssociationCategory::DIVIDE
+                            && (
+                                $time === null
+                                || $this->service instanceof Service
+                                    && $this->service->getAssociationTime($association->associationEntry)->toHalfMinutes()
+                                        >= $time->toHalfMinutes()
+                            )
                     )
                 )
             )

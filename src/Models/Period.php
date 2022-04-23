@@ -22,8 +22,8 @@ class Period implements Persistable {
     public readonly array $weekdays;
 
     public function isActive(Date $date) : bool {
-        return $date->toDateTimeImmutable() >= $this->from->toDateTimeImmutable()
-            && $date->toDateTimeImmutable() <= $this->to->toDateTimeImmutable()
+        return $date->compare($this->from) >= 0
+            && $date->compare($this->to) <= 0
             && $this->weekdays[$date->getWeekday()];
     }
 }

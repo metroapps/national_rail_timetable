@@ -9,6 +9,7 @@ use MongoDB\BSON\Persistable;
 
 abstract class ServiceEntry implements Persistable {
     use BsonSerializeTrait;
+    use OverlayTrait;
 
     public function __construct(
         public readonly string $uid
@@ -20,11 +21,5 @@ abstract class ServiceEntry implements Persistable {
     public function runsOnDate(Date $date) : bool {
         return $this->period->isActive($date)
             && !$this->excludeBankHoliday->isActive($date);
-    }
-
-    public function isSuperior(?ServiceEntry $compare, bool $permanent_only = false) : bool {
-        return $permanent_only
-            ? $this->shortTermPlanning === ShortTermPlanning::PERMANENT
-            : $compare === null || $this->shortTermPlanning !== ShortTermPlanning::PERMANENT;
     }
 }

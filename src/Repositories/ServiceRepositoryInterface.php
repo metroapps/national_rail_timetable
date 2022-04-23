@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Repositories;
 
-use DateTimeImmutable;
+use Miklcct\NationalRailJourneyPlanner\Enums\CallType;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedAssociation;
@@ -25,22 +25,26 @@ interface ServiceRepositoryInterface {
      */
     public function insertAssociations(array $associations) : void;
 
-    public function getUidOnDate(
-        string $uid,
+    /**
+     * @param string[] $uids
+     * @param Date $date
+     * @param bool $three_days
+     * @param bool $permanent_only
+     * @return array<string, DatedService[]>
+     */
+    public function getServicesByUids(
+        array $uids,
         Date $date,
+        bool $three_days = false,
         bool $permanent_only = false
-    ) : ?ServiceEntry;
+    ) : array;
 
     /**
-     * Get all public services which are active in the period specified
+     * Get all UIDs which calls / passes the station
      *
-     * @return DatedService[]
+     * @return string[]
      */
-    public function getServices(
-        DateTimeImmutable $from,
-        DateTimeImmutable $to,
-        bool $include_non_passenger = false
-    ) : array;
+    public function getUidsAtStation(string $crs, Date $date, CallType $call_type) : array;
 
     /**
      * Get associations of the specified service
@@ -68,6 +72,7 @@ interface ServiceRepositoryInterface {
         , ?Time $from = null
         , ?Time $to = null
         , bool $include_non_passenger = false
+        , bool $permanent_only = false
     ) : array;
 
     public function getFullService(
