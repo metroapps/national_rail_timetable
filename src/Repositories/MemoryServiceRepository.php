@@ -27,7 +27,7 @@ class MemoryServiceRepository extends AbstractServiceRepository {
         }
     }
 
-    public function getUidsAtStation(string $crs, Date $date, CallType $call_type) : array {
+    public function getUidsAtStation(string $crs, Date $from, Date $to, CallType $call_type) : array {
         return array_values(
             array_unique(
                 array_map(
@@ -41,8 +41,8 @@ class MemoryServiceRepository extends AbstractServiceRepository {
                                 $service->points
                                 , static fn(TimingPoint $point) =>
                                     $point->location->crsCode === $crs
-                                    && $service->period->from->compare($date->addDays(1)) <= 0
-                                    && $service->period->to->compare($date->addDays(-1)) >= 0
+                                    && $service->period->from->compare($to) <= 0
+                                    && $service->period->to->compare($from) >= 0
                                     && match($call_type) {
                                         CallType::DEPARTURE => $point->workingDeparture ?? null,
                                         CallType::ARRIVAL => $point->workingArrival ?? null,
@@ -55,15 +55,15 @@ class MemoryServiceRepository extends AbstractServiceRepository {
         );
     }
 
-    protected function getServiceEntries(array $uids, Date $date, bool $three_days = false) : array {
+    protected function getServiceEntries(array $uids, Date $from, Date $to) : array {
         return array_combine(
             $uids
             , array_map(
                 fn($uid) => array_values(
                     array_filter(
                         $this->services[$uid] ?? [], fn(ServiceEntry $service) =>
-                            $service->period->from->compare($date->addDays(+$three_days)) <= 0
-                            && $service->period->to->compare($date->addDays(-$three_days)) >= 0
+                            $service->period->from->compare($to) <= 0
+                            && $service->period->to->compare($from) >= 0
                     )
                 )
                 , $uids

@@ -19,12 +19,12 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         , private readonly Collection $associationsCollection
     ) {}
 
-    protected function getServiceEntries(array $uids, Date $date, bool $three_days = false) : array {
+    protected function getServiceEntries(array $uids, Date $from, Date $to) : array {
         $query_results = $this->servicesCollection->find(
             [
                 'uid' => ['$in' => $uids],
-                'period.from' => ['$lte' => $date->addDays(+$three_days)],
-                'period.to' => ['$gte' => $date->addDays(-$three_days)],
+                'period.from' => ['$lte' => $to],
+                'period.to' => ['$gte' => $from],
             ]
         )->toArray();
         $results = [];
@@ -64,7 +64,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         }
     }
 
-    public function getUidsAtStation(string $crs, Date $date, CallType $call_type) : array {
+    public function getUidsAtStation(string $crs, Date $from, Date $to, CallType $call_type) : array {
         return array_values(
             array_unique(
                 array_map(
@@ -81,8 +81,8 @@ class MongodbServiceRepository extends AbstractServiceRepository {
                                     } => ['$ne' => null]
                                 ]
                             ],
-                            'period.from' => ['$lte' => $date->addDays(1)],
-                            'period.to' => ['$gte' => $date->addDays(-1)],
+                            'period.from' => ['$lte' => $to],
+                            'period.to' => ['$gte' => $from],
                         ]
                         , ['projection' => ['uid' => 1, '_id' => 0], 'typeMap' => ['root' => 'array']]
                     )->toArray()

@@ -35,16 +35,16 @@ interface ServiceRepositoryInterface {
     public function getServicesByUids(
         array $uids,
         Date $date,
-        bool $three_days = false,
+        Date $to,
         bool $permanent_only = false
     ) : array;
 
     /**
      * Get all UIDs which calls / passes the station
-     *
+     **
      * @return string[]
      */
-    public function getUidsAtStation(string $crs, Date $date, CallType $call_type) : array;
+    public function getUidsAtStation(string $crs, Date $from, Date $to, CallType $call_type) : array;
 
     /**
      * Get associations of the specified service

@@ -21,7 +21,7 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
     /**
      * @return array<string, ServiceEntry[]>
      */
-    abstract protected function getServiceEntries(array $uids, Date $date, bool $three_days = false) : array;
+    abstract protected function getServiceEntries(array $uids, Date $from, Date $to) : array;
 
     /**
      * @return AssociationEntry[]
@@ -30,24 +30,24 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
 
     public function getServicesByUids(
         array $uids
-        , Date $date
-        , bool $three_days = false
+        , Date $from
+        , Date $to = null
         , bool $permanent_only = false
     ) : array {
-        $services = $this->getServiceEntries($uids, $date, $three_days);
+        $to ??= $from;
+        $services = $this->getServiceEntries($uids, $from, $to);
         $results = [];
         foreach ($uids as $uid) {
             $results[$uid] = [];
-            foreach ($three_days ? [-1, 0, 1] : [0] as $date_offset) {
+            for ($actual_date = $from; $actual_date->compare($to) <= 0; $actual_date = $actual_date->addDays(1)) {
                 $result = null;
                 foreach ($services[$uid] as $service) {
-                    $actual_date = $date->addDays($date_offset);
                     if ($service->isSuperior($result, $permanent_only) && $service->runsOnDate($actual_date)) {
                         $result = $service;
                     }
                 }
                 if ($result !== null) {
-                    $results[$uid][$date_offset] = new DatedService($result, $actual_date);
+                    $results[$uid][] = new DatedService($result, $actual_date);
                 }
             }
         }
