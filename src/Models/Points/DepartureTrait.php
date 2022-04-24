@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models\Points;
 
+use Miklcct\NationalRailJourneyPlanner\Enums\Activity;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
+use function in_array;
 
 trait DepartureTrait {
     public readonly Time $workingDeparture;
@@ -14,7 +16,7 @@ trait DepartureTrait {
     }
 
     public function getPublicDeparture() : ?Time {
-        return $this->publicDeparture;
+        return in_array(Activity::SET_DOWN, $this->activities, true) ? null : $this->publicDeparture;
     }
 
     public function getPublicOrWorkingDeparture() : Time {

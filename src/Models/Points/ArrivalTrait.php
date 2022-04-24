@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models\Points;
 
+use Miklcct\NationalRailJourneyPlanner\Enums\Activity;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
 
 trait ArrivalTrait {
@@ -14,7 +15,7 @@ trait ArrivalTrait {
     }
 
     public function getPublicArrival() : ?Time {
-        return $this->publicArrival;
+        return in_array(Activity::PICK_UP, $this->activities, true) ? null : $this->publicArrival;
     }
 
     public function getPublicOrWorkingArrival() : Time {
