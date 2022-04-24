@@ -43,8 +43,8 @@ abstract class TimingPoint implements Persistable {
             (
                 $this instanceof HasDeparture && $this->getPublicDeparture() !== null
                 || $this instanceof HasArrival && $this->getPublicArrival() !== null
-            )
-            && $this->location->crsCode !== null;
+            );
+            // && $this->location->crsCode !== null;
     }
 
     /** @var Activity[] */

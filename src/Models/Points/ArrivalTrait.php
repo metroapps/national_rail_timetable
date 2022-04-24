@@ -15,7 +15,7 @@ trait ArrivalTrait {
     }
 
     public function getPublicArrival() : ?Time {
-        return in_array(Activity::PICK_UP, $this->activities, true) ? null : $this->publicArrival;
+        return in_array(Activity::UNADVERTISED, $this->activities, true) ? null : $this->publicArrival;
     }
 
     public function getPublicOrWorkingArrival() : Time {

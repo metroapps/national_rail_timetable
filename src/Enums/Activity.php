@@ -16,4 +16,5 @@ enum Activity : string {
     case TRAIN_FINISHES = 'TF';
     case REQUEST_STOP = 'R';
     case PICK_UP = 'U';
+    case UNADVERTISED = 'N';
 }
