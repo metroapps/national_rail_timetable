@@ -17,4 +17,5 @@ enum Activity : string {
     case REQUEST_STOP = 'R';
     case PICK_UP = 'U';
     case UNADVERTISED = 'N';
+    case REVERSE = 'RM';
 }
