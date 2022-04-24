@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Repositories;
 
+use InvalidArgumentException;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationDay;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationType;
@@ -21,6 +22,8 @@ use Miklcct\NationalRailJourneyPlanner\Models\ServiceCall;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
 
 abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
+    public function __construct(protected readonly bool $permanentOnly = false) {}
+
     /**
      * @return AssociationEntry[]
      */
@@ -31,15 +34,16 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
         , ?Time $boarding = null
         , ?Time $alighting = null
         , bool $include_non_passenger = false
-        , bool $permanent_only = false
         , array $recursed_services = []
     ) : FullService {
+        if (!$dated_service->service instanceof Service) {
+            throw new InvalidArgumentException("It's not possible to make a full service if it's not a service.");
+        }
         $dated_associations = $this->getAssociations(
             $dated_service
             , $alighting ?? $boarding
             , $boarding ?? $alighting
             , $include_non_passenger
-            , $permanent_only
         );
         $divide_from = array_filter(
             $dated_associations
@@ -86,7 +90,6 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
                         , $boarding
                         , $alighting
                         , $include_non_passenger
-                        , $permanent_only
                         , $recursed_services
                     );
                 }
@@ -114,7 +117,6 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
         , ?Time $from = null
         , ?Time $to = null
         , bool $include_non_passenger = false
-        , bool $permanent_only = false
     ) : array {
         $service = $dated_service->service;
         $departure_date = $dated_service->date;
@@ -131,14 +133,14 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
                     $found = false;
                     foreach ($associations as &$existing) {
                         if ($association->isSame($existing)) {
-                            if ($association->isSuperior($existing, $permanent_only)) {
+                            if ($association->isSuperior($existing, $this->permanentOnly)) {
                                 $existing = $association;
                             }
                             $found = true;
                         }
                     }
                     unset($existing);
-                    if (!$found && (!$permanent_only || $association->shortTermPlanning === ShortTermPlanning::PERMANENT)) {
+                    if (!$found && (!$this->permanentOnly || $association->shortTermPlanning === ShortTermPlanning::PERMANENT)) {
                         $associations[] = $association;
                     }
                 }
@@ -167,7 +169,6 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
                             $primary_service = $this->getService(
                                 $association->primaryUid
                                 , $primary_departure_date
-                                , $permanent_only
                             );
                             $secondary_service = $dated_service;
                         } else {
@@ -180,7 +181,6 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
                             $secondary_service = $this->getService(
                                 $association->secondaryUid
                                 , $secondary_departure_date
-                                , $permanent_only
                             );
                         }
                         $results[] = new DatedAssociation(
@@ -272,6 +272,19 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
             )
             <=> $b->datedService->date->toDateTimeImmutable($b->call->getTime($call_type, $time_type))
         );
+        return $results;
+    }
+
+    protected function findServicesInUidMatchingRsid(array $uids, string $rsid, Date $date) : array {
+        $results = [];
+        foreach ($uids as $uid) {
+            $dated_service = $this->getService($uid, $date);
+            $service = $dated_service?->service;
+            if ($service instanceof Service && $service->hasRsid($rsid)) {
+                $results[] = $dated_service;
+            }
+        }
+
         return $results;
     }
 }

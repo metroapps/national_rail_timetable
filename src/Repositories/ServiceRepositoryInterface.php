@@ -28,7 +28,7 @@ interface ServiceRepositoryInterface {
      */
     public function insertAssociations(array $associations) : void;
 
-    public function getService(string $uid, Date $date, bool $permanent_only = false) : ?DatedService;
+    public function getService(string $uid, Date $date) : ?DatedService;
 
     /**
      * Get all UIDs which calls / passes the station
@@ -41,7 +41,6 @@ interface ServiceRepositoryInterface {
         , DateTimeImmutable $to
         , CallType $call_type
         , TimeType $time_type = TimeType::PUBLIC
-        , bool $permanent_only = false
     ) : array;
 
     /**
@@ -70,7 +69,6 @@ interface ServiceRepositoryInterface {
         , ?Time $from = null
         , ?Time $to = null
         , bool $include_non_passenger = false
-        , bool $permanent_only = false
     ) : array;
 
     public function getFullService(
@@ -78,15 +76,13 @@ interface ServiceRepositoryInterface {
         , ?Time $boarding = null
         , ?Time $alighting = null
         , bool $include_non_passenger = false
-        , bool $permanent_only = false
         , array $recursed_services = []
     ) : FullService;
 
     /**
      * @param string $rsid
      * @param Date $date
-     * @param bool $permanent_only
      * @return DatedService[]
      */
-    public function getServiceByRsid(string $rsid, Date $date, bool $permanent_only = false) : array;
+    public function getServiceByRsid(string $rsid, Date $date) : array;
 }

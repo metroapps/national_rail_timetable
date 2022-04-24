@@ -15,6 +15,7 @@ use Miklcct\NationalRailJourneyPlanner\Models\ServiceCancellation;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
 use MongoDB\BSON\Regex;
 use MongoDB\Collection;
+use stdClass;
 use function array_chunk;
 use function array_filter;
 use function array_map;
@@ -25,7 +26,10 @@ class MongodbServiceRepository extends AbstractServiceRepository {
     public function __construct(
         private readonly Collection $servicesCollection
         , private readonly Collection $associationsCollection
-    ) {}
+        , bool $permanentOnly = false
+    ) {
+        parent::__construct($permanentOnly);
+    }
 
     protected function getServiceEntries(array $uids, Date $from, Date $to) : array {
         $query_results = $this->servicesCollection->find(
@@ -89,13 +93,13 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         );
     }
 
-    public function getService(string $uid, Date $date, bool $permanent_only = false) : ?DatedService {
+    public function getService(string $uid, Date $date) : ?DatedService {
         $query_results = $this->servicesCollection->find(
             [
                 'uid' => $uid,
                 'period.from' => ['$lte' => $date],
                 'period.to' => ['$gte' => $date],
-            ] + ($permanent_only ? ['shortTermPlanning.value' => ShortTermPlanning::PERMANENT] : [])
+            ] + ($this->permanentOnly ? ['shortTermPlanning.value' => ShortTermPlanning::PERMANENT->value] : [])
             // this will order STP before permanent
             , ['sort' => ['shortTermPlanning.value' => 1]]
         );
@@ -108,35 +112,34 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         return null;
     }
 
-    public function getServiceByRsid(string $rsid, Date $date, bool $permanent_only = false) : array {
+    public function getServiceByRsid(string $rsid, Date $date) : array {
         $predicate = match(strlen($rsid)) {
             6 => new Regex(sprintf('^%s\d{2,2}$', preg_quote($rsid, null)), 'i'),
             8 => $rsid,
         };
 
         // find the UID first
-        $query_results = $this->servicesCollection->find(
-            [
-                'period.from' => ['$lte' => $date],
-                'period.to' => ['$gte' => $date],
-                '$or' => [
-                    ['serviceProperty.rsid' => $predicate],
-                    ['points.servicePropertyChange.rsid' => $predicate],
-                ],
-            ] + ($permanent_only ? ['shortTermPlanning.value' => ShortTermPlanning::PERMANENT] : [])
-            , [
-                'projection' => ['uid' => 1, '_id' => 0]
-            ]
+        $uids = array_values(
+            array_unique(
+                array_map(
+                    static fn(stdClass $object) => $object->uid
+                    , $this->servicesCollection->find(
+                    [
+                            'period.from' => ['$lte' => $date],
+                            'period.to' => ['$gte' => $date],
+                            '$or' => [
+                                ['serviceProperty.rsid' => $predicate],
+                                ['points.servicePropertyChange.rsid' => $predicate],
+                            ],
+                        ] + ($this->permanentOnly ? ['shortTermPlanning.value' => ShortTermPlanning::PERMANENT->value] : [])
+                        , [
+                            'projection' => ['uid' => 1, '_id' => 0]
+                        ]
+                    )->toArray()
+                )
+            )
         );
-        $results = [];
-        foreach ($query_results as $object) {
-            $dated_service = $this->getService($object->uid, $date, $permanent_only);
-            $service = $dated_service?->service;
-            if ($service instanceof Service && $service->hasRsid($rsid)) {
-                $results[] = $dated_service;
-            }
-        }
-        return $results;
+        return $this->findServicesInUidMatchingRsid($uids, $rsid, $date);
     }
 
     public function getServicesAtStation(
@@ -144,8 +147,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         DateTimeImmutable $from,
         DateTimeImmutable $to,
         CallType $call_type,
-        TimeType $time_type = TimeType::PUBLIC,
-        bool $permanent_only = false
+        TimeType $time_type = TimeType::PUBLIC
     ) : array {
         $from_date = Date::fromDateTimeInterface($from)->addDays(-1);
         $to_date = Date::fromDateTimeInterface($to);
@@ -164,7 +166,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
                 ],
                 'period.from' => ['$lte' => $to_date],
                 'period.to' => ['$gte' => $from_date],
-            ] + ($permanent_only ? ['shortTermPlanning.value' => ShortTermPlanning::PERMANENT] : [])
+            ] + ($this->permanentOnly ? ['shortTermPlanning.value' => ShortTermPlanning::PERMANENT->value] : [])
             , ['projection' => ['uid' => 1, '_id' => 0, 'period' => 1, 'excludeBankHoliday' => 1, 'shortTermPlanning' => 1]]
         );
 
@@ -215,7 +217,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
                         ]
                     , $possibilities
                 )
-            ] + ($permanent_only ? ['shortTermPlanning.value' => ShortTermPlanning::PERMANENT] : [])
+            ] + ($this->permanentOnly ? ['shortTermPlanning.value' => ShortTermPlanning::PERMANENT->value] : [])
         )->toArray();
 
         // replace skeleton services with real services - handle STP here
@@ -225,7 +227,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
                 if (
                     $service->uid === $possibility->service->uid
                     && $service->runsOnDate($possibility->date)
-                    && $service->isSuperior($result, $permanent_only)
+                    && $service->isSuperior($result, $this->permanentOnly)
                 ) {
                     $result = $service;
                 }

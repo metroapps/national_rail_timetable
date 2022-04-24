@@ -9,7 +9,6 @@ use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
-use Miklcct\NationalRailJourneyPlanner\Models\Service;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
 use function array_filter;
 use function array_keys;
@@ -33,7 +32,7 @@ class MemoryServiceRepository extends AbstractServiceRepository {
         return array_values(
             array_filter(
                 $this->associations[$uid] ?? []
-                , fn(AssociationEntry $association) =>
+                , static fn(AssociationEntry $association) =>
                     $association->period->from->compare($date->addDays(1)) <= 0
                     && $association->period->to->compare($date->addDays(-1)) >= 0
             )
@@ -46,10 +45,10 @@ class MemoryServiceRepository extends AbstractServiceRepository {
     /** @var array<string, AssociationEntry[]> */
     private array $associations = [];
 
-    public function getService(string $uid, Date $date, bool $permanent_only = false) : ?DatedService {
+    public function getService(string $uid, Date $date) : ?DatedService {
         $result = null;
         foreach ($this->services[$uid] ?? [] as $service) {
-            if ($service->runsOnDate($date) && $service->isSuperior($result, $permanent_only)) {
+            if ($service->runsOnDate($date) && $service->isSuperior($result, $this->permanentOnly)) {
                 $result = $service;
             }
         }
@@ -62,7 +61,6 @@ class MemoryServiceRepository extends AbstractServiceRepository {
         DateTimeImmutable $to,
         CallType $call_type,
         TimeType $time_type = TimeType::PUBLIC,
-        bool $permanent_only = false
     ) : array {
         $results = [];
         foreach (array_keys($this->services) as $uid) {
@@ -78,16 +76,8 @@ class MemoryServiceRepository extends AbstractServiceRepository {
         return $this->sortCallResults(array_merge(...$results), $call_type, $time_type);
     }
 
-    public function getServiceByRsid(string $rsid, Date $date, bool $permanent_only = false) : array {
-        $results = [];
-        foreach (array_keys($this->services) as $uid) {
-            $dated_service = $this->getService($uid, $date, $permanent_only);
-            $service = $dated_service?->service;
-            if ($service instanceof Service && $service->hasRsid($rsid)) {
-                $results[] = $dated_service;
-            }
-        }
-
-        return $results;
+    public function getServiceByRsid(string $rsid, Date $date) : array {
+        return $this->findServicesInUidMatchingRsid(array_keys($this->services), $rsid, $date);
     }
+
 }
