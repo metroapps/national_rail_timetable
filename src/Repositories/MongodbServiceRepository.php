@@ -166,6 +166,9 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         /** @var DatedService[] $possibilities */
         $possibilities = array_values(array_filter($possibilities));
 
+        if ($possibilities === []) {
+            return [];
+        }
         $real_services = $this->servicesCollection->find(
             [
                 '$or' => array_map(
