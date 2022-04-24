@@ -33,4 +33,11 @@ class PassingPoint extends IntermediatePoint {
             , $servicePropertyChange
         );
     }
+
+    /**
+     * @return Time
+     */
+    public function getPass() : Time {
+        return $this->pass;
+    }
 }

@@ -5,6 +5,8 @@ namespace Miklcct\NationalRailJourneyPlanner\Models\Points;
 
 use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
 use Miklcct\NationalRailJourneyPlanner\Enums\Activity;
+use Miklcct\NationalRailJourneyPlanner\Enums\CallType;
+use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\BsonSerializeTrait;
 use Miklcct\NationalRailJourneyPlanner\Models\Location;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
@@ -22,17 +24,26 @@ abstract class TimingPoint implements Persistable {
         $this->activities = $activities;
     }
 
-    public function getPublicDeparture() : ?Time {
-        return null;
-    }
-
-    public function getPublicArrival() : ?Time {
-        return null;
+    public function getTime(CallType $call_type, TimeType $time_type) : ?Time {
+        return match ($call_type) {
+            CallType::DEPARTURE => $this instanceof HasDeparture ? match ($time_type) {
+                TimeType::PUBLIC => $this->getPublicDeparture(),
+                TimeType::WORKING => $this->getWorkingDeparture(),
+            } : null,
+            CallType::ARRIVAL => $this instanceof HasArrival ? match ($time_type) {
+                TimeType::PUBLIC => $this->getPublicArrival(),
+                TimeType::WORKING => $this->getWorkingArrival(),
+            } : null,
+            CallType::PASS => $this->pass ?? null,
+        };
     }
 
     public function isPublicCall() : bool {
         return
-            ($this->getPublicDeparture() !== null || $this->getPublicArrival() !== null)
+            (
+                $this instanceof HasDeparture && $this->getPublicDeparture() !== null
+                || $this instanceof HasArrival && $this->getPublicArrival() !== null
+            )
             && $this->location->crsCode !== null;
     }
 

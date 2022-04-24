@@ -6,59 +6,32 @@ namespace Miklcct\NationalRailJourneyPlanner\Repositories;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationDay;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationType;
+use Miklcct\NationalRailJourneyPlanner\Enums\CallType;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
+use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\Association;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedAssociation;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
 use Miklcct\NationalRailJourneyPlanner\Models\FullService;
+use Miklcct\NationalRailJourneyPlanner\Models\Points\CallingPoint;
 use Miklcct\NationalRailJourneyPlanner\Models\Service;
-use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
+use Miklcct\NationalRailJourneyPlanner\Models\ServiceCall;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
 
 abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
     /**
-     * @return array<string, ServiceEntry[]>
-     */
-    abstract protected function getServiceEntries(array $uids, Date $from, Date $to) : array;
-
-    /**
      * @return AssociationEntry[]
      */
     abstract protected function getAssociationEntries(string $uid, Date $date) : array;
-
-    public function getServicesByUids(
-        array $uids
-        , Date $from
-        , Date $to = null
-        , bool $permanent_only = false
-    ) : array {
-        $to ??= $from;
-        $services = $this->getServiceEntries($uids, $from, $to);
-        $results = [];
-        foreach ($uids as $uid) {
-            $results[$uid] = [];
-            for ($actual_date = $from; $actual_date->compare($to) <= 0; $actual_date = $actual_date->addDays(1)) {
-                $result = null;
-                foreach ($services[$uid] as $service) {
-                    if ($service->isSuperior($result, $permanent_only) && $service->runsOnDate($actual_date)) {
-                        $result = $service;
-                    }
-                }
-                if ($result !== null) {
-                    $results[$uid][] = new DatedService($result, $actual_date);
-                }
-            }
-        }
-        return $results;
-    }
 
     public function getFullService(
         DatedService $dated_service
         , ?Time $boarding = null
         , ?Time $alighting = null
         , bool $include_non_passenger = false
+        , bool $permanent_only = false
         , array $recursed_services = []
     ) : FullService {
         $dated_associations = $this->getAssociations(
@@ -66,6 +39,7 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
             , $alighting ?? $boarding
             , $boarding ?? $alighting
             , $include_non_passenger
+            , $permanent_only
         );
         $divide_from = array_filter(
             $dated_associations
@@ -112,6 +86,7 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
                         , $boarding
                         , $alighting
                         , $include_non_passenger
+                        , $permanent_only
                         , $recursed_services
                     );
                 }
@@ -189,10 +164,11 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
                     if ($correct_date) {
                         $primary_departure_date = $departure_date->addDays($date_offset);
                         if ($association->secondaryUid === $uid) {
-                            $primary_service = $this->getServicesByUids(
-                                [$association->primaryUid]
+                            $primary_service = $this->getService(
+                                $association->primaryUid
                                 , $primary_departure_date
-                            )[$association->primaryUid][0];
+                                , $permanent_only
+                            );
                             $secondary_service = $dated_service;
                         } else {
                             $primary_service = $dated_service;
@@ -201,10 +177,11 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
                                 AssociationDay::TODAY => $departure_date,
                                 AssociationDay::TOMORROW => $departure_date->addDays(1),
                             };
-                            $secondary_service = $this->getServicesByUids(
-                                [$association->secondaryUid]
+                            $secondary_service = $this->getService(
+                                $association->secondaryUid
                                 , $secondary_departure_date
-                            )[$association->secondaryUid][0];
+                                , $permanent_only
+                            );
                         }
                         $results[] = new DatedAssociation(
                             $association
@@ -223,15 +200,29 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
             $from_results = $service instanceof Service
                 ? array_filter(
                     $results
-                    , static fn(DatedAssociation $association) => $association->associationEntry instanceof Association
-                        && $service->getAssociationTime($association->associationEntry)->toHalfMinutes()
-                            > $from->toHalfMinutes()
-                        && match ($association->associationEntry->category) {
-                            AssociationCategory::DIVIDE, AssociationCategory::NEXT =>
-                                $service->uid === $association->associationEntry->primaryUid,
-                            AssociationCategory::JOIN =>
-                                $service->uid === $association->associationEntry->secondaryUid,
+                    , static function (DatedAssociation $association) use ($service, $from) {
+                        if (!$association->associationEntry instanceof Association) {
+                            return false;
                         }
+                        if (
+                            $service->uid === $association->associationEntry->secondaryUid
+                                && $association->associationEntry->category === AssociationCategory::JOIN
+                            || $service->uid === $association->associationEntry->primaryUid
+                                && $association->associationEntry->category === AssociationCategory::NEXT
+                        ) {
+                            return true;
+                        }
+                        $association_point = $service->getAssociationPoint($association->associationEntry);
+                        if (
+                            $service->uid === $association->associationEntry->primaryUid
+                            && $association->associationEntry->category === AssociationCategory::DIVIDE
+                        ) {
+                            return $association_point instanceof CallingPoint
+                                && $association_point->getPublicOrWorkingArrival()->toHalfMinutes()
+                                    > $from->toHalfMinutes();
+                        }
+                        return false;
+                    }
                 )
                 : [];
         }
@@ -239,15 +230,31 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
             $to_results = $service instanceof Service
                 ? array_filter(
                     $results
-                    , static fn(DatedAssociation $association) => $association->associationEntry instanceof Association
-                        && $service->getAssociationTime($association->associationEntry)->toHalfMinutes()
-                            < $to->toHalfMinutes()
-                        && match ($association->associationEntry->category) {
-                            AssociationCategory::DIVIDE, AssociationCategory::NEXT =>
-                                $service->uid === $association->associationEntry->secondaryUid,
-                            AssociationCategory::JOIN =>
-                                $service->uid === $association->associationEntry->primaryUid,
+                    , static function (DatedAssociation $association) use ($service, $to) {
+                        if (!$association->associationEntry instanceof Association) {
+                            return false;
                         }
+                        if (
+                            $service->uid === $association->associationEntry->secondaryUid
+                            && in_array(
+                                $association->associationEntry->category
+                                , [AssociationCategory::DIVIDE, AssociationCategory::NEXT]
+                                , true
+                            )
+                        ) {
+                            return true;
+                        }
+                        $association_point = $service->getAssociationPoint($association->associationEntry);
+                        if (
+                            $service->uid === $association->associationEntry->primaryUid
+                            && $association->associationEntry->category === AssociationCategory::JOIN
+                        ) {
+                            return $association_point instanceof CallingPoint
+                                && $association_point->getPublicOrWorkingDeparture()->toHalfMinutes()
+                                    < $to->toHalfMinutes();
+                        }
+                        return false;
+                    }
                 )
                 : [];
         }
@@ -255,5 +262,16 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
         return $from_results !== null
             ? array_merge($from_results, $to_results ?? [])
             : $to_results ?? $results;
+    }
+
+    protected function sortCallResults(array $results, CallType $call_type, TimeType $time_type) : array {
+        usort(
+            $results
+            , static fn(ServiceCall $a, ServiceCall $b) => $a->datedService->date->toDateTimeImmutable(
+                $a->call->getTime($call_type, $time_type)
+            )
+            <=> $b->datedService->date->toDateTimeImmutable($b->call->getTime($call_type, $time_type))
+        );
+        return $results;
     }
 }

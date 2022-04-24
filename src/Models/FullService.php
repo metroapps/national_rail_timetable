@@ -5,6 +5,7 @@ namespace Miklcct\NationalRailJourneyPlanner\Models;
 
 use LogicException;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
+use Miklcct\NationalRailJourneyPlanner\Models\Points\CallingPoint;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\DestinationPoint;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\OriginPoint;
 use function array_filter;
@@ -43,15 +44,19 @@ class FullService extends DatedService {
                 , array_values(
                     array_filter(
                         $this->dividesJoinsEnRoute
-                        , static fn(DatedAssociation $association) =>
-                            $association->associationEntry instanceof Association
-                            && $association->associationEntry->category === AssociationCategory::JOIN
-                            && (
-                                $time === null
-                                || $this->service instanceof Service
-                                    && $this->service->getAssociationTime($association->associationEntry)->toHalfMinutes()
-                                        <= $time->toHalfMinutes()
-                            )
+                        , function (DatedAssociation $association) use ($time) {
+                            if (!$association->associationEntry instanceof Association) {
+                                return false;
+                            }
+                            if ($association->associationEntry->category !== AssociationCategory::JOIN) {
+                                return false;
+                            }
+                            assert($this->service instanceof Service);
+                            $association_point = $this->service->getAssociationPoint($association->associationEntry);
+                            assert($association_point instanceof CallingPoint);
+                            return $time === null
+                                || $association_point->getPublicOrWorkingDeparture()->toHalfMinutes() <= $time->toHalfMinutes();
+                        }
                     )
                 )
             )
@@ -88,15 +93,19 @@ class FullService extends DatedService {
                 , array_values(
                     array_filter(
                         $this->dividesJoinsEnRoute
-                        , fn(DatedAssociation $association) =>
-                            $association->associationEntry instanceof Association
-                            && $association->associationEntry->category === AssociationCategory::DIVIDE
-                            && (
-                                $time === null
-                                || $this->service instanceof Service
-                                    && $this->service->getAssociationTime($association->associationEntry)->toHalfMinutes()
-                                        >= $time->toHalfMinutes()
-                            )
+                        , function (DatedAssociation $association) use ($time) {
+                            if (!$association->associationEntry instanceof Association) {
+                                return false;
+                            }
+                            if ($association->associationEntry->category !== AssociationCategory::DIVIDE) {
+                                return false;
+                            }
+                            assert($this->service instanceof Service);
+                            $association_point = $this->service->getAssociationPoint($association->associationEntry);
+                            assert($association_point instanceof CallingPoint);
+                            return $time === null
+                                || $association_point->getPublicOrWorkingArrival()->toHalfMinutes() >= $time->toHalfMinutes();
+                        }
                     )
                 )
             )

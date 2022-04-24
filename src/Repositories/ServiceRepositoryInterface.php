@@ -3,12 +3,15 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Repositories;
 
+use DateTimeImmutable;
 use Miklcct\NationalRailJourneyPlanner\Enums\CallType;
+use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedAssociation;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
 use Miklcct\NationalRailJourneyPlanner\Models\FullService;
+use Miklcct\NationalRailJourneyPlanner\Models\ServiceCall;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
 
@@ -25,26 +28,21 @@ interface ServiceRepositoryInterface {
      */
     public function insertAssociations(array $associations) : void;
 
-    /**
-     * @param string[] $uids
-     * @param Date $date
-     * @param bool $three_days
-     * @param bool $permanent_only
-     * @return array<string, DatedService[]>
-     */
-    public function getServicesByUids(
-        array $uids,
-        Date $date,
-        Date $to,
-        bool $permanent_only = false
-    ) : array;
+    public function getService(string $uid, Date $date, bool $permanent_only = false) : ?DatedService;
 
     /**
      * Get all UIDs which calls / passes the station
      **
-     * @return string[]
+     * @return ServiceCall[]
      */
-    public function getUidsAtStation(string $crs, Date $from, Date $to, CallType $call_type) : array;
+    public function getServicesAtStation(
+        string $crs
+        , DateTimeImmutable $from
+        , DateTimeImmutable $to
+        , CallType $call_type
+        , TimeType $time_type = TimeType::PUBLIC
+        , bool $permanent_only = false
+    ) : array;
 
     /**
      * Get associations of the specified service
@@ -80,6 +78,7 @@ interface ServiceRepositoryInterface {
         , ?Time $boarding = null
         , ?Time $alighting = null
         , bool $include_non_passenger = false
+        , bool $permanent_only = false
         , array $recursed_services = []
     ) : FullService;
 }
