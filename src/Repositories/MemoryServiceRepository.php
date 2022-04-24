@@ -9,8 +9,6 @@ use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
-use Miklcct\NationalRailJourneyPlanner\Models\Service;
-use Miklcct\NationalRailJourneyPlanner\Models\ServiceCall;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
 use function array_filter;
 use function array_keys;
@@ -71,19 +69,11 @@ class MemoryServiceRepository extends AbstractServiceRepository {
             $to_date = Date::fromDateTimeInterface($to);
             for ($date = $from_date; $date->compare($to_date) <= 0; $date = $date->addDays(1)) {
                 $dated_service = $this->getService($uid, $date);
-                $service = $dated_service?->service;
-                if ($service instanceof Service) {
-                    foreach ($service->points as $point) {
-                        if ($point->location->crsCode === $crs) {
-                            $time = $point->getTime($call_type, $time_type);
-                            if ($time !== null && $date->toDateTimeImmutable($time) >= $from && $date->toDateTimeImmutable($time) <= $to) {
-                                $results[] = new ServiceCall($dated_service, $point);
-                            }
-                        }
-                    }
+                if ($dated_service !== null) {
+                    $results[] = $dated_service->getCallsAt($crs, $call_type, $time_type, $from, $to);
                 }
             }
         }
-        return $this->sortCallResults($results, $call_type, $time_type);
+        return $this->sortCallResults(array_merge(...$results), $call_type, $time_type);
     }
 }

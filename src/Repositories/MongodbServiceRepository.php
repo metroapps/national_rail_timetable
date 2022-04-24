@@ -11,7 +11,6 @@ use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
 use Miklcct\NationalRailJourneyPlanner\Models\Service;
-use Miklcct\NationalRailJourneyPlanner\Models\ServiceCall;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCancellation;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
 use MongoDB\Collection;
@@ -164,6 +163,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
                 }
             }
         }
+        /** @var DatedService[] $possibilities */
         $possibilities = array_values(array_filter($possibilities));
 
         $real_services = $this->servicesCollection->find(
@@ -197,23 +197,15 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         }
         unset($possibility);
 
-        $results = [];
-        // check calls in the results
-        foreach ($possibilities as $possibility) {
-            if ($possibility->service instanceof Service) {
-                foreach ($possibility->service->points as $point) {
-                    if ($point->location->crsCode === $crs) {
-                        $time = $point->getTime($call_type, $time_type);
-                        if ($time !== null) {
-                            $date_time = $possibility->date->toDateTimeImmutable($time);
-                            if ($date_time >= $from && $date_time < $to) {
-                                $results[] = new ServiceCall($possibility, $point);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        $results = array_merge(
+            ...array_map(
+                static fn(DatedService $possibility) =>
+                    $possibility->service instanceof Service
+                        ? $possibility->getCallsAt($crs, $call_type, $time_type, $from, $to)
+                        : []
+                , $possibilities
+            )
+        );
         return $this->sortCallResults($results, $call_type, $time_type);
     }
 }
