@@ -16,9 +16,12 @@ use function array_filter;
 use function array_merge;
 use function assert;
 
+/**
+ * @property-read Service $service
+ */
 class FullService extends DatedService {
     public function __construct(
-        ServiceEntry $service
+        Service $service
         , Date $date
         , public readonly ?DatedAssociation $divideFrom
         , array $dividesJoinsEnRoute
