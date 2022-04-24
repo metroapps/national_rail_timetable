@@ -9,6 +9,7 @@ use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
+use Miklcct\NationalRailJourneyPlanner\Models\Service;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
 use function array_filter;
 use function array_keys;
@@ -75,5 +76,18 @@ class MemoryServiceRepository extends AbstractServiceRepository {
             }
         }
         return $this->sortCallResults(array_merge(...$results), $call_type, $time_type);
+    }
+
+    public function getServiceByRsid(string $rsid, Date $date, bool $permanent_only = false) : array {
+        $results = [];
+        foreach (array_keys($this->services) as $uid) {
+            $dated_service = $this->getService($uid, $date, $permanent_only);
+            $service = $dated_service?->service;
+            if ($service instanceof Service && $service->hasRsid($rsid)) {
+                $results[] = $dated_service;
+            }
+        }
+
+        return $results;
     }
 }

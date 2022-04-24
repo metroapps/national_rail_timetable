@@ -81,4 +81,12 @@ interface ServiceRepositoryInterface {
         , bool $permanent_only = false
         , array $recursed_services = []
     ) : FullService;
+
+    /**
+     * @param string $rsid
+     * @param Date $date
+     * @param bool $permanent_only
+     * @return DatedService[]
+     */
+    public function getServiceByRsid(string $rsid, Date $date, bool $permanent_only = false) : array;
 }

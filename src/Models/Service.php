@@ -83,4 +83,20 @@ class Service extends ServiceEntry {
     public function getDestination() : DestinationPoint {
         return $this->points[count($this->points) - 1];
     }
+
+    public function hasRsid(string $rsid) : bool {
+        $service_property = $this->serviceProperty;
+        if (str_starts_with($service_property->rsid, $rsid)) {
+            return true;
+        }
+        foreach ($this->points as $point) {
+            if (
+                $point instanceof IntermediatePoint
+                && str_starts_with($point->servicePropertyChange?->rsid ?? '', $rsid)
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

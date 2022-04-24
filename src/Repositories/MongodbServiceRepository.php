@@ -13,11 +13,13 @@ use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
 use Miklcct\NationalRailJourneyPlanner\Models\Service;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCancellation;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
+use MongoDB\BSON\Regex;
 use MongoDB\Collection;
 use function array_chunk;
 use function array_filter;
 use function array_map;
 use function array_values;
+use function preg_quote;
 
 class MongodbServiceRepository extends AbstractServiceRepository {
     public function __construct(
@@ -75,6 +77,8 @@ class MongodbServiceRepository extends AbstractServiceRepository {
             [
                 ['key' => ['uid' => 1]],
                 ['key' => ['points.location.crsCode' => 1, 'period.from' => 1, 'period.to' => 1]],
+                ['key' => ['serviceProperty.rsid' => 1]],
+                ['key' => ['points.servicePropertyChange.rsid' => 1]],
             ]
         );
         $this->associationsCollection->createIndexes(
@@ -102,6 +106,37 @@ class MongodbServiceRepository extends AbstractServiceRepository {
             }
         }
         return null;
+    }
+
+    public function getServiceByRsid(string $rsid, Date $date, bool $permanent_only = false) : array {
+        $predicate = match(strlen($rsid)) {
+            6 => new Regex(sprintf('^%s\d{2,2}$', preg_quote($rsid, null)), 'i'),
+            8 => $rsid,
+        };
+
+        // find the UID first
+        $query_results = $this->servicesCollection->find(
+            [
+                'period.from' => ['$lte' => $date],
+                'period.to' => ['$gte' => $date],
+                '$or' => [
+                    ['serviceProperty.rsid' => $predicate],
+                    ['points.servicePropertyChange.rsid' => $predicate],
+                ],
+            ] + ($permanent_only ? ['shortTermPlanning.value' => ShortTermPlanning::PERMANENT] : [])
+            , [
+                'projection' => ['uid' => 1, '_id' => 0]
+            ]
+        );
+        $results = [];
+        foreach ($query_results as $object) {
+            $dated_service = $this->getService($object->uid, $date, $permanent_only);
+            $service = $dated_service?->service;
+            if ($service instanceof Service && $service->hasRsid($rsid)) {
+                $results[] = $dated_service;
+            }
+        }
+        return $results;
     }
 
     public function getServicesAtStation(
