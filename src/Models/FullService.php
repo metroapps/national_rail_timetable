@@ -22,23 +22,23 @@ class FullService extends DatedService {
     public function __construct(
         Service $service
         , Date $date
-        , public readonly ?DatedAssociation $divideFrom
+        , public ?DatedAssociation $divideFrom
         , array $dividesJoinsEnRoute
-        , public readonly ?DatedAssociation $joinTo
+        , public ?DatedAssociation $joinTo
     ) {
         $this->dividesJoinsEnRoute = $dividesJoinsEnRoute;
         parent::__construct($service, $date);
     }
 
     /** @var DatedAssociation[] */
-    public readonly array $dividesJoinsEnRoute;
+    public array $dividesJoinsEnRoute;
 
     /**
      * @return OriginPoint[]
      */
-    public function getAllOrigins(?Time $time = null) : array {
+    public function getOrigins(?Time $time = null) : array {
         if ($this->divideFrom === null) {
-            $base = $this->service instanceof Service ? $this->service->getOrigin() : [];
+            $base = $this->service instanceof Service ? [$this->service->getOrigin()] : [];
             $portions = [];
         } else {
             $base = [];
@@ -70,12 +70,12 @@ class FullService extends DatedService {
         );
         return array_merge(
             $base
-            , array_map(
+            , ...array_map(
                 static function(DatedService $portion) {
                     if (!$portion instanceof self) {
                         throw new LogicException('Listing all origins requires all services being full services.');
                     }
-                    return $portion->getAllOrigins();
+                    return $portion->getOrigins();
                 }
                 , $portions
             )
@@ -85,7 +85,7 @@ class FullService extends DatedService {
     /**
      * @return DestinationPoint[]
      */
-    public function getAllDestinations(?Time $time = null) : array {
+    public function getDestinations(?Time $time = null) : array {
         if ($this->joinTo === null) {
             $base = $this->service instanceof Service ? [$this->service->getDestination()] : [];
             $portions = [];
@@ -124,13 +124,16 @@ class FullService extends DatedService {
                     if (!$portion instanceof self) {
                         throw new LogicException('Listing all destinations requires all services being full services.');
                     }
-                    return $portion->getAllDestinations();
+                    return $portion->getDestinations();
                 }
                 , $portions
             )
         );
     }
 
+    /**
+     * @return ServiceCallWithDestination[]
+     */
     public function getCallsAt(
         string $crs
         , TimeType $time_type
@@ -138,6 +141,20 @@ class FullService extends DatedService {
         , DateTimeImmutable $to = null
     ) : array {
         $this_portion = parent::getCallsAt($crs, $time_type, $from, $to);
+        foreach ($this_portion as &$service_call) {
+            $origins = $this->getOrigins($service_call->call->getTime($service_call->timeType));
+            $destinations = $this->getDestinations($service_call->call->getTime($service_call->timeType));
+            $service_call = new ServiceCallWithDestination(
+                $service_call->timestamp
+                , $service_call->timeType
+                , $service_call->datedService
+                , $service_call->call
+                , $service_call->serviceProperty
+                , $origins
+                , $destinations
+            );
+        }
+        unset($service_call);
         if ($this->joinTo === null) {
             $join_portion = [];
         } else {
@@ -183,22 +200,26 @@ class FullService extends DatedService {
                     assert($association instanceof Association);
                     $secondary_service = $dated_association->secondaryService;
                     assert($secondary_service->service instanceof Service);
+                    $association_point = $this->service->getAssociationPoint($association);
+                    assert($association_point instanceof CallingPoint);
                     if ($association->category === AssociationCategory::DIVIDE) {
-                        $divide_timestamp = $secondary_service->date->toDateTimeImmutable(
-                            $secondary_service->service->getOrigin()->getPublicOrWorkingDeparture()
+                        $divide_timestamp = $this->date->toDateTimeImmutable(
+                            $association_point->getPublicOrWorkingArrival()
                         );
                         return $divide_timestamp < $from
                             ? []
                             : $secondary_service->getCallsAt(
                                 $crs
                                 , $time_type
-                                , $divide_timestamp
+                                , $secondary_service->date->toDateTimeImmutable(
+                                    $secondary_service->service->getOrigin()->getPublicOrWorkingDeparture()
+                                )
                                 , $to
                             );
                     }
                     if ($association->category === AssociationCategory::JOIN) {
-                        $join_timestamp = $secondary_service->date->toDateTimeImmutable(
-                            $secondary_service->service->getDestination()->getPublicOrWorkingArrival()
+                        $join_timestamp = $this->date->toDateTimeImmutable(
+                            $association_point->getPublicOrWorkingDeparture()
                         );
                         return $join_timestamp > $to
                             ? []
@@ -206,7 +227,9 @@ class FullService extends DatedService {
                                 $crs
                                 , $time_type
                                 , $from
-                                , $join_timestamp
+                                , $secondary_service->date->toDateTimeImmutable(
+                                    $secondary_service->service->getDestination()->getPublicOrWorkingArrival()
+                                )
                             );
                     }
                     throw new UnexpectedValueException('Unknown association type');

@@ -14,10 +14,9 @@ use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedAssociation;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
 use Miklcct\NationalRailJourneyPlanner\Models\FullService;
-use Miklcct\NationalRailJourneyPlanner\Models\Points\CallingPoint;
 use Miklcct\NationalRailJourneyPlanner\Models\Service;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCall;
-use Miklcct\NationalRailJourneyPlanner\Models\Time;
+use function count;
 
 abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
     public function __construct(protected readonly bool $permanentOnly = false) {}
@@ -29,18 +28,15 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
 
     public function getFullService(
         DatedService $dated_service
-        , ?Time $boarding = null
-        , ?Time $alighting = null
         , bool $include_non_passenger = false
         , array $recursed_services = []
     ) : FullService {
         if (!$dated_service->service instanceof Service) {
             throw new InvalidArgumentException("It's not possible to make a full service if it's not a service.");
         }
+        $stub = new FullService($dated_service->service, $dated_service->date, null, [], null);
         $dated_associations = $this->getAssociations(
             $dated_service
-            , $alighting ?? $boarding
-            , $boarding ?? $alighting
             , $include_non_passenger
         );
         $divide_from = array_filter(
@@ -68,7 +64,7 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
         /** @var array<DatedAssociation|null> $dated_associations */
         $dated_associations = [$divide_from, ...$divides_and_joins, $join_to];
 
-        $recursed_services[] = $dated_service;
+        $recursed_services[] = $stub;
         foreach ($dated_associations as &$dated_association) {
             if ($dated_association !== null) {
                 /** @var DatedService[] $services */
@@ -85,8 +81,6 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
                     )[0] ?? null;
                     $service = $recursed ?? $this->getFullService(
                         $service
-                        , $boarding
-                        , $alighting
                         , $include_non_passenger
                         , $recursed_services
                     );
@@ -101,19 +95,14 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
         }
         unset($dated_association);
 
-        return new FullService(
-            $dated_service->service
-            , $dated_service->date
-            , $dated_associations[0]
-            , array_slice($dated_associations, 1, count($dated_associations) - 2)
-            , $dated_associations[count($dated_associations) - 1]
-        );
+        $stub->divideFrom = $dated_associations[0];
+        $stub->dividesJoinsEnRoute = array_slice($dated_associations, 1, count($dated_associations) - 2);
+        $stub->joinTo = $dated_associations[count($dated_associations) - 1];
+        return $stub;
     }
 
     public function getAssociations(
         DatedService $dated_service
-        , ?Time $from = null
-        , ?Time $to = null
         , bool $include_non_passenger = false
     ) : array {
         $service = $dated_service->service;
@@ -191,75 +180,7 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
             }
         }
 
-        $from_results = null;
-        $to_results = null;
-
-        if ($from !== null) {
-            $from_results = $service instanceof Service
-                ? array_filter(
-                    $results
-                    , static function (DatedAssociation $association) use ($service, $from) {
-                        if (!$association->associationEntry instanceof Association) {
-                            return false;
-                        }
-                        if (
-                            $service->uid === $association->associationEntry->secondaryUid
-                                && $association->associationEntry->category === AssociationCategory::JOIN
-                            || $service->uid === $association->associationEntry->primaryUid
-                                && $association->associationEntry->category === AssociationCategory::NEXT
-                        ) {
-                            return true;
-                        }
-                        $association_point = $service->getAssociationPoint($association->associationEntry);
-                        if (
-                            $service->uid === $association->associationEntry->primaryUid
-                            && $association->associationEntry->category === AssociationCategory::DIVIDE
-                        ) {
-                            return $association_point instanceof CallingPoint
-                                && $association_point->getPublicOrWorkingArrival()->toHalfMinutes()
-                                    > $from->toHalfMinutes();
-                        }
-                        return false;
-                    }
-                )
-                : [];
-        }
-        if ($to !== null) {
-            $to_results = $service instanceof Service
-                ? array_filter(
-                    $results
-                    , static function (DatedAssociation $association) use ($service, $to) {
-                        if (!$association->associationEntry instanceof Association) {
-                            return false;
-                        }
-                        if (
-                            $service->uid === $association->associationEntry->secondaryUid
-                            && in_array(
-                                $association->associationEntry->category
-                                , [AssociationCategory::DIVIDE, AssociationCategory::NEXT]
-                                , true
-                            )
-                        ) {
-                            return true;
-                        }
-                        $association_point = $service->getAssociationPoint($association->associationEntry);
-                        if (
-                            $service->uid === $association->associationEntry->primaryUid
-                            && $association->associationEntry->category === AssociationCategory::JOIN
-                        ) {
-                            return $association_point instanceof CallingPoint
-                                && $association_point->getPublicOrWorkingDeparture()->toHalfMinutes()
-                                    < $to->toHalfMinutes();
-                        }
-                        return false;
-                    }
-                )
-                : [];
-        }
-
-        return $from_results !== null
-            ? array_merge($from_results, $to_results ?? [])
-            : $to_results ?? $results;
+        return $results;
     }
 
     /** @var ServiceCall[] $results */

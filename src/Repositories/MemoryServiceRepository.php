@@ -8,6 +8,9 @@ use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
+use Miklcct\NationalRailJourneyPlanner\Models\DepartureBoardWithFullServices;
+use Miklcct\NationalRailJourneyPlanner\Models\Service;
+use Miklcct\NationalRailJourneyPlanner\Models\ServiceCallWithDestination;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
 use function array_filter;
 use function array_keys;
@@ -54,24 +57,39 @@ class MemoryServiceRepository extends AbstractServiceRepository {
         return $result === null ? null : new DatedService($result, $date);
     }
 
-    public function getServicesAtStation(
+    public function getDepartureBoard(
         string $crs,
         DateTimeImmutable $from,
         DateTimeImmutable $to,
         TimeType $time_type
-    ) : array {
+    ) : DepartureBoardWithFullServices {
         $results = [];
         foreach (array_keys($this->services) as $uid) {
             $from_date = Date::fromDateTimeInterface($from)->addDays(-1);
             $to_date = Date::fromDateTimeInterface($to);
             for ($date = $from_date; $date->compare($to_date) <= 0; $date = $date->addDays(1)) {
                 $dated_service = $this->getService($uid, $date);
-                if ($dated_service !== null) {
-                    $results[] = $dated_service->getCallsAt($crs, $time_type, $from, $to);
+                if ($dated_service?->service instanceof Service) {
+                    /** @noinspection NullPointerExceptionInspection it's not possible to be null due to if condition */
+                    $full_service = $this->getFullService($dated_service);
+                    $results[] = array_values(
+                        array_filter(
+                            $full_service->getCallsAt($crs, $time_type, $from, $to)
+                            // prevent repeated calls from different portion
+                            , static fn(ServiceCallWithDestination $result) =>
+                                $result->datedService->service->uid === $full_service->service->uid
+                        )
+                    );
                 }
             }
         }
-        return $this->sortCallResults(array_merge(...$results));
+        return new DepartureBoardWithFullServices(
+            $crs
+            , $from
+            , $to
+            , $time_type
+            , $this->sortCallResults(array_merge(...$results))
+        );
     }
 
     public function getServiceByRsid(string $rsid, Date $date) : array {

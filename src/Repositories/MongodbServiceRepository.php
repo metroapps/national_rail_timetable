@@ -10,8 +10,11 @@ use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
 use Miklcct\NationalRailJourneyPlanner\Models\DepartureBoard;
+use Miklcct\NationalRailJourneyPlanner\Models\DepartureBoardWithFullServices;
+use Miklcct\NationalRailJourneyPlanner\Models\FullService;
 use Miklcct\NationalRailJourneyPlanner\Models\Service;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCall;
+use Miklcct\NationalRailJourneyPlanner\Models\ServiceCallWithDestination;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
 use MongoDB\BSON\Regex;
 use MongoDB\BSON\UTCDateTime;
@@ -31,26 +34,6 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         , bool $permanentOnly = false
     ) {
         parent::__construct($permanentOnly);
-    }
-
-    protected function getServiceEntries(array $uids, Date $from, Date $to) : array {
-        $query_results = $this->servicesCollection->find(
-            [
-                'uid' => ['$in' => $uids],
-                'period.from' => ['$lte' => $to],
-                'period.to' => ['$gte' => $from],
-            ]
-        )->toArray();
-        $results = [];
-        foreach ($uids as $new_uid) {
-            $results[$new_uid] = array_values(
-                array_filter(
-                    $query_results
-                    , static fn(ServiceEntry $service) => $service->uid === $new_uid
-                )
-            );
-        }
-        return $results;
     }
 
     protected function getAssociationEntries(string $uid, Date $date) : array {
@@ -144,12 +127,12 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         return $this->findServicesInUidMatchingRsid($uids, $rsid, $date);
     }
 
-    public function getServicesAtStation(
+    public function getDepartureBoard(
         string $crs,
         DateTimeImmutable $from,
         DateTimeImmutable $to,
         TimeType $time_type
-    ) : array {
+    ) : DepartureBoard {
         $cache_entry = $this->departureBoardsCollection?->findOne(
             [
                 'crs' => $crs,
@@ -160,7 +143,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         );
         if ($cache_entry !== null) {
             assert($cache_entry instanceof DepartureBoard);
-            return $this->getServiceCallsFromCache($cache_entry);
+            return $cache_entry;
         }
 
         $from_date = Date::fromDateTimeInterface($from)->addDays(-1);
@@ -220,7 +203,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         $possibilities = array_values(array_filter($possibilities));
 
         if ($possibilities === []) {
-            return [];
+            return new DepartureBoard($crs, $from, $to, $time_type, []);
         }
         $real_services = $this->servicesCollection->find(
             [
@@ -264,14 +247,31 @@ class MongodbServiceRepository extends AbstractServiceRepository {
             )
         );
         $results = $this->sortCallResults($results);
+        foreach ($results as &$result) {
+            if (!$result instanceof ServiceCallWithDestination) {
+                $dated_service = $result->datedService instanceof FullService
+                    ? $result->datedService
+                    : $this->getFullService($result->datedService);
+                $result = new ServiceCallWithDestination(
+                    $result->timestamp
+                    , $result->timeType
+                    , $dated_service
+                    , $result->call
+                    , $result->serviceProperty
+                    , $dated_service->getOrigins($result->call->getTime($result->timeType))
+                    , $dated_service->getDestinations($result->call->getTime($result->timeType))
+                );
+            }
+        }
+        unset($result);
         if ($this->departureBoardsCollection !== null) {
             $cache_items = array_map(
-                static function (ServiceCall $service_call) use ($time_type) : ServiceCall {
+                static function (ServiceCallWithDestination $service_call) use ($time_type) : ServiceCallWithDestination {
                     $service = $service_call->datedService->service;
                     assert($service instanceof Service);
                     $time = $service_call->call->getTime($time_type);
                     assert($time !== null);
-                    return new ServiceCall(
+                    return new ServiceCallWithDestination(
                         $service_call->timestamp
                         , $service_call->timeType
                         , new DatedService(
@@ -285,6 +285,8 @@ class MongodbServiceRepository extends AbstractServiceRepository {
                         )
                         , $service_call->call
                         , $service_call->serviceProperty
+                        , $service_call->origins
+                        , $service_call->destinations
                     );
                 }
                 , $results
@@ -292,13 +294,12 @@ class MongodbServiceRepository extends AbstractServiceRepository {
             $cache_document = new DepartureBoard($crs, $from, $to, $time_type, $cache_items);
             $this->departureBoardsCollection->insertOne($cache_document);
         }
-        return $results;
+        return new DepartureBoardWithFullServices($crs, $from, $to, $time_type, $results);
     }
 
-    /** @return ServiceCall[] */
-    private function getServiceCallsFromCache(DepartureBoard $group) : array {
-        if ($group->calls === []) {
-            return [];
+    public function getDepartureBoardWithFullServices(DepartureBoard $board) : DepartureBoardWithFullServices {
+        if ($board->calls === []) {
+            return new DepartureBoardWithFullServices($board->crs, $board->from, $board->to, $board->timeType, []);
         }
         $predicate = [
             '$or' => array_map(
@@ -308,31 +309,44 @@ class MongodbServiceRepository extends AbstractServiceRepository {
                         'period' => $item->datedService->service->period,
                         'shortTermPlanning.value' => $item->datedService->service->shortTermPlanning->value,
                     ]
-                , $group->calls
+                , $board->calls
             )
         ];
         $services = $this->servicesCollection->find($predicate)->toArray();
-        return array_map(
-            static function (ServiceCall $cache_item) use ($services) : ServiceCall {
-                $skeleton_service = $cache_item->datedService->service;
-                $real_service = array_values(
-                    array_filter(
-                        $services
-                        , static fn(ServiceEntry $service) =>
-                            $service->uid === $skeleton_service->uid
-                            && $service->period == $skeleton_service->period
-                            && $service->shortTermPlanning === $skeleton_service->shortTermPlanning
-                    )
-                );
-                return new ServiceCall(
-                    $cache_item->timestamp
-                    , $cache_item->timeType
-                    , new DatedService($real_service[0], $cache_item->datedService->date)
-                    , $cache_item->call
-                    , $cache_item->serviceProperty
-                );
-            }
-            , $group->calls
+        return new DepartureBoardWithFullServices(
+            $board->crs
+            , $board->from
+            , $board->to
+            , $board->timeType
+            , array_map(
+                function (ServiceCall $cache_item) use ($services) : ServiceCall {
+                    $skeleton_service = $cache_item->datedService->service;
+                    $real_service = $this->getFullService(
+                        new DatedService(
+                            array_values(
+                                array_filter(
+                                    $services
+                                    , static fn(ServiceEntry $service) =>
+                                        $service->uid === $skeleton_service->uid
+                                        && $service->period == $skeleton_service->period
+                                        && $service->shortTermPlanning === $skeleton_service->shortTermPlanning
+                                )
+                            )[0]
+                            , $cache_item->datedService->date
+                        )
+                    );
+                    return new ServiceCallWithDestination(
+                        $cache_item->timestamp
+                        , $cache_item->timeType
+                        , $real_service
+                        , $cache_item->call
+                        , $cache_item->serviceProperty
+                        , $cache_item->origins
+                        , $cache_item->destinations
+                    );
+                }
+                , $board->calls
+            )
         );
     }
 }

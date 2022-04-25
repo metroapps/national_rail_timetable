@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
 use DateTimeImmutable;
+use LogicException;
 use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\TimingPoint;
 use MongoDB\BSON\Persistable;
@@ -29,7 +30,7 @@ class DatedService implements Persistable {
     ) : array {
         $service = $this->service;
         if (!$service instanceof Service) {
-            return [];
+            throw new LogicException('The service within DatedService must be a proper Service to get calling points.');
         }
         return array_values(
             array_filter(
@@ -54,7 +55,7 @@ class DatedService implements Persistable {
                     $timestamp = $service_call?->timestamp;
                     return $timestamp !== null
                         && ($from === null || $timestamp >= $from)
-                        && ($to === null || $timestamp <= $to);
+                        && ($to === null || $timestamp < $to);
                 }
             )
         );
