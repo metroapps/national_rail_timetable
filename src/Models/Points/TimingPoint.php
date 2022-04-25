@@ -9,6 +9,7 @@ use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\BsonSerializeTrait;
 use Miklcct\NationalRailJourneyPlanner\Models\Location;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
+use Miklcct\NationalRailJourneyPlanner\Models\TiplocLocation;
 use MongoDB\BSON\Persistable;
 
 abstract class TimingPoint implements Persistable {
@@ -38,8 +39,12 @@ abstract class TimingPoint implements Persistable {
             (
                 $this instanceof HasDeparture && $this->getPublicDeparture() !== null
                 || $this instanceof HasArrival && $this->getPublicArrival() !== null
+            )
+            // this filter out non-stations on rail services, but keeps bus stations without CRS
+            && (
+                $this->location->crsCode !== null
+                || $this->location instanceof TiplocLocation && $this->location->stanox === null
             );
-            // && $this->location->crsCode !== null;
     }
 
     /** @var Activity[] */

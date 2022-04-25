@@ -29,6 +29,7 @@ use Miklcct\NationalRailJourneyPlanner\Models\ServiceCancellation;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceProperty;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
+use Miklcct\NationalRailJourneyPlanner\Models\TiplocLocation;
 use Miklcct\NationalRailJourneyPlanner\Repositories\LocationRepositoryInterface;
 use Miklcct\NationalRailJourneyPlanner\Repositories\ServiceRepositoryInterface;
 use function array_filter;
@@ -393,10 +394,15 @@ class TimetableParser {
             $line
             , [2, 7, 2, 6, 1, 26, 5, 4, 3, 16]
         );
-        return new Location(
+        $stanox = (int)$columns[6];
+        if ($stanox === 0) {
+            $stanox = null;
+        }
+        return new TiplocLocation(
             tiploc: $columns[1]
             , name: $columns[5]
             , crsCode: $columns[8] === '' ? null : $columns[8]
+            , stanox: $stanox
         );
     }
 }

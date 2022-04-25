@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
 use MongoDB\BSON\Persistable;
+use function is_string;
 
 class Location implements Persistable {
     use BsonSerializeTrait;
@@ -14,14 +15,19 @@ class Location implements Persistable {
         , public readonly string $name
     ) {}
 
-    public function isSuperior(?Location $existing) : bool {
-        return $existing === null
-            || $this instanceof Station
-            && (
-                !$existing instanceof Station
-                || $this->minorCrsCode === $this->crsCode
-                && $existing->minorCrsCode !== $existing->crsCode
-                || $this->interchange !== 9 && $existing->interchange === 9
+    public function isSuperior(Location|string|null $existing) : bool {
+        return !is_string($existing) && (
+            $existing === null || $this->superiorScore() > $existing->superiorScore()
+        );
+    }
+
+    private function superiorScore() : int {
+        return $this instanceof TiplocLocation && $this->stanox === null // This is to handle bus stations such as XCQ
+            ? 4
+            : (
+                $this instanceof Station
+                    ? $this->interchange !== 9 ? 3 : ($this->minorCrsCode === $this->crsCode ? 2 : 1)
+                    : 0
             );
     }
 }
