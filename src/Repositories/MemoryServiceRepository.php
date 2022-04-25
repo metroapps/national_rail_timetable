@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailJourneyPlanner\Repositories;
 
 use DateTimeImmutable;
-use Miklcct\NationalRailJourneyPlanner\Enums\CallType;
 use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\Date;
@@ -59,8 +58,7 @@ class MemoryServiceRepository extends AbstractServiceRepository {
         string $crs,
         DateTimeImmutable $from,
         DateTimeImmutable $to,
-        CallType $call_type,
-        TimeType $time_type = TimeType::PUBLIC,
+        TimeType $time_type
     ) : array {
         $results = [];
         foreach (array_keys($this->services) as $uid) {
@@ -69,11 +67,11 @@ class MemoryServiceRepository extends AbstractServiceRepository {
             for ($date = $from_date; $date->compare($to_date) <= 0; $date = $date->addDays(1)) {
                 $dated_service = $this->getService($uid, $date);
                 if ($dated_service !== null) {
-                    $results[] = $dated_service->getCallsAt($crs, $call_type, $time_type, $from, $to);
+                    $results[] = $dated_service->getCallsAt($crs, $time_type, $from, $to);
                 }
             }
         }
-        return $this->sortCallResults(array_merge(...$results), $call_type, $time_type);
+        return $this->sortCallResults(array_merge(...$results));
     }
 
     public function getServiceByRsid(string $rsid, Date $date) : array {

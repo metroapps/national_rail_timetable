@@ -6,7 +6,6 @@ namespace Miklcct\NationalRailJourneyPlanner\Models;
 use DateTimeImmutable;
 use LogicException;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
-use Miklcct\NationalRailJourneyPlanner\Enums\CallType;
 use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\CallingPoint;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\DestinationPoint;
@@ -134,12 +133,11 @@ class FullService extends DatedService {
 
     public function getCallsAt(
         string $crs
-        , CallType $call_type
         , TimeType $time_type
         , DateTimeImmutable $from = null
         , DateTimeImmutable $to = null
     ) : array {
-        $this_portion = parent::getCallsAt($crs, $call_type, $time_type, $from, $to);
+        $this_portion = parent::getCallsAt($crs, $time_type, $from, $to);
         if ($this->joinTo === null) {
             $join_portion = [];
         } else {
@@ -154,7 +152,6 @@ class FullService extends DatedService {
             );
             $join_portion = $primary_service->getCallsAt(
                 $crs
-                , $call_type
                 , $time_type
                 , $from !== null && $from > $association_timestamp ? $from : $association_timestamp
                 , $to
@@ -174,7 +171,6 @@ class FullService extends DatedService {
             );
             $divide_portion = $primary_service->getCallsAt(
                 $crs
-                , $call_type
                 , $time_type
                 , $from
                 , $to !== null && $to < $association_timestamp ? $to : $association_timestamp
@@ -182,7 +178,7 @@ class FullService extends DatedService {
         }
         $other_portions = array_merge(
             ...array_map(
-                function (DatedAssociation $dated_association) use ($time_type, $call_type, $crs, $to, $from) {
+                function (DatedAssociation $dated_association) use ($time_type, $crs, $to, $from) {
                     $association = $dated_association->associationEntry;
                     assert($association instanceof Association);
                     $secondary_service = $dated_association->secondaryService;
@@ -195,7 +191,6 @@ class FullService extends DatedService {
                             ? []
                             : $secondary_service->getCallsAt(
                                 $crs
-                                , $call_type
                                 , $time_type
                                 , $divide_timestamp
                                 , $to
@@ -209,7 +204,6 @@ class FullService extends DatedService {
                             ? []
                             : $secondary_service->getCallsAt(
                                 $crs
-                                , $call_type
                                 , $time_type
                                 , $from
                                 , $join_timestamp

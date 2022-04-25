@@ -5,13 +5,11 @@ namespace Miklcct\NationalRailJourneyPlanner\Repositories;
 
 use DateTimeImmutable;
 use Miklcct\NationalRailJourneyPlanner\Enums\BankHoliday;
-use Miklcct\NationalRailJourneyPlanner\Enums\CallType;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
 use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
-use Miklcct\NationalRailJourneyPlanner\Models\CallCacheGroup;
-use Miklcct\NationalRailJourneyPlanner\Models\CallCacheItem;
 use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
+use Miklcct\NationalRailJourneyPlanner\Models\DepartureBoard;
 use Miklcct\NationalRailJourneyPlanner\Models\Service;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCall;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
@@ -29,7 +27,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
     public function __construct(
         private readonly Collection $servicesCollection
         , private readonly Collection $associationsCollection
-        , private readonly ?Collection $callCacheCollection
+        , private readonly ?Collection $departureBoardsCollection
         , bool $permanentOnly = false
     ) {
         parent::__construct($permanentOnly);
@@ -150,19 +148,18 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         string $crs,
         DateTimeImmutable $from,
         DateTimeImmutable $to,
-        CallType $call_type,
-        TimeType $time_type = TimeType::PUBLIC
+        TimeType $time_type
     ) : array {
-        $cache_entry = $this->callCacheCollection?->findOne(
+        $cache_entry = $this->departureBoardsCollection?->findOne(
             [
                 'crs' => $crs,
                 'from' => new UTCDateTime($from),
                 'to' => new UTCDateTime($to),
-                'callType.value' => $call_type->value,
                 'timeType.value' => $time_type->value,
             ]
         );
         if ($cache_entry !== null) {
+            assert($cache_entry instanceof DepartureBoard);
             return $this->getServiceCallsFromCache($cache_entry);
         }
 
@@ -174,10 +171,12 @@ class MongodbServiceRepository extends AbstractServiceRepository {
                 'points' => [
                     '$elemMatch' => [
                         'location.crsCode' => $crs,
-                        match($call_type) {
-                            CallType::DEPARTURE => 'workingDeparture',
-                            CallType::ARRIVAL => 'workingArrival',
-                            CallType::PASS => 'pass',
+                        match($time_type) {
+                            TimeType::WORKING_ARRIVAL => 'workingArrival',
+                            TimeType::PUBLIC_ARRIVAL => 'publicArrival',
+                            TimeType::PASS => 'pass',
+                            TimeType::PUBLIC_DEPARTURE => 'publicDeparture',
+                            TimeType::WORKING_DEPARTURE => 'workingDeparture',
                         } => ['$ne' => null],
                     ],
                 ],
@@ -259,66 +258,63 @@ class MongodbServiceRepository extends AbstractServiceRepository {
             ...array_map(
                 static fn(DatedService $possibility) =>
                     $possibility->service instanceof Service
-                        ? $possibility->getCallsAt($crs, $call_type, $time_type, $from, $to)
+                        ? $possibility->getCallsAt($crs, $time_type, $from, $to)
                         : []
                 , $possibilities
             )
         );
-        $results = $this->sortCallResults($results, $call_type, $time_type);
-        if ($this->callCacheCollection !== null) {
+        $results = $this->sortCallResults($results);
+        if ($this->departureBoardsCollection !== null) {
             $cache_items = array_map(
-                static function (ServiceCall $service_call) use ($call_type, $time_type) : CallCacheItem {
+                static function (ServiceCall $service_call) use ($time_type) : ServiceCall {
                     $service = $service_call->datedService->service;
                     assert($service instanceof Service);
-                    $time = $service_call->call->getTime($call_type, $time_type);
+                    $time = $service_call->call->getTime($time_type);
                     assert($time !== null);
-                    return new CallCacheItem(
-                        $service_call->datedService->date->toDateTimeImmutable(
-                            $time
-                        )
-                        , new ServiceCall(
-                            new DatedService(
-                                new ServiceEntry(
-                                    $service->uid
-                                    , $service->period
-                                    , $service->excludeBankHoliday
-                                    , $service->shortTermPlanning
-                                )
-                                , $service_call->datedService->date
+                    return new ServiceCall(
+                        $service_call->timestamp
+                        , $service_call->timeType
+                        , new DatedService(
+                            new ServiceEntry(
+                                $service->uid
+                                , $service->period
+                                , $service->excludeBankHoliday
+                                , $service->shortTermPlanning
                             )
-                            , $service_call->call
+                            , $service_call->datedService->date
                         )
-                        , $service->getServicePropertyAtTime($time)
+                        , $service_call->call
+                        , $service_call->serviceProperty
                     );
                 }
                 , $results
             );
-            $cache_document = new CallCacheGroup($crs, $from, $to, $call_type, $time_type, $cache_items);
-            $this->callCacheCollection->insertOne($cache_document);
+            $cache_document = new DepartureBoard($crs, $from, $to, $time_type, $cache_items);
+            $this->departureBoardsCollection->insertOne($cache_document);
         }
         return $results;
     }
 
     /** @return ServiceCall[] */
-    private function getServiceCallsFromCache(CallCacheGroup $group) : array {
+    private function getServiceCallsFromCache(DepartureBoard $group) : array {
         if ($group->calls === []) {
             return [];
         }
         $predicate = [
             '$or' => array_map(
-                static fn(CallCacheItem $item) =>
+                static fn(ServiceCall $item) =>
                     [
-                        'uid' => $item->serviceCall->datedService->service->uid,
-                        'period' => $item->serviceCall->datedService->service->period,
-                        'shortTermPlanning.value' => $item->serviceCall->datedService->service->shortTermPlanning->value,
+                        'uid' => $item->datedService->service->uid,
+                        'period' => $item->datedService->service->period,
+                        'shortTermPlanning.value' => $item->datedService->service->shortTermPlanning->value,
                     ]
                 , $group->calls
             )
         ];
         $services = $this->servicesCollection->find($predicate)->toArray();
         return array_map(
-            static function (CallCacheItem $cache_item) use ($services) : ServiceCall {
-                $skeleton_service = $cache_item->serviceCall->datedService->service;
+            static function (ServiceCall $cache_item) use ($services) : ServiceCall {
+                $skeleton_service = $cache_item->datedService->service;
                 $real_service = array_values(
                     array_filter(
                         $services
@@ -329,8 +325,11 @@ class MongodbServiceRepository extends AbstractServiceRepository {
                     )
                 );
                 return new ServiceCall(
-                    new DatedService($real_service[0], $cache_item->serviceCall->datedService->date)
-                    , $cache_item->serviceCall->call
+                    $cache_item->timestamp
+                    , $cache_item->timeType
+                    , new DatedService($real_service[0], $cache_item->datedService->date)
+                    , $cache_item->call
+                    , $cache_item->serviceProperty
                 );
             }
             , $group->calls

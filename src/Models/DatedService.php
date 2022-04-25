@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
 use DateTimeImmutable;
-use Miklcct\NationalRailJourneyPlanner\Enums\CallType;
 use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\TimingPoint;
 use MongoDB\BSON\Persistable;
@@ -19,35 +18,44 @@ class DatedService implements Persistable {
 
     /**
      * @param string $crs
-     * @param CallType $call_type
      * @param TimeType $time_type
      * @return ServiceCall[]
      */
     public function getCallsAt(
         string $crs
-        , CallType $call_type
         , TimeType $time_type
         , DateTimeImmutable $from = null
         , DateTimeImmutable $to = null
     ) : array {
-        if (!$this->service instanceof Service) {
+        $service = $this->service;
+        if (!$service instanceof Service) {
             return [];
         }
         return array_values(
-            array_map(
-                fn(TimingPoint $point) => new ServiceCall($this, $point)
-                , array_filter(
-                    $this->service->points
-                    , function (TimingPoint $point) use ($to, $from, $crs, $call_type, $time_type) {
+            array_filter(
+                array_map(
+                    function (TimingPoint $point) use ($service, $crs, $time_type) : ?ServiceCall {
                         if ($point->location->crsCode !== $crs) {
-                            return false;
+                            return null;
                         }
-                        $time = $point->getTime($call_type, $time_type);
-                        return $time !== null
-                            && ($from === null || $this->date->toDateTimeImmutable($time) >= $from)
-                            && ($to === null || $this->date->toDateTimeImmutable($time) <= $to);
+                        $time = $point->getTime($time_type);
+                        $timestamp = $time === null ? null : $this->date->toDateTimeImmutable($time);
+                        return $time === null ? null : new ServiceCall(
+                            $timestamp
+                            , $time_type
+                            , $this
+                            , $point
+                            , $service->getServicePropertyAtTime($time)
+                        );
                     }
+                    , $service->points
                 )
+                , static function (?ServiceCall $service_call) use ($to, $from) {
+                    $timestamp = $service_call?->timestamp;
+                    return $timestamp !== null
+                        && ($from === null || $timestamp >= $from)
+                        && ($to === null || $timestamp <= $to);
+                }
             )
         );
     }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailJourneyPlanner\Repositories;
 
 use DateTimeImmutable;
-use Miklcct\NationalRailJourneyPlanner\Enums\CallType;
 use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\Date;
@@ -39,8 +38,7 @@ interface ServiceRepositoryInterface {
         string $crs
         , DateTimeImmutable $from
         , DateTimeImmutable $to
-        , CallType $call_type
-        , TimeType $time_type = TimeType::PUBLIC
+        , TimeType $time_type
     ) : array;
 
     /**

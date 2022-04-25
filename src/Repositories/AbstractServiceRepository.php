@@ -7,9 +7,7 @@ use InvalidArgumentException;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationDay;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationType;
-use Miklcct\NationalRailJourneyPlanner\Enums\CallType;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
-use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\Association;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\Date;
@@ -264,13 +262,11 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
             : $to_results ?? $results;
     }
 
-    protected function sortCallResults(array $results, CallType $call_type, TimeType $time_type) : array {
+    /** @var ServiceCall[] $results */
+    protected function sortCallResults(array $results) : array {
         usort(
             $results
-            , static fn(ServiceCall $a, ServiceCall $b) => $a->datedService->date->toDateTimeImmutable(
-                $a->call->getTime($call_type, $time_type)
-            )
-            <=> $b->datedService->date->toDateTimeImmutable($b->call->getTime($call_type, $time_type))
+            , static fn(ServiceCall $a, ServiceCall $b) => $a->timestamp <=> $b->timestamp
         );
         return $results;
     }
