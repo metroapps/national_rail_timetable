@@ -49,7 +49,7 @@ class Service extends ServiceEntry {
                 && ($point instanceof PassingPoint
                     ? $point->pass->toHalfMinutes()
                     : ($point instanceof CallingPoint
-                        ? $point->workingArrival->toHalfMinutes()
+                        ? $point->getPublicOrWorkingArrival()->toHalfMinutes()
                         : PHP_INT_MAX
                     )
                 ) < $time->toHalfMinutes()

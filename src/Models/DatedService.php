@@ -7,8 +7,11 @@ use DateTimeImmutable;
 use Miklcct\NationalRailJourneyPlanner\Enums\CallType;
 use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\TimingPoint;
+use MongoDB\BSON\Persistable;
 
-class DatedService {
+class DatedService implements Persistable {
+    use BsonSerializeTrait;
+
     public function __construct(
         public readonly ServiceEntry $service
         , public readonly Date $date

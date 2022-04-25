@@ -4,9 +4,11 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
 use BackedEnum;
+use DateTimeInterface;
 use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
+use MongoDB\BSON\UTCDateTime;
 use ReflectionClass;
-use ReflectionNamedType;
+use UnexpectedValueException;
 use function is_a;
 use function method_exists;
 
@@ -14,7 +16,10 @@ use function method_exists;
 // due to the way bsonUnserialize works in regard to readonly property
 trait BsonSerializeTrait {
     public function bsonSerialize() : array {
-        return (array)$this;
+        return array_map(
+            static fn($value) => $value instanceof DateTimeInterface ? new UTCDateTime($value) : $value
+            , (array)$this
+        );
     }
 
     public function bsonUnserialize(array $data) : void {
@@ -27,23 +32,33 @@ trait BsonSerializeTrait {
             if ($property->isPublic() && !$property->isStatic() && $declaring_class_name === self::class) {
                 $key = $property->name;
                 $type = $property->getType();
-                $is_backed_enum = $type instanceof ReflectionNamedType
-                    && is_a($type->getName(), BackedEnum::class, true);
                 if ($type->getName() === 'array') {
                     foreach ($property->getAttributes() as $attribute) {
                         $instance = $attribute->newInstance();
-                        if ($instance instanceof ElementType && is_a($instance->type, BackedEnum::class, true)) {
+                        if ($instance instanceof ElementType) {
                             foreach ($data[$key] as &$value) {
-                                $value = $instance->type::from($value->value);
+                                $value = self::processValue($instance->type, $value);
                             }
                             unset($value);
                         }
                     }
                 }
                 /** @noinspection PhpVariableVariableInspection */
-                /** @noinspection PhpUndefinedMethodInspection */
-                $this->$key = $is_backed_enum ? $type->getName()::from($data[$key]->value) : $data[$key];
+                $this->$key = self::processValue($type->getName(), $data[$key]);
             }
         }
+    }
+
+    private static function processValue(string $type, mixed $value) : mixed {
+        if (is_a($type, BackedEnum::class, true)) {
+            return $type::tryFrom($value->value);
+        }
+        if (is_a($type, DateTimeInterface::class, true)) {
+            if (!$value instanceof UTCDateTime) {
+                throw new UnexpectedValueException('Only BSON UTCDateTime can be loaded into DateTimeInterface');
+            }
+            return $type::createFromInterface($value->toDateTime());
+        }
+        return $value;
     }
 }

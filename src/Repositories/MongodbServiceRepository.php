@@ -8,12 +8,15 @@ use Miklcct\NationalRailJourneyPlanner\Enums\BankHoliday;
 use Miklcct\NationalRailJourneyPlanner\Enums\CallType;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
 use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
+use Miklcct\NationalRailJourneyPlanner\Models\CallCacheGroup;
+use Miklcct\NationalRailJourneyPlanner\Models\CallCacheItem;
 use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
 use Miklcct\NationalRailJourneyPlanner\Models\Service;
-use Miklcct\NationalRailJourneyPlanner\Models\ServiceCancellation;
+use Miklcct\NationalRailJourneyPlanner\Models\ServiceCall;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
 use MongoDB\BSON\Regex;
+use MongoDB\BSON\UTCDateTime;
 use MongoDB\Collection;
 use stdClass;
 use function array_chunk;
@@ -26,6 +29,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
     public function __construct(
         private readonly Collection $servicesCollection
         , private readonly Collection $associationsCollection
+        , private readonly ?Collection $callCacheCollection
         , bool $permanentOnly = false
     ) {
         parent::__construct($permanentOnly);
@@ -149,6 +153,19 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         CallType $call_type,
         TimeType $time_type = TimeType::PUBLIC
     ) : array {
+        $cache_entry = $this->callCacheCollection?->findOne(
+            [
+                'crs' => $crs,
+                'from' => new UTCDateTime($from),
+                'to' => new UTCDateTime($to),
+                'callType.value' => $call_type->value,
+                'timeType.value' => $time_type->value,
+            ]
+        );
+        if ($cache_entry !== null) {
+            return $this->getServiceCallsFromCache($cache_entry);
+        }
+
         $from_date = Date::fromDateTimeInterface($from)->addDays(-1);
         $to_date = Date::fromDateTimeInterface($to);
         // get skeleton services - incomplete objects!
@@ -175,7 +192,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
 
         foreach ($query_results as $entry) {
             for ($date = $from_date; $date->compare($to_date) <= 0; $date = $date->addDays(1)) {
-                $skeleton_service = new ServiceCancellation(
+                $skeleton_service = new ServiceEntry(
                     $entry->uid
                     , $entry->period
                     , BankHoliday::from($entry->excludeBankHoliday->value)
@@ -237,6 +254,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         }
         unset($possibility);
 
+        /** @var ServiceCall[] */
         $results = array_merge(
             ...array_map(
                 static fn(DatedService $possibility) =>
@@ -246,6 +264,76 @@ class MongodbServiceRepository extends AbstractServiceRepository {
                 , $possibilities
             )
         );
-        return $this->sortCallResults($results, $call_type, $time_type);
+        $results = $this->sortCallResults($results, $call_type, $time_type);
+        if ($this->callCacheCollection !== null) {
+            $cache_items = array_map(
+                static function (ServiceCall $service_call) use ($call_type, $time_type) : CallCacheItem {
+                    $service = $service_call->datedService->service;
+                    assert($service instanceof Service);
+                    $time = $service_call->call->getTime($call_type, $time_type);
+                    assert($time !== null);
+                    return new CallCacheItem(
+                        $service_call->datedService->date->toDateTimeImmutable(
+                            $time
+                        )
+                        , new ServiceCall(
+                            new DatedService(
+                                new ServiceEntry(
+                                    $service->uid
+                                    , $service->period
+                                    , $service->excludeBankHoliday
+                                    , $service->shortTermPlanning
+                                )
+                                , $service_call->datedService->date
+                            )
+                            , $service_call->call
+                        )
+                        , $service->getServicePropertyAtTime($time)
+                    );
+                }
+                , $results
+            );
+            $cache_document = new CallCacheGroup($crs, $from, $to, $call_type, $time_type, $cache_items);
+            $this->callCacheCollection->insertOne($cache_document);
+        }
+        return $results;
+    }
+
+    /** @return ServiceCall[] */
+    private function getServiceCallsFromCache(CallCacheGroup $group) : array {
+        if ($group->calls === []) {
+            return [];
+        }
+        $predicate = [
+            '$or' => array_map(
+                static fn(CallCacheItem $item) =>
+                    [
+                        'uid' => $item->serviceCall->datedService->service->uid,
+                        'period' => $item->serviceCall->datedService->service->period,
+                        'shortTermPlanning.value' => $item->serviceCall->datedService->service->shortTermPlanning->value,
+                    ]
+                , $group->calls
+            )
+        ];
+        $services = $this->servicesCollection->find($predicate)->toArray();
+        return array_map(
+            static function (CallCacheItem $cache_item) use ($services) : ServiceCall {
+                $skeleton_service = $cache_item->serviceCall->datedService->service;
+                $real_service = array_values(
+                    array_filter(
+                        $services
+                        , static fn(ServiceEntry $service) =>
+                            $service->uid === $skeleton_service->uid
+                            && $service->period == $skeleton_service->period
+                            && $service->shortTermPlanning === $skeleton_service->shortTermPlanning
+                    )
+                );
+                return new ServiceCall(
+                    new DatedService($real_service[0], $cache_item->serviceCall->datedService->date)
+                    , $cache_item->serviceCall->call
+                );
+            }
+            , $group->calls
+        );
     }
 }

@@ -7,7 +7,7 @@ use Miklcct\NationalRailJourneyPlanner\Enums\BankHoliday;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
 use MongoDB\BSON\Persistable;
 
-abstract class ServiceEntry implements Persistable {
+class ServiceEntry implements Persistable {
     use BsonSerializeTrait;
     use OverlayTrait;
 
