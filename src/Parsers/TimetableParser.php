@@ -395,7 +395,7 @@ class TimetableParser {
         );
         return new Location(
             tiploc: $columns[1]
-            , name: $columns[6]
+            , name: $columns[5]
             , crsCode: $columns[8] === '' ? null : $columns[8]
         );
     }
