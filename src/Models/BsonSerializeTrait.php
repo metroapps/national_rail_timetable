@@ -8,6 +8,7 @@ use DateTimeInterface;
 use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
 use MongoDB\BSON\UTCDateTime;
 use ReflectionClass;
+use stdClass;
 use UnexpectedValueException;
 use function is_a;
 use function method_exists;
@@ -32,19 +33,23 @@ trait BsonSerializeTrait {
             if ($property->isPublic() && !$property->isStatic() && $declaring_class_name === self::class) {
                 $key = $property->name;
                 $type = $property->getType();
+                $value = $data[$key];
                 if ($type->getName() === 'array') {
+                    if ($value instanceof stdClass) {
+                        $value = (array)$value;
+                    }
                     foreach ($property->getAttributes() as $attribute) {
                         $instance = $attribute->newInstance();
                         if ($instance instanceof ElementType) {
-                            foreach ($data[$key] as &$value) {
-                                $value = self::processValue($instance->type, $value);
+                            foreach ($value as &$element) {
+                                $element = self::processValue($instance->type, $element);
                             }
-                            unset($value);
+                            unset($element);
                         }
                     }
                 }
                 /** @noinspection PhpVariableVariableInspection */
-                $this->$key = self::processValue($type->getName(), $data[$key]);
+                $this->$key = self::processValue($type->getName(), $value);
             }
         }
     }

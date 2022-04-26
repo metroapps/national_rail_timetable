@@ -9,7 +9,6 @@ use Miklcct\NationalRailJourneyPlanner\Enums\Power;
 use Miklcct\NationalRailJourneyPlanner\Enums\Reservation;
 use Miklcct\NationalRailJourneyPlanner\Enums\TrainCategory;
 use MongoDB\BSON\Persistable;
-use stdClass;
 use function substr;
 
 class ServiceProperty implements Persistable {
@@ -35,26 +34,7 @@ class ServiceProperty implements Persistable {
         $this->caterings = $caterings;
     }
 
-    public function bsonUnserialize(array $data) : void {
-        $this->__construct(
-            TrainCategory::from($data['trainCategory']->value)
-            , $data['identity']
-            , $data['headcode']
-            , $data['portionId']
-            , Power::from($data['power']->value)
-            , $data['timingLoad']
-            , $data['speedMph']
-            , $data['doo']
-            , (array)$data['seatingClasses']
-            , (array)$data['sleeperClasses']
-            , Reservation::from($data['reservation']->value)
-            , array_map(
-                static fn(stdClass $item) => Catering::from($item->value)
-                , $data['caterings']
-            )
-            , $data['rsid']
-        );
-    }
+
 
     public function getPortions() : ?array {
         $result = [];

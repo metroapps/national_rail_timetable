@@ -9,7 +9,11 @@ use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
 use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\CallingPoint;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\DestinationPoint;
+use Miklcct\NationalRailJourneyPlanner\Models\Points\HasArrival;
+use Miklcct\NationalRailJourneyPlanner\Models\Points\HasDeparture;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\OriginPoint;
+use Miklcct\NationalRailJourneyPlanner\Models\Points\PassingPoint;
+use Miklcct\NationalRailJourneyPlanner\Models\Points\TimingPoint;
 use UnexpectedValueException;
 use function array_filter;
 use function array_merge;
@@ -26,6 +30,55 @@ class FullService extends DatedService {
         , array $dividesJoinsEnRoute
         , public ?DatedAssociation $joinTo
     ) {
+        usort(
+            $dividesJoinsEnRoute
+            , function (DatedAssociation $a, DatedAssociation $b) {
+                assert($a->associationEntry instanceof Association);
+                assert($b->associationEntry instanceof Association);
+                /** @var TimingPoint[] $points */
+                $points = array_map(
+                    $this->service->getAssociationPoint(...)
+                    , [$a->associationEntry, $b->associationEntry]
+                );
+                $times = array_map(
+                    static fn(TimingPoint $point) =>
+                        $point instanceof HasDeparture ? $point->getPublicOrWorkingDeparture() : (
+                            $point instanceof HasArrival ? $point->getPublicOrWorkingArrival() : (
+                                $point instanceof PassingPoint ? $point->pass : assert(false)
+                            )
+                        )
+                    , $points
+                );
+                if ($times[0]->toHalfMinutes() === $times[1]->toHalfMinutes()) {
+                    // the associations are at the same call
+                    if ($a->associationEntry->category === $b->associationEntry->category) {
+                        /** @var DateTimeImmutable[] $timestamps */
+                        $timestamps = array_map(
+                            static function (DatedAssociation $dated_association) {
+                                assert($dated_association->associationEntry instanceof Association);
+                                assert($dated_association->secondaryService instanceof FullService);
+                                return $dated_association->secondaryService->date->toDateTimeImmutable(
+                                    match ($dated_association->associationEntry->category) {
+                                    AssociationCategory::DIVIDE =>
+                                        $dated_association->secondaryService->service->getOrigin()->getPublicOrWorkingDeparture(),
+                                    AssociationCategory::JOIN =>
+                                        $dated_association->secondaryService->service->getDestination()->getPublicOrWorkingArrival()
+
+                                    }
+                                );
+                            }
+                            , [$a, $b]
+                        );
+                        // multiple joins or divides happening together - order by departure / arrival time
+                        // of the child portions
+                        return $timestamps[0] <=> $timestamps[1];
+                    }
+                    // one is join and one is divide - order divide before join
+                    return $a->associationEntry->category->name <=> $b->associationEntry->category->name;
+                }
+                return $times[0]->toHalfMinutes() <=> $times[1]->toHalfMinutes();
+            }
+        );
         $this->dividesJoinsEnRoute = $dividesJoinsEnRoute;
         parent::__construct($service, $date);
     }
@@ -34,11 +87,14 @@ class FullService extends DatedService {
     public array $dividesJoinsEnRoute;
 
     /**
-     * @return OriginPoint[]
+     * Returns the origins of this service, listed in portion order with
+     * key defining which train the origin comes from
+     *
+     * @return array<string, OriginPoint>
      */
     public function getOrigins(?Time $time = null) : array {
         if ($this->divideFrom === null) {
-            $base = $this->service instanceof Service ? [$this->service->getOrigin()] : [];
+            $base = $this->service instanceof Service ? [$this->service->uid => $this->service->getOrigin()] : [];
             $portions = [];
         } else {
             $base = [];
@@ -83,11 +139,14 @@ class FullService extends DatedService {
     }
 
     /**
-     * @return DestinationPoint[]
+     * Returns the destination of this service, listed in portion order with
+     * key defining which train the destination comes from
+     *
+     * @return array<string, DestinationPoint>
      */
     public function getDestinations(?Time $time = null) : array {
         if ($this->joinTo === null) {
-            $base = $this->service instanceof Service ? [$this->service->getDestination()] : [];
+            $base = $this->service instanceof Service ? [$this->service->uid => $this->service->getDestination()] : [];
             $portions = [];
         } else {
             $base = [];
