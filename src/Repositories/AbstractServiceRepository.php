@@ -14,6 +14,7 @@ use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedAssociation;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
 use Miklcct\NationalRailJourneyPlanner\Models\FullService;
+use Miklcct\NationalRailJourneyPlanner\Models\Points\CallingPoint;
 use Miklcct\NationalRailJourneyPlanner\Models\Service;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCall;
 use function count;
@@ -41,24 +42,39 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
         );
         $divide_from = array_filter(
             $dated_associations
-            , static fn(DatedAssociation $dated_association) =>
-                $dated_service->service->uid === $dated_association->associationEntry->secondaryUid
-                && $dated_association->associationEntry instanceof Association
-                && $dated_association->associationEntry->category === AssociationCategory::DIVIDE
+            , static function (DatedAssociation $dated_association) use ($dated_service) {
+                $primary_service = $dated_association->primaryService->service;
+                return $dated_service->service->uid === $dated_association->associationEntry->secondaryUid
+                    && $dated_association->associationEntry instanceof Association
+                    && $dated_association->associationEntry->category === AssociationCategory::DIVIDE
+                    // the following lines are to prevent some ScotRail services "dividing" at its terminus
+                    && $primary_service instanceof Service
+                    && $primary_service->getAssociationPoint($dated_association->associationEntry) instanceof CallingPoint;
+            }
         )[0] ?? null;
         $join_to = array_filter(
             $dated_associations
-            , static fn(DatedAssociation $dated_association) =>
-                $dated_service->service->uid === $dated_association->associationEntry->secondaryUid
-                && $dated_association->associationEntry instanceof Association
-                && $dated_association->associationEntry->category === AssociationCategory::JOIN
+            , static function (DatedAssociation $dated_association) use ($dated_service) {
+                $primary_service = $dated_association->primaryService->service;
+                return $dated_service->service->uid === $dated_association->associationEntry->secondaryUid
+                    && $dated_association->associationEntry instanceof Association
+                    && $dated_association->associationEntry->category === AssociationCategory::JOIN
+                    // the following lines are to prevent some ScotRail services "joining" at its terminus
+                    && $primary_service instanceof Service
+                    && $primary_service->getAssociationPoint($dated_association->associationEntry) instanceof CallingPoint;
+            }
         )[0] ?? null;
         $divides_and_joins = array_filter(
             $dated_associations
-            , static fn(DatedAssociation $dated_association) =>
-                $dated_service->service->uid === $dated_association->associationEntry->primaryUid
-                && $dated_association->associationEntry instanceof Association
-                && $dated_association->associationEntry->category !== AssociationCategory::NEXT
+            , static function (DatedAssociation $dated_association) use ($dated_service) {
+                $primary_service = $dated_service->service;
+                return $primary_service->uid === $dated_association->associationEntry->primaryUid
+                    && $dated_association->associationEntry instanceof Association
+                    && $dated_association->associationEntry->category !== AssociationCategory::NEXT
+                    // the following lines are to prevent some ScotRail services "dividing" or "joining" at its terminus
+                    && $primary_service instanceof Service
+                    && $primary_service->getAssociationPoint($dated_association->associationEntry) instanceof CallingPoint;
+            }
         );
 
         /** @var array<DatedAssociation|null> $dated_associations */
