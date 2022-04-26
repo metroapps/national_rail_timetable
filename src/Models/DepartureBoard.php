@@ -27,7 +27,7 @@ class DepartureBoard implements Persistable {
         $this->calls = $calls;
     }
 
-    /** @var ServiceCallWithDestination[] */
-    #[ElementType(ServiceCallWithDestination::class)]
+    /** @var ServiceCallWithDestinationAndCalls[] */
+    #[ElementType(ServiceCallWithDestinationAndCalls::class)]
     public readonly array $calls;
 }

@@ -8,8 +8,7 @@ use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
 use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\TimingPoint;
 
-// This class can be used to identify which portion(s) of the train will call
-class ServiceCallWithDestination extends ServiceCall {
+class ServiceCallWithDestinationAndCalls extends ServiceCallWithDestination {
     use BsonSerializeTrait;
 
     public function __construct(
@@ -21,16 +20,18 @@ class ServiceCallWithDestination extends ServiceCall {
         , ServiceProperty $serviceProperty
         , array $origins
         , array $destinations
+        , array $precedingCalls
+        , array $subsequentCalls
     ) {
-        parent::__construct($timestamp, $timeType, $uid, $date, $call, $serviceProperty);
-        $this->origins = $origins;
-        $this->destinations = $destinations;
+        parent::__construct($timestamp, $timeType, $uid, $date, $call, $serviceProperty, $origins, $destinations);
+        $this->precedingCalls = $precedingCalls;
+        $this->subsequentCalls = $subsequentCalls;
     }
 
-    /** @var Location[] */
-    #[ElementType(Location::class)]
-    public readonly array $origins;
-    /** @var Location[] */
-    #[ElementType(Location::class)]
-    public readonly array $destinations;
+    /** @var self[] */
+    #[ElementType(self::class)]
+    public array $precedingCalls;
+    /** @var self[] */
+    #[ElementType(self::class)]
+    public array $subsequentCalls;
 }

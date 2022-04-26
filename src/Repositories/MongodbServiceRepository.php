@@ -10,11 +10,8 @@ use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
 use Miklcct\NationalRailJourneyPlanner\Models\DepartureBoard;
-use Miklcct\NationalRailJourneyPlanner\Models\DepartureBoardWithFullServices;
-use Miklcct\NationalRailJourneyPlanner\Models\FullService;
 use Miklcct\NationalRailJourneyPlanner\Models\Service;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCall;
-use Miklcct\NationalRailJourneyPlanner\Models\ServiceCallWithDestination;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
 use MongoDB\BSON\Regex;
 use MongoDB\BSON\UTCDateTime;
@@ -30,7 +27,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
     public function __construct(
         private readonly Collection $servicesCollection
         , private readonly Collection $associationsCollection
-        , private readonly ?Collection $departureBoardsCollection
+        , private readonly ?Collection $departureBoardsCollection = null
         , bool $permanentOnly = false
     ) {
         parent::__construct($permanentOnly);
@@ -241,112 +238,26 @@ class MongodbServiceRepository extends AbstractServiceRepository {
             ...array_map(
                 static fn(DatedService $possibility) =>
                     $possibility->service instanceof Service
-                        ? $possibility->getCallsAt($crs, $time_type, $from, $to)
+                        ? $possibility->getCalls($time_type, $crs, $from, $to)
                         : []
                 , $possibilities
             )
         );
         $results = $this->sortCallResults($results);
         foreach ($results as &$result) {
-            if (!$result instanceof ServiceCallWithDestination) {
-                $dated_service = $result->datedService instanceof FullService
-                    ? $result->datedService
-                    : $this->getFullService($result->datedService);
-                $result = new ServiceCallWithDestination(
-                    $result->timestamp
-                    , $result->timeType
-                    , $dated_service
-                    , $result->call
-                    , $result->serviceProperty
-                    , $dated_service->getOrigins($result->call->getTime($result->timeType))
-                    , $dated_service->getDestinations($result->call->getTime($result->timeType))
-                );
+            $dated_service = $this->getFullService($this->getService($result->uid, $result->date));
+            $full_results = $dated_service->getCalls($time_type, $crs, $from, $to, true);
+            foreach ($full_results as $full_result) {
+                if ($result->timestamp == $full_result->timestamp) {
+                    $result = $full_result;
+                }
             }
         }
         unset($result);
+        $board = new DepartureBoard($crs, $from, $to, $time_type, $results);
         if ($this->departureBoardsCollection !== null) {
-            $cache_items = array_map(
-                static function (ServiceCallWithDestination $service_call) use ($time_type) : ServiceCallWithDestination {
-                    $service = $service_call->datedService->service;
-                    assert($service instanceof Service);
-                    $time = $service_call->call->getTime($time_type);
-                    assert($time !== null);
-                    return new ServiceCallWithDestination(
-                        $service_call->timestamp
-                        , $service_call->timeType
-                        , new DatedService(
-                            new ServiceEntry(
-                                $service->uid
-                                , $service->period
-                                , $service->excludeBankHoliday
-                                , $service->shortTermPlanning
-                            )
-                            , $service_call->datedService->date
-                        )
-                        , $service_call->call
-                        , $service_call->serviceProperty
-                        , $service_call->origins
-                        , $service_call->destinations
-                    );
-                }
-                , $results
-            );
-            $cache_document = new DepartureBoard($crs, $from, $to, $time_type, $cache_items);
-            $this->departureBoardsCollection->insertOne($cache_document);
+            $this->departureBoardsCollection->insertOne($board);
         }
-        return new DepartureBoardWithFullServices($crs, $from, $to, $time_type, $results);
-    }
-
-    public function getDepartureBoardWithFullServices(DepartureBoard $board) : DepartureBoardWithFullServices {
-        if ($board->calls === []) {
-            return new DepartureBoardWithFullServices($board->crs, $board->from, $board->to, $board->timeType, []);
-        }
-        $predicate = [
-            '$or' => array_map(
-                static fn(ServiceCall $item) =>
-                    [
-                        'uid' => $item->datedService->service->uid,
-                        'period' => $item->datedService->service->period,
-                        'shortTermPlanning.value' => $item->datedService->service->shortTermPlanning->value,
-                    ]
-                , $board->calls
-            )
-        ];
-        $services = $this->servicesCollection->find($predicate)->toArray();
-        return new DepartureBoardWithFullServices(
-            $board->crs
-            , $board->from
-            , $board->to
-            , $board->timeType
-            , array_map(
-                function (ServiceCall $cache_item) use ($services) : ServiceCall {
-                    $skeleton_service = $cache_item->datedService->service;
-                    $real_service = $this->getFullService(
-                        new DatedService(
-                            array_values(
-                                array_filter(
-                                    $services
-                                    , static fn(ServiceEntry $service) =>
-                                        $service->uid === $skeleton_service->uid
-                                        && $service->period == $skeleton_service->period
-                                        && $service->shortTermPlanning === $skeleton_service->shortTermPlanning
-                                )
-                            )[0]
-                            , $cache_item->datedService->date
-                        )
-                    );
-                    return new ServiceCallWithDestination(
-                        $cache_item->timestamp
-                        , $cache_item->timeType
-                        , $real_service
-                        , $cache_item->call
-                        , $cache_item->serviceProperty
-                        , $cache_item->origins
-                        , $cache_item->destinations
-                    );
-                }
-                , $board->calls
-            )
-        );
+        return $board;
     }
 }

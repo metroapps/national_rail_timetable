@@ -14,7 +14,8 @@ class ServiceCall implements Persistable {
     public function __construct(
         public readonly DateTimeImmutable $timestamp
         , public readonly TimeType $timeType
-        , public readonly DatedService $datedService
+        , public readonly string $uid
+        , public readonly Date $date
         , public readonly TimingPoint $call
         , public readonly ServiceProperty $serviceProperty
     ) {}

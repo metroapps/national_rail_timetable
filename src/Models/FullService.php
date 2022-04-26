@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
+use DateInterval;
 use DateTimeImmutable;
 use LogicException;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
@@ -16,7 +17,9 @@ use Miklcct\NationalRailJourneyPlanner\Models\Points\PassingPoint;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\TimingPoint;
 use UnexpectedValueException;
 use function array_filter;
+use function array_map;
 use function array_merge;
+use function array_values;
 use function assert;
 
 /**
@@ -193,25 +196,62 @@ class FullService extends DatedService {
     /**
      * @return ServiceCallWithDestination[]
      */
-    public function getCallsAt(
-        string $crs
-        , TimeType $time_type
+    public function getCalls(
+        TimeType $time_type
+        , string $crs = null
         , DateTimeImmutable $from = null
         , DateTimeImmutable $to = null
+        , bool $with_subsequent_calls = false
     ) : array {
-        $this_portion = parent::getCallsAt($crs, $time_type, $from, $to);
+        $this_portion = parent::getCalls($time_type, $crs, $from, $to);
         foreach ($this_portion as &$service_call) {
-            $origins = $this->getOrigins($service_call->call->getTime($service_call->timeType));
-            $destinations = $this->getDestinations($service_call->call->getTime($service_call->timeType));
-            $service_call = new ServiceCallWithDestination(
-                $service_call->timestamp
-                , $service_call->timeType
-                , $service_call->datedService
-                , $service_call->call
-                , $service_call->serviceProperty
-                , $origins
-                , $destinations
-            );
+            $time = $service_call->call->getTime($service_call->timeType);
+            $origins = $this->getOrigins($time);
+            $destinations = $this->getDestinations($time);
+            if ($with_subsequent_calls) {
+                $preceding_calls = $this->getCalls(
+                    match ($service_call->timeType) {
+                        TimeType::WORKING_ARRIVAL => TimeType::WORKING_DEPARTURE,
+                        TimeType::PUBLIC_ARRIVAL => TimeType::PUBLIC_DEPARTURE,
+                        default => $service_call->timeType
+                    }
+                    , null
+                    , null
+                    , $service_call->timestamp
+                );
+                $subsequent_calls = $this->getCalls(
+                    match ($service_call->timeType) {
+                        TimeType::WORKING_DEPARTURE => TimeType::WORKING_ARRIVAL,
+                        TimeType::PUBLIC_DEPARTURE => TimeType::PUBLIC_ARRIVAL,
+                        default => $service_call->timeType
+                    }
+                    , null
+                    , $service_call->timestamp->add(new DateInterval('PT1S'))
+                );
+                $service_call = new ServiceCallWithDestinationAndCalls(
+                    $service_call->timestamp
+                    , $service_call->timeType
+                    , $service_call->uid
+                    , $service_call->date
+                    , $service_call->call
+                    , $service_call->serviceProperty
+                    , $origins
+                    , $destinations
+                    , $preceding_calls
+                    , $subsequent_calls
+                );
+            } else {
+                $service_call = new ServiceCallWithDestination(
+                    $service_call->timestamp
+                    , $service_call->timeType
+                    , $service_call->uid
+                    , $service_call->date
+                    , $service_call->call
+                    , $service_call->serviceProperty
+                    , $origins
+                    , $destinations
+                );
+            }
         }
         unset($service_call);
         if ($this->joinTo === null) {
@@ -220,17 +260,18 @@ class FullService extends DatedService {
             $association = $this->joinTo->associationEntry;
             assert($association instanceof Association);
             $primary_service = $this->joinTo->primaryService;
-            assert($primary_service->service instanceof Service);
+            assert($primary_service instanceof FullService);
             $association_point = $primary_service->service->getAssociationPoint($association);
             assert($association_point instanceof CallingPoint);
             $association_timestamp = $primary_service->date->toDateTimeImmutable(
                 $association_point->getPublicOrWorkingDeparture()
             );
-            $join_portion = $primary_service->getCallsAt(
-                $crs
-                , $time_type
+            $join_portion = $primary_service->getCalls(
+                $time_type
+                , $crs
                 , $from !== null && $from > $association_timestamp ? $from : $association_timestamp
                 , $to
+                , $with_subsequent_calls
             );
         }
         if ($this->divideFrom === null) {
@@ -239,26 +280,27 @@ class FullService extends DatedService {
             $association = $this->divideFrom->associationEntry;
             assert($association instanceof Association);
             $primary_service = $this->divideFrom->primaryService;
-            assert($primary_service->service instanceof Service);
+            assert($primary_service instanceof FullService);
             $association_point = $primary_service->service->getAssociationPoint($association);
             assert($association_point instanceof CallingPoint);
             $association_timestamp = $primary_service->date->toDateTimeImmutable(
                 $association_point->getPublicOrWorkingArrival()
             );
-            $divide_portion = $primary_service->getCallsAt(
-                $crs
-                , $time_type
+            $divide_portion = $primary_service->getCalls(
+                $time_type
+                , $crs
                 , $from
                 , $to !== null && $to < $association_timestamp ? $to : $association_timestamp
+                , $with_subsequent_calls
             );
         }
         $other_portions = array_merge(
             ...array_map(
-                function (DatedAssociation $dated_association) use ($time_type, $crs, $to, $from) {
+                function (DatedAssociation $dated_association) use ($with_subsequent_calls, $time_type, $crs, $to, $from) {
                     $association = $dated_association->associationEntry;
                     assert($association instanceof Association);
                     $secondary_service = $dated_association->secondaryService;
-                    assert($secondary_service->service instanceof Service);
+                    assert($secondary_service instanceof FullService);
                     $association_point = $this->service->getAssociationPoint($association);
                     assert($association_point instanceof CallingPoint);
                     if ($association->category === AssociationCategory::DIVIDE) {
@@ -267,13 +309,14 @@ class FullService extends DatedService {
                         );
                         return $divide_timestamp < $from
                             ? []
-                            : $secondary_service->getCallsAt(
-                                $crs
-                                , $time_type
+                            : $secondary_service->getCalls(
+                                $time_type
+                                , $crs
                                 , $secondary_service->date->toDateTimeImmutable(
                                     $secondary_service->service->getOrigin()->getPublicOrWorkingDeparture()
                                 )
                                 , $to
+                                , $with_subsequent_calls
                             );
                     }
                     if ($association->category === AssociationCategory::JOIN) {
@@ -282,13 +325,14 @@ class FullService extends DatedService {
                         );
                         return $join_timestamp > $to
                             ? []
-                            : $secondary_service->getCallsAt(
-                                $crs
-                                , $time_type
+                            : $secondary_service->getCalls(
+                                $time_type
+                                , $crs
                                 , $from
                                 , $secondary_service->date->toDateTimeImmutable(
                                     $secondary_service->service->getDestination()->getPublicOrWorkingArrival()
                                 )
+                                , $with_subsequent_calls
                             );
                     }
                     throw new UnexpectedValueException('Unknown association type');
@@ -296,6 +340,12 @@ class FullService extends DatedService {
                 , $this->dividesJoinsEnRoute
             )
         );
-        return array_merge($divide_portion, $this_portion, $other_portions, $join_portion);
+        $result = array_merge($divide_portion, $this_portion, $join_portion, $other_portions);
+        usort(
+            $result
+            , static fn(ServiceCallWithDestination $a, ServiceCallWithDestination $b)
+                => $a->timestamp <=> $b->timestamp
+        );
+        return $result;
     }
 }

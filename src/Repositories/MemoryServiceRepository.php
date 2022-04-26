@@ -8,7 +8,7 @@ use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
 use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
-use Miklcct\NationalRailJourneyPlanner\Models\DepartureBoardWithFullServices;
+use Miklcct\NationalRailJourneyPlanner\Models\DepartureBoard;
 use Miklcct\NationalRailJourneyPlanner\Models\Service;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCallWithDestination;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
@@ -62,7 +62,7 @@ class MemoryServiceRepository extends AbstractServiceRepository {
         DateTimeImmutable $from,
         DateTimeImmutable $to,
         TimeType $time_type
-    ) : DepartureBoardWithFullServices {
+    ) : DepartureBoard {
         $results = [];
         foreach (array_keys($this->services) as $uid) {
             $from_date = Date::fromDateTimeInterface($from)->addDays(-1);
@@ -74,16 +74,16 @@ class MemoryServiceRepository extends AbstractServiceRepository {
                     $full_service = $this->getFullService($dated_service);
                     $results[] = array_values(
                         array_filter(
-                            $full_service->getCallsAt($crs, $time_type, $from, $to)
+                            $full_service->getCalls($time_type, $crs, $from, $to, true)
                             // prevent repeated calls from different portion
                             , static fn(ServiceCallWithDestination $result) =>
-                                $result->datedService->service->uid === $full_service->service->uid
+                                $result->uid === $full_service->service->uid
                         )
                     );
                 }
             }
         }
-        return new DepartureBoardWithFullServices(
+        return new DepartureBoard(
             $crs
             , $from
             , $to
