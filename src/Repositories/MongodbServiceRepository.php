@@ -14,7 +14,6 @@ use Miklcct\NationalRailJourneyPlanner\Models\Service;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCall;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
 use MongoDB\BSON\Regex;
-use MongoDB\BSON\UTCDateTime;
 use MongoDB\Collection;
 use stdClass;
 use function array_chunk;
@@ -27,7 +26,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
     public function __construct(
         private readonly Collection $servicesCollection
         , private readonly Collection $associationsCollection
-        , private readonly ?Collection $departureBoardsCollection = null
+        , private readonly ?DepartureBoardsCacheInterface $departureBoardsCache = null
         , bool $permanentOnly = false
     ) {
         parent::__construct($permanentOnly);
@@ -130,16 +129,8 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         DateTimeImmutable $to,
         TimeType $time_type
     ) : DepartureBoard {
-        $cache_entry = $this->departureBoardsCollection?->findOne(
-            [
-                'crs' => $crs,
-                'from' => new UTCDateTime($from),
-                'to' => new UTCDateTime($to),
-                'timeType.value' => $time_type->value,
-            ]
-        );
+        $cache_entry = $this->departureBoardsCache?->getDepartureBoard($crs, $from, $to, $time_type);
         if ($cache_entry !== null) {
-            assert($cache_entry instanceof DepartureBoard);
             return $cache_entry;
         }
 
@@ -255,9 +246,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         }
         unset($result);
         $board = new DepartureBoard($crs, $from, $to, $time_type, $results);
-        if ($this->departureBoardsCollection !== null) {
-            $this->departureBoardsCollection->insertOne($board);
-        }
+        $this->departureBoardsCache?->putDepartureBoard($board);
         return $board;
     }
 }
