@@ -28,10 +28,10 @@ class ServiceCallWithDestinationAndCalls extends ServiceCallWithDestination {
         $this->subsequentCalls = $subsequentCalls;
     }
 
-    /** @var self[] */
-    #[ElementType(self::class)]
+    /** @var ServiceCallWithDestination[] */
+    #[ElementType(ServiceCallWithDestination::class)]
     public array $precedingCalls;
-    /** @var self[] */
-    #[ElementType(self::class)]
+    /** @var ServiceCallWithDestination[] */
+    #[ElementType(ServiceCallWithDestination::class)]
     public array $subsequentCalls;
 }
