@@ -19,8 +19,8 @@ class PassingPoint extends IntermediatePoint {
         , string $line
         , public readonly Time $pass
         , int $allowanceHalfMinutes
-        , array $activities
-        , ?ServiceProperty $servicePropertyChange
+        , array $activity
+        , ?ServiceProperty $serviceProperty
     ) {
         parent::__construct(
             $location
@@ -29,8 +29,8 @@ class PassingPoint extends IntermediatePoint {
             , $path
             , $line
             , $allowanceHalfMinutes
-            , $activities
-            , $servicePropertyChange
+            , $activity
+            , $serviceProperty
         );
     }
 

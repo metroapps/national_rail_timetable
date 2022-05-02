@@ -62,8 +62,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
             [
                 ['key' => ['uid' => 1]],
                 ['key' => ['points.location.crsCode' => 1, 'period.from' => 1, 'period.to' => 1]],
-                ['key' => ['serviceProperty.rsid' => 1]],
-                ['key' => ['points.servicePropertyChange.rsid' => 1]],
+                ['key' => ['points.serviceProperty.rsid' => 1]],
             ]
         );
         $this->associationsCollection->createIndexes(
@@ -109,8 +108,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
                             'period.from' => ['$lte' => $date],
                             'period.to' => ['$gte' => $date],
                             '$or' => [
-                                ['serviceProperty.rsid' => $predicate],
-                                ['points.servicePropertyChange.rsid' => $predicate],
+                                ['points.serviceProperty.rsid' => $predicate],
                             ],
                         ] + ($this->permanentOnly ? ['shortTermPlanning.value' => ShortTermPlanning::PERMANENT->value] : [])
                         , [

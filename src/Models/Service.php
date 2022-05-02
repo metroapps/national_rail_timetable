@@ -23,7 +23,6 @@ class Service extends ServiceEntry {
         , Period $period
         , BankHoliday $excludeBankHoliday
         , public readonly string $toc
-        , public readonly ServiceProperty $serviceProperty
         , array $timingPoints
         , ShortTermPlanning $shortTermPlanning
     ) {
@@ -41,11 +40,11 @@ class Service extends ServiceEntry {
     public readonly array $points;
 
     public function getServicePropertyAtTime(Time $time) : ServiceProperty {
-        $result = $this->serviceProperty;
+        $result = $this->getOrigin()->serviceProperty;
         foreach ($this->points as $point) {
             if (
                 $point instanceof IntermediatePoint
-                && $point->servicePropertyChange !== null
+                && $point->serviceProperty !== null
                 && ($point instanceof PassingPoint
                     ? $point->pass->toHalfMinutes()
                     : ($point instanceof CallingPoint
@@ -54,7 +53,7 @@ class Service extends ServiceEntry {
                     )
                 ) < $time->toHalfMinutes()
             ) {
-                $result = $point->servicePropertyChange;
+                $result = $point->serviceProperty;
             }
         }
         return $result;
@@ -85,14 +84,14 @@ class Service extends ServiceEntry {
     }
 
     public function hasRsid(string $rsid) : bool {
-        $service_property = $this->serviceProperty;
+        $service_property = $this->getOrigin()->serviceProperty;
         if (str_starts_with($service_property->rsid, $rsid)) {
             return true;
         }
         foreach ($this->points as $point) {
             if (
                 $point instanceof IntermediatePoint
-                && str_starts_with($point->servicePropertyChange?->rsid ?? '', $rsid)
+                && str_starts_with($point->serviceProperty?->rsid ?? '', $rsid)
             ) {
                 return true;
             }

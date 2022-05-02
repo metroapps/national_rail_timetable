@@ -18,7 +18,7 @@ abstract class IntermediatePoint extends TimingPoint {
         , public readonly string $line
         , public readonly int $allowanceHalfMinutes
         , array $activity
-        , public readonly ?ServiceProperty $servicePropertyChange
+        , public readonly ?ServiceProperty $serviceProperty
     ) {
         parent::__construct($location, $locationSuffix, $platform, $activity);
     }

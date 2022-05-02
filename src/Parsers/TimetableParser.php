@@ -184,7 +184,7 @@ class TimetableParser {
             assert($line !== false);
             switch (substr($line, 0, 2)) {
             case 'LO':
-                $point = $this->parseOrigin($line);
+                $point = $this->parseOrigin($line, $serviceProperty);
                 $last_call = $point->workingDeparture;
                 $points[] = $point;
                 break;
@@ -214,7 +214,6 @@ class TimetableParser {
             , new Period($from, $to, $weekdays)
             , $excludeBankHoliday
             , $toc
-            , $serviceProperty
             , $points
             , $shortTermPlanning
         );
@@ -236,7 +235,7 @@ class TimetableParser {
         };
     }
 
-    private function parseOrigin(string $line) : OriginPoint {
+    private function parseOrigin(string $line, ServiceProperty $serviceProperty) : OriginPoint {
         $columns = $this->helper->parseLine(
             $line
             , [2, 8, 5, 4, 3, 3, 2, 2, 12, 2]
@@ -252,7 +251,8 @@ class TimetableParser {
             , allowanceHalfMinutes: $this->parseAllowance($columns[6])
                 + $this->parseAllowance($columns[7])
                 + $this->parseAllowance($columns[9])
-            , activities: $this->parseActivities($columns[8])
+            , activity: $this->parseActivities($columns[8])
+            , serviceProperty: $serviceProperty
         );
     }
 
@@ -275,11 +275,11 @@ class TimetableParser {
                 , platform: $columns[7]
                 , line: $columns[8]
                 , path: $columns[9]
-                , activities: $this->parseActivities($columns[10])
+                , activity: $this->parseActivities($columns[10])
                 , allowanceHalfMinutes: $this->parseAllowance($columns[11])
                     + $this->parseAllowance($columns[12])
                     + $this->parseAllowance($columns[13])
-                , servicePropertyChange: $change
+                , serviceProperty: $change
             )
             : new CallingPoint(
                 location: $this->locationRepository->getLocationByTiploc($location_columns[0])
@@ -296,7 +296,7 @@ class TimetableParser {
                 , allowanceHalfMinutes: $this->parseAllowance($columns[11])
                     + $this->parseAllowance($columns[12])
                     + $this->parseAllowance($columns[13])
-                , servicePropertyChange: $change
+                , serviceProperty: $change
             );
     }
 

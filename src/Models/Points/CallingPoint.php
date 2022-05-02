@@ -25,7 +25,7 @@ class CallingPoint extends IntermediatePoint implements HasDeparture, HasArrival
         , ?Time $publicDeparture
         , int $allowanceHalfMinutes
         , array $activities
-        , ? ServiceProperty $servicePropertyChange
+        , ? ServiceProperty $serviceProperty
     ) {
         $this->publicDeparture = $publicDeparture;
         $this->workingDeparture = $workingDeparture;
@@ -39,7 +39,7 @@ class CallingPoint extends IntermediatePoint implements HasDeparture, HasArrival
             , $line
             , $allowanceHalfMinutes
             , $activities
-            , $servicePropertyChange
+            , $serviceProperty
         );
     }
 }

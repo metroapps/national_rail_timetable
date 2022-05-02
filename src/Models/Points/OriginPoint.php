@@ -5,6 +5,7 @@ namespace Miklcct\NationalRailJourneyPlanner\Models\Points;
 
 use Miklcct\NationalRailJourneyPlanner\Models\BsonSerializeTrait;
 use Miklcct\NationalRailJourneyPlanner\Models\Location;
+use Miklcct\NationalRailJourneyPlanner\Models\ServiceProperty;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
 
 class OriginPoint extends TimingPoint implements HasDeparture {
@@ -19,10 +20,11 @@ class OriginPoint extends TimingPoint implements HasDeparture {
         , Time $workingDeparture
         , ?Time $publicDeparture
         , public readonly int $allowanceHalfMinutes
-        , array $activities
+        , array $activity
+        , public readonly ServiceProperty $serviceProperty
     ) {
         $this->publicDeparture = $publicDeparture;
         $this->workingDeparture = $workingDeparture;
-        parent::__construct($location, $locationSuffix, $platform, $activities);
+        parent::__construct($location, $locationSuffix, $platform, $activity);
     }
 }
