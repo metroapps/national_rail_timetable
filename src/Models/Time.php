@@ -29,7 +29,7 @@ class Time implements JsonSerializable, Persistable {
             , ($hhmm[4] ?? '') === 'H'
         );
         return $last_call !== null
-            && $result->toHalfMinutes() < $last_call->toHalfMinutes()
+            && $result->toHalfMinutes() < $last_call->toHalfMinutes() - 120
             ? $result->addDay()
             : $result;
     }
