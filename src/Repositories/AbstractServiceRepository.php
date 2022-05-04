@@ -32,48 +32,65 @@ abstract class AbstractServiceRepository implements ServiceRepositoryInterface {
         , bool $include_non_passenger = false
         , array $recursed_services = []
     ) : FullService {
-        if (!$dated_service->service instanceof Service) {
+        $service = $dated_service->service;
+        if (!$service instanceof Service) {
             throw new InvalidArgumentException("It's not possible to make a full service if it's not a service.");
         }
-        $stub = new FullService($dated_service->service, $dated_service->date, null, [], null);
+        $stub = new FullService($service, $dated_service->date, null, [], null);
         $dated_associations = $this->getAssociations(
             $dated_service
             , $include_non_passenger
         );
         $divide_from = array_filter(
             $dated_associations
-            , static function (DatedAssociation $dated_association) use ($dated_service) {
+            , static function (DatedAssociation $dated_association) use ($service) {
                 $primary_service = $dated_association->primaryService->service;
-                return $dated_service->service->uid === $dated_association->associationEntry->secondaryUid
+                return $service->uid === $dated_association->associationEntry->secondaryUid
                     && $dated_association->associationEntry instanceof Association
                     && $dated_association->associationEntry->category === AssociationCategory::DIVIDE
                     // the following lines are to prevent some ScotRail services "dividing" at its terminus
                     && $primary_service instanceof Service
-                    && $primary_service->getAssociationPoint($dated_association->associationEntry) instanceof CallingPoint;
+                    && $primary_service->getAssociationPoint($dated_association->associationEntry) instanceof CallingPoint
+                    // the following lines are to prevent divided trains not starting from dividing point
+                    // https://www.railforums.co.uk/threads/divided-portion-doesnt-start-from-divide-point-what-does-it-mean.231126/
+                    && $service->getOrigin()->location->tiploc === $dated_association->associationEntry->location->tiploc
+                    && $service->getOrigin()->locationSuffix === $dated_association->associationEntry->secondarySuffix;
             }
         )[0] ?? null;
         $join_to = array_filter(
             $dated_associations
-            , static function (DatedAssociation $dated_association) use ($dated_service) {
+            , static function (DatedAssociation $dated_association) use ($service, $dated_service) {
                 $primary_service = $dated_association->primaryService->service;
                 return $dated_service->service->uid === $dated_association->associationEntry->secondaryUid
                     && $dated_association->associationEntry instanceof Association
                     && $dated_association->associationEntry->category === AssociationCategory::JOIN
                     // the following lines are to prevent some ScotRail services "joining" at its terminus
                     && $primary_service instanceof Service
-                    && $primary_service->getAssociationPoint($dated_association->associationEntry) instanceof CallingPoint;
+                    && $primary_service->getAssociationPoint($dated_association->associationEntry) instanceof CallingPoint
+                    // the following lines are to prevent joining trains not ending at joining point
+                    // https://www.railforums.co.uk/threads/divided-portion-doesnt-start-from-divide-point-what-does-it-mean.231126/
+                    && $service->getDestination()->location->tiploc === $dated_association->associationEntry->location->tiploc
+                    && $service->getDestination()->locationSuffix === $dated_association->associationEntry->secondarySuffix;
             }
         )[0] ?? null;
         $divides_and_joins = array_filter(
             $dated_associations
-            , static function (DatedAssociation $dated_association) use ($dated_service) {
-                $primary_service = $dated_service->service;
-                return $primary_service->uid === $dated_association->associationEntry->primaryUid
+            , static function (DatedAssociation $dated_association) use ($service) {
+                $secondary_service = $dated_association->secondaryService->service;
+                return $service->uid === $dated_association->associationEntry->primaryUid
                     && $dated_association->associationEntry instanceof Association
-                    && $dated_association->associationEntry->category !== AssociationCategory::NEXT
                     // the following lines are to prevent some ScotRail services "dividing" or "joining" at its terminus
-                    && $primary_service instanceof Service
-                    && $primary_service->getAssociationPoint($dated_association->associationEntry) instanceof CallingPoint;
+                    && $service->getAssociationPoint($dated_association->associationEntry) instanceof CallingPoint
+                    // the following lines are to prevent divided / joining trains not starting / ending from the associated point
+                    // https://www.railforums.co.uk/threads/divided-portion-doesnt-start-from-divide-point-what-does-it-mean.231126/
+                    && $secondary_service instanceof Service
+                    && ($secondary_expected_location = match ($dated_association->associationEntry->category) {
+                        AssociationCategory::NEXT => null,
+                        AssociationCategory::DIVIDE => $secondary_service->getOrigin(),
+                        AssociationCategory::JOIN => $secondary_service->getDestination(),
+                    })
+                    && $secondary_expected_location->location->tiploc === $dated_association->associationEntry->location->tiploc
+                    && $secondary_expected_location->locationSuffix === $dated_association->associationEntry->secondarySuffix;
             }
         );
 
