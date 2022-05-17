@@ -10,6 +10,7 @@ enum TrainCategory : string {
     case NONE = '';
     case METRO = 'OL';
     case ORDINARY = 'OO';
+    case CHANNEL_TUNNEL = 'XC';
     case EXPRESS = 'XX';
     case SLEEPER = 'XZ';
     case REPLACEMENT_BUS = 'BR';
