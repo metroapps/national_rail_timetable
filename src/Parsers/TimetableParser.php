@@ -98,7 +98,7 @@ class TimetableParser {
             , $this->parseYymmdd($columns[5])
             , $this->helper->parseWeekdays($columns[6])
         );
-        $location = $this->locationRepository->getLocationByTiploc($columns[9]);
+        $location = $this->getLocation($columns[9]);
         $shortTermPlanning = ShortTermPlanning::from($columns[15]);
         return $shortTermPlanning === ShortTermPlanning::CANCEL
             ? new AssociationCancellation(
@@ -242,7 +242,7 @@ class TimetableParser {
         );
         $location_columns = $this->helper->parseLine($columns[1], [7, 1]);
         return new OriginPoint(
-            location: $this->locationRepository->getLocationByTiploc($location_columns[0])
+            location: $this->getLocation($location_columns[0])
             , locationSuffix: $location_columns[1]
             , workingDeparture: Time::fromHhmm($columns[2])
             , publicDeparture: $this->parsePublicTime($columns[3], null)
@@ -269,7 +269,7 @@ class TimetableParser {
         $location_columns = $this->helper->parseLine($columns[1], [7, 1]);
         return $columns[4] !== ''
             ? new PassingPoint(
-                location: $this->locationRepository->getLocationByTiploc($location_columns[0])
+                location: $this->getLocation($location_columns[0])
                 , locationSuffix: $location_columns[1]
                 , pass: Time::fromHhmm($columns[4], $last_call)
                 , platform: $columns[7]
@@ -282,7 +282,7 @@ class TimetableParser {
                 , serviceProperty: $change
             )
             : new CallingPoint(
-                location: $this->locationRepository->getLocationByTiploc($location_columns[0])
+                location: $this->getLocation($location_columns[0])
                 , locationSuffix: $location_columns[1]
                 , workingArrival: Time::fromHhmm($columns[2], $last_call)
                 , workingDeparture: Time::fromHhmm($columns[3], $last_call)
@@ -308,7 +308,7 @@ class TimetableParser {
         );
         $location_columns = $this->helper->parseLine($columns[1], [7, 1]);
         return new DestinationPoint(
-            location: $this->locationRepository->getLocationByTiploc($location_columns[0])
+            location: $this->getLocation($location_columns[0])
             , locationSuffix: $location_columns[1]
             , workingArrival: Time::fromHhmm($columns[2], $last_call)
             , publicArrival: $this->parsePublicTime($columns[3], $last_call)
@@ -404,5 +404,13 @@ class TimetableParser {
             , crsCode: $columns[8] === '' ? null : $columns[8]
             , stanox: $stanox
         );
+    }
+
+    private function getLocation(string $location) : ?Location {
+        if (substr($location, 3, 4) === '----') {
+            // Z-train
+            return $this->locationRepository->getLocationByCrs(substr($location, 0, 3));
+        }
+        return $this->locationRepository->getLocationByTiploc($location);
     }
 }
