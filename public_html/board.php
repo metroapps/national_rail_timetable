@@ -19,6 +19,7 @@ use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\Location;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCallWithDestination;
 use function Miklcct\ThinPhpApp\Escaper\html;
+use Miklcct\NationalRailJourneyPlanner\Models\Station;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -131,13 +132,22 @@ foreach ($board->calls as $service_call) {
                         implode(
                             ', '
                             , array_map(
-                                fn(ServiceCallWithDestination $service_call) : string => 
-                                    sprintf(
-                                        '<span class="%s">%s (%s)</span>'
-                                        , in_array($service_call->call->location->crsCode, array_map(fn(Location $location) => $location->crsCode, $destinations), true) ? 'destination' : ''
-                                        , html($service_call->call->location->name)
+                                static function(ServiceCallWithDestination $service_call) use ($destinations): string { 
+                                    $station = $service_call->call->location;
+                                    assert($station instanceof Station);
+                                    return sprintf(
+                                        '<a href="%s" class="%s">%s (%s)</a>'
+                                        , $_SERVER['PHP_SELF'] . '?' . http_build_query(
+                                            [
+                                                'station' => $station->crsCode,
+                                                'from' => $service_call->timestamp->format('c')
+                                            ]
+                                        )
+                                        , in_array($station->crsCode, array_map(fn(Location $location) => $location->crsCode, $destinations ?? []), true) ? 'destination' : ''
+                                        , html($station->name)
                                         , html($service_call->timestamp->format('H:i'))
-                                    )
+                                    );
+                                }
                                 , array_filter(
                                     $service_call->subsequentCalls
                                     , fn(ServiceCallWithDestination $service_call) : bool =>
