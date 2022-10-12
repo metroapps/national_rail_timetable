@@ -29,6 +29,13 @@ class MemoryLocationRepository implements LocationRepositoryInterface {
                     , $station
                 );
             }
+            if (isset($station->minorCrsCode)) {
+                $this->updateStation(
+                    $this->locationsByCrs
+                    , $station->minorCrsCode
+                    , $station
+                );
+            }
             $this->updateStation(
                 $this->locationsByName
                 , $station->name
