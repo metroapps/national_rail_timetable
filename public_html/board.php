@@ -23,6 +23,10 @@ use Miklcct\NationalRailJourneyPlanner\Models\Station;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+function show_minutes(int $minutes) : string {
+    return $minutes === 1 ? '1 minute' : "$minutes minutes";
+}
+
 set_time_limit(300);
 ini_set('memory_limit', '4G');
 
@@ -89,6 +93,35 @@ if (is_array($destinations)) {
 ?>
             between <?= html($from->format('Y-m-d H:i')) ?> and <?= html($to->format('Y-m-d H:i')) ?>
         </p>
+<?php
+if ($station instanceof Station) {
+?>
+        <p>Minimum connection time is <span class="time"><?= html(show_minutes($station->minimumConnectionTime)) ?></span><?= $station->tocConnectionTimes === [] ? '.' : ', with the exception of the following:' ?></p>
+<?php
+    if ($station->tocConnectionTimes !== []) {
+?>
+        <table>
+            <thead>
+                <tr><th>From</th><th>To</th><th>Time</th></tr>
+            </thead>
+            <tbody>
+<?php
+        foreach ($station->tocConnectionTimes as $entry) {
+?>
+                <tr>
+                    <td><?= html($entry->arrivingToc) ?></td>
+                    <td><?= html($entry->departingToc) ?></td>
+                    <td class="time"><?= html(show_minutes($entry->connectionTime)) ?></td>
+                </tr>
+<?php
+        }
+?>
+            </tbody>
+        </table>
+<?php
+    }
+}
+?>
         <table>
             <thead>
                 <tr>
@@ -134,7 +167,6 @@ foreach ($board->calls as $service_call) {
                             , array_map(
                                 static function(ServiceCallWithDestination $service_call) use ($destinations): string { 
                                     $station = $service_call->call->location;
-                                    assert($station instanceof Station);
                                     return sprintf(
                                         '<a href="%s" class="%s">%s (%s)</a>'
                                         , $_SERVER['PHP_SELF'] . '?' . http_build_query(
