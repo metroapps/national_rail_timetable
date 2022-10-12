@@ -72,6 +72,7 @@ if (is_array($destination_stations)) {
             <thead>
                 <tr>
                     <th>Time</th>
+                    <th>Pl.</th>
                     <th>Train number</th>
                     <th>Destination</th>
                     <th>Calling at</th>
@@ -85,6 +86,7 @@ foreach ($board->calls as $service_call) {
 ?>
                 <tr>
                     <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->timestamp->format('H:i')) ?></td>
+                    <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->call->platform) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html(substr($service_call->serviceProperty->rsid, 0, 6)) ?></td>
 <?php
     foreach ($portion_uids as $i => $uid) {
