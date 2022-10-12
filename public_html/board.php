@@ -36,7 +36,7 @@ $timetable = new MongodbServiceRepository(
     $database->selectCollection('services')
     , $database->selectCollection('associations')
     , null
-    , true
+    , !empty($_GET['permanent_only'])
 );
 
 $station = null;
@@ -106,6 +106,9 @@ foreach ($stations->getAllStationNames() as $name) {
             </p>
             <p>
                 <label>Show valid connections from TOC: <input type="text" name="connecting_toc" size="8" value="<?= html($_GET['connecting_toc'] ?? '') ?>"/></label></br>
+            </p>
+            <p>
+                <label>Show permanent timetable instead of actual timetable: <input type="checkbox" name="permanent_only" <?= !empty($_GET['permanent_only']) ? 'checked="checked"' : '' ?>/></label><br/>
             </p>
             <p>
                 <input type="submit" />
@@ -215,6 +218,7 @@ if ($station !== null) {
                                                 'station' => $station->crsCode,
                                                 'from' => $service_call->timestamp->format('c'),
                                                 'connecting_toc' => $service_call->toc,
+                                                'permanent_only' => $_GET['permanent_only'] ?? ''
                                             ]
                                         )
                                         , $station->crsCode === $destination?->crsCode ? 'destination' : ''
