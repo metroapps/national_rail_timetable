@@ -234,6 +234,7 @@ class FullService extends DatedService {
                     , $service_call->uid
                     , $service_call->date
                     , $service_call->call
+                    , $service_call->toc
                     , $service_call->serviceProperty
                     , $origins
                     , $destinations
@@ -247,6 +248,7 @@ class FullService extends DatedService {
                     , $service_call->uid
                     , $service_call->date
                     , $service_call->call
+                    , $service_call->toc
                     , $service_call->serviceProperty
                     , $origins
                     , $destinations

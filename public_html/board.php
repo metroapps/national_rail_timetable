@@ -148,7 +148,7 @@ foreach ($board->calls as $service_call) {
     $portion_uids = array_keys($service_call->destinations);
 ?>
                 <tr>
-                    <td class="time" rowspan="<?= html($portions_count) ?>"><?= html($service_call->timestamp->format('H:i')) ?></td>
+                    <td class="time <?= $service_call->isValidConnection($from, $_GET['connecting_toc'] ?? null) ? 'valid_connection' : 'invalid_connection' ?>" rowspan="<?= html($portions_count) ?>"><?= html($service_call->timestamp->format('H:i')) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->call->platform) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html(substr($service_call->serviceProperty->rsid, 0, 6)) ?></td>
 <?php
@@ -172,7 +172,8 @@ foreach ($board->calls as $service_call) {
                                         , $_SERVER['PHP_SELF'] . '?' . http_build_query(
                                             [
                                                 'station' => $station->crsCode,
-                                                'from' => $service_call->timestamp->format('c')
+                                                'from' => $service_call->timestamp->format('c'),
+                                                'connecting_toc' => $service_call->toc,
                                             ]
                                         )
                                         , in_array($station->crsCode, array_map(fn(Location $location) => $location->crsCode, $destinations ?? []), true) ? 'destination' : ''

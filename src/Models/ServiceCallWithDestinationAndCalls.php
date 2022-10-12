@@ -17,13 +17,14 @@ class ServiceCallWithDestinationAndCalls extends ServiceCallWithDestination {
         , string $uid
         , Date $date
         , TimingPoint $call
+        , string $toc
         , ServiceProperty $serviceProperty
         , array $origins
         , array $destinations
         , array $precedingCalls
         , array $subsequentCalls
     ) {
-        parent::__construct($timestamp, $timeType, $uid, $date, $call, $serviceProperty, $origins, $destinations);
+        parent::__construct($timestamp, $timeType, $uid, $date, $call, $toc, $serviceProperty, $origins, $destinations);
         $this->precedingCalls = $precedingCalls;
         $this->subsequentCalls = $subsequentCalls;
     }

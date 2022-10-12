@@ -23,7 +23,7 @@ class Station extends Location {
         $this->tocConnectionTimes = $tocConnectionTimes;
     }
 
-    public function getConnectionTime(string $from_toc, string $to_toc) : int {
+    public function getConnectionTime(?string $from_toc, ?string $to_toc) : int {
         foreach ($this->tocConnectionTimes as $interchange) {
             if ($interchange->arrivingToc === $from_toc && $interchange->departingToc === $to_toc) {
                 return $interchange->connectionTime;

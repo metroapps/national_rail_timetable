@@ -20,11 +20,12 @@ class ServiceCallWithDestination extends ServiceCall {
         , string $uid
         , Date $date
         , TimingPoint $call
+        , string $toc
         , ServiceProperty $serviceProperty
         , array $origins
         , array $destinations
     ) {
-        parent::__construct($timestamp, $timeType, $uid, $date, $call, $serviceProperty);
+        parent::__construct($timestamp, $timeType, $uid, $date, $call, $toc, $serviceProperty);
         $this->origins = $origins;
         $this->destinations = $destinations;
     }
