@@ -8,6 +8,8 @@ use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\TimingPoint;
 use MongoDB\BSON\Persistable;
 use DateInterval;
+use Miklcct\NationalRailJourneyPlanner\Enums\Mode;
+use PhpParser\Builder\Enum_;
 
 class ServiceCall implements Persistable {
     use BsonSerializeTrait;
@@ -18,6 +20,7 @@ class ServiceCall implements Persistable {
         , public readonly string $uid
         , public readonly Date $date
         , public readonly TimingPoint $call
+        , public readonly Mode $mode
         , public readonly string $toc
         , public readonly ServiceProperty $serviceProperty
     ) {}

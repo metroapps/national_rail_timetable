@@ -5,6 +5,7 @@ namespace Miklcct\NationalRailJourneyPlanner\Models;
 
 use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
 use Miklcct\NationalRailJourneyPlanner\Enums\BankHoliday;
+use Miklcct\NationalRailJourneyPlanner\Enums\Mode;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\CallingPoint;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\DestinationPoint;
@@ -22,6 +23,7 @@ class Service extends ServiceEntry {
         string $uid
         , Period $period
         , BankHoliday $excludeBankHoliday
+        , public readonly Mode $mode
         , public readonly string $toc
         , array $timingPoints
         , ShortTermPlanning $shortTermPlanning

@@ -12,6 +12,7 @@ set_error_handler(
     }
 );
 
+use Miklcct\NationalRailJourneyPlanner\Enums\Mode;
 use MongoDB\Client;
 use Miklcct\NationalRailJourneyPlanner\Repositories\MongodbLocationRepository;
 use Miklcct\NationalRailJourneyPlanner\Repositories\MongodbServiceRepository;
@@ -168,6 +169,7 @@ if ($station !== null) {
             <thead>
                 <tr>
                     <th>Time</th>
+                    <th>Mode</th>
                     <th>Pl.</th>
                     <th>TOC</th>
                     <th>Train number</th>
@@ -183,7 +185,7 @@ if ($station !== null) {
             $date = $current_date;
 ?>
                 <tr>
-                    <th colspan="6"><?= html($date) ?></th>
+                    <th colspan="7"><?= html($date) ?></th>
                 </tr>
 <?php
         }
@@ -192,6 +194,11 @@ if ($station !== null) {
 ?>
                 <tr>
                     <td class="time"><?= html($service_call->timestamp->format('H:i')) ?></td>
+                    <td><?= match ($service_call->mode) {
+                        Mode::BUS => 'BUS',
+                        Mode::SHIP => 'SHIP',
+                        default => '',
+                    } ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->call->platform) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->toc) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html(substr($service_call->serviceProperty->rsid, 0, 6)) ?></td>

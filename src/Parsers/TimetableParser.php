@@ -9,6 +9,7 @@ use Miklcct\NationalRailJourneyPlanner\Enums\AssociationDay;
 use Miklcct\NationalRailJourneyPlanner\Enums\AssociationType;
 use Miklcct\NationalRailJourneyPlanner\Enums\BankHoliday;
 use Miklcct\NationalRailJourneyPlanner\Enums\Catering;
+use Miklcct\NationalRailJourneyPlanner\Enums\Mode;
 use Miklcct\NationalRailJourneyPlanner\Enums\Power;
 use Miklcct\NationalRailJourneyPlanner\Enums\Reservation;
 use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
@@ -213,6 +214,11 @@ class TimetableParser {
             $uid
             , new Period($from, $to, $weekdays)
             , $excludeBankHoliday
+            , match($columns[7]) {
+                'S', '4' => Mode::SHIP,
+                'B', '5' => Mode::BUS,
+                default => Mode::TRAIN,
+            }
             , $toc
             , $points
             , $shortTermPlanning

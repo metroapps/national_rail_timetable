@@ -5,6 +5,7 @@ namespace Miklcct\NationalRailJourneyPlanner\Models;
 
 use DateTimeImmutable;
 use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
+use Miklcct\NationalRailJourneyPlanner\Enums\Mode;
 use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\TimingPoint;
 
@@ -17,6 +18,7 @@ class ServiceCallWithDestinationAndCalls extends ServiceCallWithDestination {
         , string $uid
         , Date $date
         , TimingPoint $call
+        , Mode $mode
         , string $toc
         , ServiceProperty $serviceProperty
         , array $origins
@@ -24,7 +26,7 @@ class ServiceCallWithDestinationAndCalls extends ServiceCallWithDestination {
         , array $precedingCalls
         , array $subsequentCalls
     ) {
-        parent::__construct($timestamp, $timeType, $uid, $date, $call, $toc, $serviceProperty, $origins, $destinations);
+        parent::__construct($timestamp, $timeType, $uid, $date, $call, $mode, $toc, $serviceProperty, $origins, $destinations);
         $this->precedingCalls = $precedingCalls;
         $this->subsequentCalls = $subsequentCalls;
     }
