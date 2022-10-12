@@ -16,7 +16,6 @@ use MongoDB\Client;
 use Miklcct\NationalRailJourneyPlanner\Repositories\MongodbLocationRepository;
 use Miklcct\NationalRailJourneyPlanner\Repositories\MongodbServiceRepository;
 use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
-use Miklcct\NationalRailJourneyPlanner\Models\Location;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCallWithDestination;
 use function Miklcct\ThinPhpApp\Escaper\html;
 use Miklcct\NationalRailJourneyPlanner\Models\Station;
@@ -41,7 +40,7 @@ $timetable = new MongodbServiceRepository(
 );
 
 $station = null;
-$destinations = null;
+$destination = null;
 
 if (!empty($_GET['station'])) {
     $station = $stations->getLocationByCrs(strtoupper($_GET['station'])) ?? $stations->getLocationByName(strtoupper($_GET['station']));
@@ -52,20 +51,15 @@ if (!empty($_GET['station'])) {
     $from = isset($_GET['from']) ? new DateTimeImmutable($_GET['from']) : new DateTimeImmutable();
     $to = isset($_GET['to']) ? new DateTimeImmutable($_GET['to']) : $from->add(new DateInterval('P1D'));
     $board = $timetable->getDepartureBoard($station->crsCode, $from, $to, TimeType::PUBLIC_DEPARTURE);
-    if (isset($_GET['filter']) && is_array($_GET['filter'])) {
-        foreach ($_GET['filter'] as $input) {
-            if ($input !== '') {
-                $input = strtoupper($input);
-                $location = $stations->getLocationByCrs($input) ?? $stations->getLocationByName($input);
-                if ($location === null) {
-                    throw new InvalidArgumentException('Destination station can\'t be found!');
-                }
-                $destinations[] = $location;
-            }
+    if (!empty($_GET['filter'])) {
+        $input = strtoupper($_GET['filter']);
+        $destination = $stations->getLocationByCrs($input) ?? $stations->getLocationByName($input);
+        if ($destination === null) {
+            throw new InvalidArgumentException('Destination station can\'t be found!');
         }
     }
-    if (is_array($destinations)) {
-        $board = $board->filter(array_map(fn(Location $station) => $station->crsCode, $destinations), TimeType::PUBLIC_ARRIVAL);
+    if ($destination !== null) {
+        $board = $board->filter($destination->crsCode, TimeType::PUBLIC_ARRIVAL, !empty($_GET['not_overtaken']));
     }
 }
 
@@ -81,9 +75,9 @@ $date = null;
                 $station === null ? 'Departure board' : sprintf(
                     'Departures from %s %s between %s and %s'
                     , $station->name 
-                    , (is_array($destinations) 
-                        ? ' to ' . implode(', ', array_map(fn(Location $station) => $station->name, $destinations))
-                        : '')
+                    , $destination !== null 
+                        ? ' to ' . $destination->name
+                        : ''
                     , $from->format('Y-m-d H:i')
                     , $to->format('Y-m-d H:i')
                 )
@@ -103,7 +97,7 @@ foreach ($stations->getAllStationNames() as $name) {
             </datalist>
 <?php
 foreach ($_GET as $key => $value) {
-    if (!in_array($key, ['station', 'filter'], true)) {
+    if (!in_array($key, ['station', 'filter', 'not_overtaken'], true)) {
 ?>
             <input type="hidden" name="<?= html($key) ?>" value="<?= html($value) ?>" />
 <?php
@@ -111,13 +105,9 @@ foreach ($_GET as $key => $value) {
 }
 ?>
             <p>
-                <label>Show departures from: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($station?->name)?>"/></label>
-            </p>
-            <p>
-                Show only trains calling at (optional): <br/>
-                <input autocomplete="off" list="stations" type="text" name="filter[]" size="32" value="<?= html(($destinations[0] ?? null)?->name) ?>"/><br/>
-                <input autocomplete="off" list="stations" type="text" name="filter[]" size="32" value="<?= html(($destinations[1] ?? null)?->name) ?>"/><br/>
-                <input autocomplete="off" list="stations" type="text" name="filter[]" size="32" value="<?= html(($destinations[2] ?? null)?->name) ?>"/><br/>
+                <label>Show departures from: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($station?->name)?>"/></label><br/>
+                <label>only trains calling at (optional): <input autocomplete="off" list="stations" type="text" name="filter" size="32" value="<?= html($destination?->name) ?>"/></label><br/>
+                <label>Non-overtaken trains only: <input type="checkbox" name="not_overtaken" <?= !empty($_GET['not_overtaken']) ? 'checked="checked"' : '' ?>/></label>
             </p>
             <p>
                 <input type="submit" />
@@ -126,15 +116,17 @@ foreach ($_GET as $key => $value) {
 <?php
 if ($station !== null) {
 ?>  
-        <h1>Departures from <?= html($station->name) ?> (<?= html($station->crsCode ?? '') ?>)</h1>
-        <p>
+        <h1>
+            Departures from <?= html($station->name . (isset($station->crsCode) ? " ($station->crsCode)" : '')) ?>
 <?php
-    if (is_array($destinations)) {
+    if ($destination !== null) {
 ?>
-            Calling at <?= html(implode(' or ', array_map(fn(Location $station) => $station->name . (isset($station->crsCode) ? " ($station->crsCode)" : ''), $destinations))) ?>
+        calling at <?= html($destination->name . (isset($destination->crsCode) ? " ($destination->crsCode)" : '')) ?>
 <?php
     }
 ?>
+        </h1>
+        <p>
             between <?= html($from->format('Y-m-d H:i')) ?> and <?= html($to->format('Y-m-d H:i')) ?>
         </p>
 <?php
@@ -211,7 +203,7 @@ if ($station !== null) {
                         implode(
                             ', '
                             , array_map(
-                                static function(ServiceCallWithDestination $service_call) use ($destinations): string { 
+                                static function(ServiceCallWithDestination $service_call) use ($destination): string { 
                                     $station = $service_call->call->location;
                                     return sprintf(
                                         '<a href="%s" class="%s">%s (%s)</a>'
@@ -222,7 +214,7 @@ if ($station !== null) {
                                                 'connecting_toc' => $service_call->toc,
                                             ]
                                         )
-                                        , in_array($station->crsCode, array_map(fn(Location $location) => $location->crsCode, $destinations ?? []), true) ? 'destination' : ''
+                                        , $station->crsCode === $destination->crsCode ? 'destination' : ''
                                         , html($station->name)
                                         , html($service_call->timestamp->format('H:i'))
                                     );

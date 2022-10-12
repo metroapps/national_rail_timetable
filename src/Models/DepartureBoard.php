@@ -27,7 +27,7 @@ class DepartureBoard implements Persistable {
         $this->calls = $calls;
     }
 
-    public function filter(array $crses, TimeType $time_type) : static {
+    public function filter(string $crs, TimeType $time_type, bool $not_overtaken = false) : static {
         return new static(
             $this->crs
             , $this->from
@@ -35,22 +35,47 @@ class DepartureBoard implements Persistable {
             , $this->timeType
             , array_filter(
                 $this->calls
-                , function (ServiceCallWithDestinationAndCalls $service_call) use ($time_type, $crses) : bool {
-                    return !in_array($this->timeType, [TimeType::PUBLIC_ARRIVAL, TimeType::WORKING_ARRIVAL], true)
-                            && array_filter(
-                                $service_call->subsequentCalls
-                                , static function (ServiceCallWithDestination $filter_call) use ($time_type, $crses) : bool {
-                                    return in_array($filter_call->call->location->crsCode, $crses, true);
-                                }
-                            ) !== []
-                        || !in_array($this->timeType, [TimeType::PUBLIC_DEPARTURE, TimeType::WORKING_DEPARTURE], true)
-                            && array_filter(
-                                $service_call->precedingCalls
-                                , static function (ServiceCallWithDestination $filter_call) use ($time_type, $crses) : bool {
-                                    return in_array($filter_call->call->location->crsCode, $crses, true);
-                                }
-                            ) !== [];
-                    }
+                , fn(ServiceCallWithDestinationAndCalls $service_call) : bool =>
+                    !in_array($this->timeType, [TimeType::PUBLIC_ARRIVAL, TimeType::WORKING_ARRIVAL], true)
+                        && array_filter(
+                            $service_call->subsequentCalls
+                            , fn(ServiceCallWithDestination $filter_call) : bool =>
+                                $filter_call->call->location->crsCode === $crs
+                                && (
+                                    !$not_overtaken 
+                                    || array_filter(
+                                        $this->calls
+                                        , static fn(ServiceCallWithDestinationAndCalls $other_call) : bool =>
+                                            $other_call->timestamp >= $service_call->timestamp
+                                            && array_filter(
+                                                $other_call->subsequentCalls
+                                                , static fn(ServiceCallWithDestination $compare_filter_call) : bool =>
+                                                    $compare_filter_call->call->location->crsCode === $crs
+                                                    && $compare_filter_call->timestamp < $filter_call->timestamp
+                                            ) !== []
+                                    ) === []
+                                )
+                        ) !== []
+                    || !in_array($this->timeType, [TimeType::PUBLIC_DEPARTURE, TimeType::WORKING_DEPARTURE], true)
+                        && array_filter(
+                            $service_call->precedingCalls
+                            , fn(ServiceCallWithDestination $filter_call) : bool =>
+                                $filter_call->call->location->crsCode === $crs
+                                && (
+                                    !$not_overtaken 
+                                    || array_filter(
+                                        $this->calls
+                                        , static fn(ServiceCallWithDestinationAndCalls $other_call) : bool =>
+                                            $other_call->timestamp <= $service_call->timestamp
+                                            && array_filter(
+                                                $other_call->precedingCalls
+                                                , static fn(ServiceCallWithDestination $compare_filter_call) : bool =>
+                                                    $compare_filter_call->call->location->crsCode === $crs
+                                                    && $compare_filter_call->timestamp > $filter_call->timestamp
+                                            ) !== []
+                                    ) === []
+                                )
+                    ) !== []
             )
         );
     }
