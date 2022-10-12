@@ -22,12 +22,8 @@ class Location implements Persistable {
     }
 
     private function superiorScore() : int {
-        return $this instanceof TiplocLocation && $this->stanox === null // This is to handle bus stations such as XCQ
-            ? 4
-            : (
-                $this instanceof Station
-                    ? $this->interchange !== 9 ? 3 : ($this->minorCrsCode === $this->crsCode ? 2 : 1)
-                    : 0
-            );
+        return $this instanceof Station
+            ? $this->interchange !== 9 ? 3 : ($this->minorCrsCode === $this->crsCode ? 2 : 1)
+            : 0;
     }
 }

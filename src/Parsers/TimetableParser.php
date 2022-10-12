@@ -411,6 +411,7 @@ class TimetableParser {
             // Z-train
             return $this->locationRepository->getLocationByCrs(substr($location, 0, 3));
         }
-        return $this->locationRepository->getLocationByTiploc($location);
+        $location = $this->locationRepository->getLocationByTiploc($location);
+        return ($location->crsCode !== null ? $this->locationRepository->getLocationByCrs($location->crsCode) : null) ?? $location;
     }
 }
