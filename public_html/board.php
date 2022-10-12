@@ -40,19 +40,24 @@ $timetable = new MongodbServiceRepository(
     , true
 );
 
-$station = $stations->getLocationByCrs($_GET['station']);
+$station = $stations->getLocationByCrs(strtoupper($_GET['station'])) ?? $stations->getLocationByName(strtoupper($_GET['station']));
 if ($station === null) {
     throw new InvalidArgumentException('Station can\'t be found!');
 }
-$destinations = isset($_GET['filter']) 
-    ? array_map(
-        $stations->getLocationByCrs(...)
-        , (array)$_GET['filter']
-    )
-    : null;
-if (is_array($destinations) && in_array(null, $destinations, true)) {
-    throw new InvalidArgumentException('Destination station can\'t be found!');
+$destinations = null;
+if (isset($_GET['filter']) && is_array($_GET['filter'])) {
+    foreach ($_GET['filter'] as $input) {
+        if ($input !== '') {
+            $input = strtoupper($input);
+            $location = $stations->getLocationByCrs($input) ?? $stations->getLocationByName($input);
+            if ($location === null) {
+                throw new InvalidArgumentException('Destination station can\'t be found!');
+            }
+            $destinations[] = $location;
+        }
+    }
 }
+
 $from = isset($_GET['from']) ? new DateTimeImmutable($_GET['from']) : new DateTimeImmutable();
 $to = isset($_GET['to']) ? new DateTimeImmutable($_GET['to']) : $from->add(new DateInterval('P1D'));
 $board = $timetable->getDepartureBoard($station->crsCode, $from, $to, TimeType::PUBLIC_DEPARTURE);
@@ -93,6 +98,27 @@ if (is_array($destinations)) {
 ?>
             between <?= html($from->format('Y-m-d H:i')) ?> and <?= html($to->format('Y-m-d H:i')) ?>
         </p>
+        <form action="<?= html($_SERVER['PHP_SELF']) ?>" method="GET">
+<?php
+foreach ($_GET as $key => $value) {
+    if (!in_array($key, ['station', 'filter'], true)) {
+?>
+            <input type="hidden" key="<?= html($key) ?>" value="<?= html($value) ?>" />
+<?php
+    }
+}
+?>
+            <p>
+                Show departures from: <input type="text" name="station" size="32" value="<?= html($station->name)?>"/>
+            </p>
+            <p>
+                Show only trains calling at (optional): <br/>
+                <input type="text" name="filter[]" size="32" value="<?= html(($destinations[0] ?? null)?->name) ?>"/><br/>
+                <input type="text" name="filter[]" size="32" value="<?= html(($destinations[1] ?? null)?->name) ?>"/><br/>
+                <input type="text" name="filter[]" size="32" value="<?= html(($destinations[2] ?? null)?->name) ?>"/><br/>
+                <input type="submit" />
+            </p>
+        </form>
 <?php
 if ($station instanceof Station) {
 ?>
