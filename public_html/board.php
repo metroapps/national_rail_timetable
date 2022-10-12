@@ -39,20 +39,20 @@ $station = $stations->getLocationByCrs($_GET['station']);
 if ($station === null) {
     throw new InvalidArgumentException('Station can\'t be found!');
 }
-$destination_stations = isset($_GET['filter']) 
+$destinations = isset($_GET['filter']) 
     ? array_map(
         $stations->getLocationByCrs(...)
         , (array)$_GET['filter']
     )
     : null;
-if (is_array($destination_stations) && in_array(null, $destination_stations, true)) {
+if (is_array($destinations) && in_array(null, $destinations, true)) {
     throw new InvalidArgumentException('Destination station can\'t be found!');
 }
 $from = isset($_GET['from']) ? new DateTimeImmutable($_GET['from']) : new DateTimeImmutable();
-$to = isset($_GET['to']) ? new DateTimeImmutable($_GET['to']) : (new DateTimeImmutable())->add(new DateInterval('P1D'));
+$to = isset($_GET['to']) ? new DateTimeImmutable($_GET['to']) : $from->add(new DateInterval('P1D'));
 $board = $timetable->getDepartureBoard($station->crsCode, $from, $to, TimeType::PUBLIC_DEPARTURE);
-if (is_array($destination_stations)) {
-    $board = $board->filter(array_map(fn(Location $station) => $station->crsCode, $destination_stations), TimeType::PUBLIC_ARRIVAL);
+if (is_array($destinations)) {
+    $board = $board->filter(array_map(fn(Location $station) => $station->crsCode, $destinations), TimeType::PUBLIC_ARRIVAL);
 }
 
 $date = null;
@@ -61,13 +61,14 @@ $date = null;
 <!DOCTYPE html>
 <html>
     <head>
+        <link rel="stylesheet" href="board.css" />
         <title><?= 
             html(
                 sprintf(
                     'Departures from %s %s between %s and %s'
                     , $station->name 
-                    , (is_array($destination_stations) 
-                        ? ' to ' . implode(', ', array_map(fn(Location $station) => $station->name, $destination_stations))
+                    , (is_array($destinations) 
+                        ? ' to ' . implode(', ', array_map(fn(Location $station) => $station->name, $destinations))
                         : '')
                     , $from->format('Y-m-d H:i')
                     , $to->format('Y-m-d H:i')
@@ -76,7 +77,18 @@ $date = null;
         ?></title>
     </head>
     <body>
-        <table border="1">
+        <h1>Departures from <?= html($station->name) ?></h1>
+        <p>
+<?php
+if (is_array($destinations)) {
+?>
+            Calling at <?= implode(' or ', array_map(fn(Location $station) => $station->name, $destinations)) ?>
+<?php
+}
+?>
+            between <?= html($from->format('Y-m-d H:i')) ?> and <?= html($to->format('Y-m-d H:i')) ?>
+        </p>
+        <table>
             <thead>
                 <tr>
                     <th>Time</th>
@@ -102,7 +114,7 @@ foreach ($board->calls as $service_call) {
     $portion_uids = array_keys($service_call->destinations);
 ?>
                 <tr>
-                    <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->timestamp->format('H:i')) ?></td>
+                    <td class="time" rowspan="<?= html($portions_count) ?>"><?= html($service_call->timestamp->format('H:i')) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->call->platform) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html(substr($service_call->serviceProperty->rsid, 0, 6)) ?></td>
 <?php
@@ -114,23 +126,22 @@ foreach ($board->calls as $service_call) {
 <?php
         }
 ?>
-                    <td><?= html($service_call->destinations[$uid]->location->name) ?></td>
-                    <td><?=
-                        html(
-                            implode(
-                                ', '
-                                , array_map(
-                                    fn(ServiceCallWithDestination $service_call) : string => 
-                                        sprintf(
-                                            "%s (%s)"
-                                            , $service_call->call->location->name
-                                            , $service_call->timestamp->format('H:i')
-                                        )
-                                    , array_filter(
-                                        $service_call->subsequentCalls
-                                        , fn(ServiceCallWithDestination $service_call) : bool =>
-                                            in_array($uid, array_keys($service_call->destinations), true)
+                    <td class="destination"><?= html($service_call->destinations[$uid]->location->name) ?></td>
+                    <td><?=                        
+                        implode(
+                            ', '
+                            , array_map(
+                                fn(ServiceCallWithDestination $service_call) : string => 
+                                    sprintf(
+                                        '<span class="%s">%s (%s)</span>'
+                                        , in_array($service_call->call->location->crsCode, array_map(fn(Location $location) => $location->crsCode, $destinations), true) ? 'destination' : ''
+                                        , html($service_call->call->location->name)
+                                        , html($service_call->timestamp->format('H:i'))
                                     )
+                                , array_filter(
+                                    $service_call->subsequentCalls
+                                    , fn(ServiceCallWithDestination $service_call) : bool =>
+                                        in_array($uid, array_keys($service_call->destinations), true)
                                 )
                             )
                         )
