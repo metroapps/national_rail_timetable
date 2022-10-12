@@ -6,11 +6,3 @@ table, th, td {
 .time, .destination {
     font-weight: bold;
 }
-
-.valid_connection {
-    color: green;
-}
-
-.invalid_connection {
-    color: red;
-}

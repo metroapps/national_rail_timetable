@@ -48,8 +48,9 @@ if (!empty($_GET['station'])) {
         throw new InvalidArgumentException('Station can\'t be found!');
     }
 
-    $from = isset($_GET['from']) ? new DateTimeImmutable($_GET['from']) : new DateTimeImmutable();
-    $to = isset($_GET['to']) ? new DateTimeImmutable($_GET['to']) : $from->add(new DateInterval('P1D'));
+    $time_zone = new DateTimeZone('Europe/London');
+    $from = isset($_GET['from']) ? new DateTimeImmutable($_GET['from'], $time_zone) : new DateTimeImmutable('now', $time_zone);
+    $to = isset($_GET['to']) ? new DateTimeImmutable($_GET['to'], $time_zone) : $from->add(new DateInterval('P1D'));
     $board = $timetable->getDepartureBoard($station->crsCode, $from, $to, TimeType::PUBLIC_DEPARTURE);
     if (!empty($_GET['filter'])) {
         $input = strtoupper($_GET['filter']);
@@ -58,8 +59,11 @@ if (!empty($_GET['station'])) {
             throw new InvalidArgumentException('Destination station can\'t be found!');
         }
     }
+    if (!empty($_GET['connecting_toc'])) {
+        $board = $board->filterValidConnection($from, $_GET['connecting_toc']);
+    }
     if ($destination !== null) {
-        $board = $board->filter($destination->crsCode, TimeType::PUBLIC_ARRIVAL, !empty($_GET['not_overtaken']));
+        $board = $board->filterByDestination($destination->crsCode, !empty($_GET['not_overtaken']));
     }
 }
 
@@ -95,19 +99,14 @@ foreach ($stations->getAllStationNames() as $name) {
 }
 ?>
             </datalist>
-<?php
-foreach ($_GET as $key => $value) {
-    if (!in_array($key, ['station', 'filter', 'not_overtaken'], true)) {
-?>
-            <input type="hidden" name="<?= html($key) ?>" value="<?= html($value) ?>" />
-<?php
-    }
-}
-?>
             <p>
-                <label>Show departures from: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($station?->name)?>"/></label><br/>
+                <label>Show departures at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($station?->name)?>"/></label><br/>
                 <label>only trains calling at (optional): <input autocomplete="off" list="stations" type="text" name="filter" size="32" value="<?= html($destination?->name) ?>"/></label><br/>
-                <label>Non-overtaken trains only: <input type="checkbox" name="not_overtaken" <?= !empty($_GET['not_overtaken']) ? 'checked="checked"' : '' ?>/></label>
+                <label>Non-overtaken trains only: <input type="checkbox" name="not_overtaken" <?= !empty($_GET['not_overtaken']) ? 'checked="checked"' : '' ?>/></label><br/>
+                <label>from <input type="datetime-local" name="from" value="<?= html(isset($from) ? substr($from->format('c'), 0, 19) : '') ?>"/></label> <label>to <input type="datetime-local" name="to" value="<?=html(isset($to) ? substr($to->format('c'), 0, 19) : '')?>"/></label>
+            </p>
+            <p>
+                <label>Show valid connections from TOC: <input type="text" name="connecting_toc" size="8" value="<?= html($_GET['connecting_toc'] ?? '') ?>"/></label></br>
             </p>
             <p>
                 <input type="submit" />
@@ -128,6 +127,13 @@ if ($station !== null) {
         </h1>
         <p>
             between <?= html($from->format('Y-m-d H:i')) ?> and <?= html($to->format('Y-m-d H:i')) ?>
+<?php
+    if (!empty($_GET['connecting_toc'])) {
+?>
+        for a valid connection from <?= html($_GET['connecting_toc']) ?>
+<?php
+    }
+?>
         </p>
 <?php
     if ($station instanceof Station) {
@@ -185,7 +191,7 @@ if ($station !== null) {
         $portion_uids = array_keys($service_call->destinations);
 ?>
                 <tr>
-                    <td class="time <?= $service_call->isValidConnection($from, $_GET['connecting_toc'] ?? null) ? 'valid_connection' : 'invalid_connection' ?>" rowspan="<?= html($portions_count) ?>"><?= html($service_call->timestamp->format('H:i')) ?></td>
+                    <td class="time"><?= html($service_call->timestamp->format('H:i')) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->call->platform) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->toc) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html(substr($service_call->serviceProperty->rsid, 0, 6)) ?></td>
@@ -214,7 +220,7 @@ if ($station !== null) {
                                                 'connecting_toc' => $service_call->toc,
                                             ]
                                         )
-                                        , $station->crsCode === $destination->crsCode ? 'destination' : ''
+                                        , $station->crsCode === $destination?->crsCode ? 'destination' : ''
                                         , html($station->name)
                                         , html($service_call->timestamp->format('H:i'))
                                     );

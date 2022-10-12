@@ -27,7 +27,20 @@ class DepartureBoard implements Persistable {
         $this->calls = $calls;
     }
 
-    public function filter(string $crs, TimeType $time_type, bool $not_overtaken = false) : static {
+    public function filterValidConnection(DateTimeImmutable $time, ?string $other_toc) : static {
+        return new static(
+            $this->crs
+            , $this->from
+            , $this->to
+            , $this->timeType
+            , array_filter(
+                $this->calls
+                , fn(ServiceCall $call) => $call->isValidConnection($time, $other_toc)
+            )
+        );
+    }
+
+    public function filterByDestination(string $filter_crs, bool $not_overtaken = false) : static {
         return new static(
             $this->crs
             , $this->from
@@ -40,7 +53,7 @@ class DepartureBoard implements Persistable {
                         && array_filter(
                             $service_call->subsequentCalls
                             , fn(ServiceCallWithDestination $filter_call) : bool =>
-                                $filter_call->call->location->crsCode === $crs
+                                $filter_call->call->location->crsCode === $filter_crs
                                 && (
                                     !$not_overtaken 
                                     || array_filter(
@@ -50,7 +63,7 @@ class DepartureBoard implements Persistable {
                                             && array_filter(
                                                 $other_call->subsequentCalls
                                                 , static fn(ServiceCallWithDestination $compare_filter_call) : bool =>
-                                                    $compare_filter_call->call->location->crsCode === $crs
+                                                    $compare_filter_call->call->location->crsCode === $filter_crs
                                                     && $compare_filter_call->timestamp < $filter_call->timestamp
                                             ) !== []
                                     ) === []
@@ -60,7 +73,7 @@ class DepartureBoard implements Persistable {
                         && array_filter(
                             $service_call->precedingCalls
                             , fn(ServiceCallWithDestination $filter_call) : bool =>
-                                $filter_call->call->location->crsCode === $crs
+                                $filter_call->call->location->crsCode === $filter_crs
                                 && (
                                     !$not_overtaken 
                                     || array_filter(
@@ -70,7 +83,7 @@ class DepartureBoard implements Persistable {
                                             && array_filter(
                                                 $other_call->precedingCalls
                                                 , static fn(ServiceCallWithDestination $compare_filter_call) : bool =>
-                                                    $compare_filter_call->call->location->crsCode === $crs
+                                                    $compare_filter_call->call->location->crsCode === $filter_crs
                                                     && $compare_filter_call->timestamp > $filter_call->timestamp
                                             ) !== []
                                     ) === []
