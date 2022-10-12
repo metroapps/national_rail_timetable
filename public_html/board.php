@@ -1,11 +1,22 @@
 <?php
 declare(strict_types=1);
 error_reporting(E_ALL);
+ini_set('display_errors', 1);
+set_error_handler(
+    function (int $severity, string $message, string $file, int $line) {
+        if (!(error_reporting() & $severity)) {
+            // This error code is not included in error_reporting
+            return;
+        }
+        throw new ErrorException($message, 0, $severity, $file, $line);
+    }
+);
 
 use MongoDB\Client;
 use Miklcct\NationalRailJourneyPlanner\Repositories\MongodbLocationRepository;
 use Miklcct\NationalRailJourneyPlanner\Repositories\MongodbServiceRepository;
 use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
+use Miklcct\NationalRailJourneyPlanner\Models\Location;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCallWithDestination;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
@@ -24,17 +35,37 @@ $timetable = new MongodbServiceRepository(
     , true
 );
 
-$board = $timetable->getDepartureBoard($_GET['station'], new DateTimeImmutable($_GET['from']), new DateTimeImmutable($_GET['to']), TimeType::PUBLIC_DEPARTURE);
-if (isset($_GET['filter'])) {
-    $_GET['filter'] = (array)$_GET['filter'];
-    $board = $board->filter($_GET['filter'], TimeType::PUBLIC_ARRIVAL);
+$station = $stations->getLocationByCrs($_GET['station']);
+if ($station === null) {
+    throw new InvalidArgumentException('Station can\'t be found!');
+}
+$destination_stations = isset($_GET['filter']) 
+    ? array_map(
+        $stations->getLocationByCrs(...)
+        , (array)$_GET['filter']
+    )
+    : null;
+if (is_array($destination_stations) && in_array(null, $destination_stations, true)) {
+    throw new InvalidArgumentException('Destination station can\'t be found!');
+}
+
+$board = $timetable->getDepartureBoard($station->crsCode, new DateTimeImmutable($_GET['from']), new DateTimeImmutable($_GET['to']), TimeType::PUBLIC_DEPARTURE);
+if (is_array($destination_stations)) {
+    $board = $board->filter(array_map(fn(Location $station) => $station->crsCode, $destination_stations), TimeType::PUBLIC_ARRIVAL);
 }
 
 ?>
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Departures</title>
+        <title>Departures from <?= 
+            html(
+                $station->name 
+                . (is_array($destination_stations) 
+                    ? ' to ' . implode(', ', array_map(fn(Location $station) => $station->name, $destination_stations))
+                    : '')
+            )
+        ?></title>
     </head>
     <body>
         <table border="1">
