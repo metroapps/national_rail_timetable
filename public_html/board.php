@@ -103,7 +103,7 @@ foreach ($stations->getAllStationNames() as $name) {
                 <label>Show departures at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($station?->name)?>"/></label><br/>
                 <label>only trains calling at (optional): <input autocomplete="off" list="stations" type="text" name="filter" size="32" value="<?= html($destination?->name) ?>"/></label><br/>
                 <label>Non-overtaken trains only: <input type="checkbox" name="not_overtaken" <?= !empty($_GET['not_overtaken']) ? 'checked="checked"' : '' ?>/></label><br/>
-                <label>from <input type="datetime-local" name="from" value="<?= html(isset($from) ? substr($from->format('c'), 0, 19) : '') ?>"/></label>
+                <label>from (leave empty for now) <input type="datetime-local" name="from" value="<?= html(isset($from) ? substr($from->format('c'), 0, 19) : '') ?>"/></label>
             </p>
             <p>
                 <label>Show valid connections from TOC: <input type="text" name="connecting_toc" size="8" value="<?= html($_GET['connecting_toc'] ?? '') ?>"/></label></br>
