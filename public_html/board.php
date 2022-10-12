@@ -50,7 +50,7 @@ if (!empty($_GET['station'])) {
 
     $time_zone = new DateTimeZone('Europe/London');
     $from = isset($_GET['from']) ? new DateTimeImmutable($_GET['from'], $time_zone) : new DateTimeImmutable('now', $time_zone);
-    $to = isset($_GET['to']) ? new DateTimeImmutable($_GET['to'], $time_zone) : $from->add(new DateInterval('P1D'));
+    $to = $from->add(new DateInterval('P1DT4H30M'));
     $board = $timetable->getDepartureBoard($station->crsCode, $from, $to, TimeType::PUBLIC_DEPARTURE);
     if (!empty($_GET['filter'])) {
         $input = strtoupper($_GET['filter']);
@@ -77,13 +77,12 @@ $date = null;
         <title><?= 
             html(
                 $station === null ? 'Departure board' : sprintf(
-                    'Departures from %s %s between %s and %s'
+                    'Departures at %s %s from %s'
                     , $station->name 
                     , $destination !== null 
                         ? ' to ' . $destination->name
                         : ''
                     , $from->format('Y-m-d H:i')
-                    , $to->format('Y-m-d H:i')
                 )
             )
         ?></title>
@@ -103,7 +102,7 @@ foreach ($stations->getAllStationNames() as $name) {
                 <label>Show departures at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($station?->name)?>"/></label><br/>
                 <label>only trains calling at (optional): <input autocomplete="off" list="stations" type="text" name="filter" size="32" value="<?= html($destination?->name) ?>"/></label><br/>
                 <label>Non-overtaken trains only: <input type="checkbox" name="not_overtaken" <?= !empty($_GET['not_overtaken']) ? 'checked="checked"' : '' ?>/></label><br/>
-                <label>from <input type="datetime-local" name="from" value="<?= html(isset($from) ? substr($from->format('c'), 0, 19) : '') ?>"/></label> <label>to <input type="datetime-local" name="to" value="<?=html(isset($to) ? substr($to->format('c'), 0, 19) : '')?>"/></label>
+                <label>from <input type="datetime-local" name="from" value="<?= html(isset($from) ? substr($from->format('c'), 0, 19) : '') ?>"/></label>
             </p>
             <p>
                 <label>Show valid connections from TOC: <input type="text" name="connecting_toc" size="8" value="<?= html($_GET['connecting_toc'] ?? '') ?>"/></label></br>
@@ -116,25 +115,23 @@ foreach ($stations->getAllStationNames() as $name) {
 if ($station !== null) {
 ?>  
         <h1>
-            Departures from <?= html($station->name . (isset($station->crsCode) ? " ($station->crsCode)" : '')) ?>
+            Departures at <?= html($station->name . (isset($station->crsCode) ? " ($station->crsCode)" : '')) ?>
 <?php
     if ($destination !== null) {
 ?>
-        calling at <?= html($destination->name . (isset($destination->crsCode) ? " ($destination->crsCode)" : '')) ?>
+            calling at <?= html($destination->name . (isset($destination->crsCode) ? " ($destination->crsCode)" : '')) ?>
+<?php
+    }
+?>
+            from <?= html($from->format('Y-m-d H:i')) ?>
+<?php
+    if (!empty($_GET['connecting_toc'])) {
+?>
+            for a valid connection from <?= html($_GET['connecting_toc']) ?>
 <?php
     }
 ?>
         </h1>
-        <p>
-            between <?= html($from->format('Y-m-d H:i')) ?> and <?= html($to->format('Y-m-d H:i')) ?>
-<?php
-    if (!empty($_GET['connecting_toc'])) {
-?>
-        for a valid connection from <?= html($_GET['connecting_toc']) ?>
-<?php
-    }
-?>
-        </p>
 <?php
     if ($station instanceof Station) {
 ?>

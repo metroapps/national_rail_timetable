@@ -3,6 +3,10 @@ table, th, td {
     border-collapse: collapse;
 }
 
+h1 {
+    font-size: 1.5rem;
+}
+
 .time, .destination {
     font-weight: bold;
 }
