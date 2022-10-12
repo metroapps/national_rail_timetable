@@ -6,7 +6,8 @@
         "php" : "^8.1",
         "thecodingmachine/safe": "^2.1",
         "mongodb/mongodb": "^1.12",
-        "ext-mongodb" : "*"
+        "ext-mongodb" : "*",
+        "miklcct/thin_php_app": "^0.6.1"
     },
     "require-dev" : {
         "roave/security-advisories" : "dev-latest",
