@@ -8,7 +8,7 @@ use MongoDB\Collection;
 use MongoDB\Driver\Cursor;
 use function array_keys;
 use function array_values;
-use function is_array;
+use stdClass;
 
 class MongodbLocationRepository implements LocationRepositoryInterface {
     public function __construct(private readonly Collection $collection) {
@@ -66,8 +66,8 @@ class MongodbLocationRepository implements LocationRepositoryInterface {
     private function processResult(Cursor $cursor) : ?Location {
         $result = null;
         foreach ($cursor as $item) {
-            if (is_array($item) && isset($item['alias'])) {
-                $item = $this->getLocationByName($item['alias']);
+            if ($item instanceof stdClass && isset($item->alias)) {
+                $item = $this->getLocationByName($item->alias);
             }
             if ($item instanceof Location && $item->isSuperior($result)) {
                 $result = $item;
