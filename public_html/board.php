@@ -127,6 +127,7 @@ if ($station instanceof Station) {
                 <tr>
                     <th>Time</th>
                     <th>Pl.</th>
+                    <th>TOC</th>
                     <th>Train number</th>
                     <th>Destination</th>
                     <th>Calling at</th>
@@ -140,7 +141,7 @@ foreach ($board->calls as $service_call) {
         $date = $current_date;
 ?>
                 <tr>
-                    <th colspan="5"><?= html($date) ?></th>
+                    <th colspan="6"><?= html($date) ?></th>
                 </tr>
 <?php
     }
@@ -150,6 +151,7 @@ foreach ($board->calls as $service_call) {
                 <tr>
                     <td class="time <?= $service_call->isValidConnection($from, $_GET['connecting_toc'] ?? null) ? 'valid_connection' : 'invalid_connection' ?>" rowspan="<?= html($portions_count) ?>"><?= html($service_call->timestamp->format('H:i')) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->call->platform) ?></td>
+                    <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->toc) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html(substr($service_call->serviceProperty->rsid, 0, 6)) ?></td>
 <?php
     foreach ($portion_uids as $i => $uid) {
