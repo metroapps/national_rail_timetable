@@ -40,29 +40,33 @@ $timetable = new MongodbServiceRepository(
     , true
 );
 
-$station = $stations->getLocationByCrs(strtoupper($_GET['station'])) ?? $stations->getLocationByName(strtoupper($_GET['station']));
-if ($station === null) {
-    throw new InvalidArgumentException('Station can\'t be found!');
-}
+$station = null;
 $destinations = null;
-if (isset($_GET['filter']) && is_array($_GET['filter'])) {
-    foreach ($_GET['filter'] as $input) {
-        if ($input !== '') {
-            $input = strtoupper($input);
-            $location = $stations->getLocationByCrs($input) ?? $stations->getLocationByName($input);
-            if ($location === null) {
-                throw new InvalidArgumentException('Destination station can\'t be found!');
+
+if (!empty($_GET['station'])) {
+    $station = $stations->getLocationByCrs(strtoupper($_GET['station'])) ?? $stations->getLocationByName(strtoupper($_GET['station']));
+    if ($station === null) {
+        throw new InvalidArgumentException('Station can\'t be found!');
+    }
+
+    $from = isset($_GET['from']) ? new DateTimeImmutable($_GET['from']) : new DateTimeImmutable();
+    $to = isset($_GET['to']) ? new DateTimeImmutable($_GET['to']) : $from->add(new DateInterval('P1D'));
+    $board = $timetable->getDepartureBoard($station->crsCode, $from, $to, TimeType::PUBLIC_DEPARTURE);
+    if (isset($_GET['filter']) && is_array($_GET['filter'])) {
+        foreach ($_GET['filter'] as $input) {
+            if ($input !== '') {
+                $input = strtoupper($input);
+                $location = $stations->getLocationByCrs($input) ?? $stations->getLocationByName($input);
+                if ($location === null) {
+                    throw new InvalidArgumentException('Destination station can\'t be found!');
+                }
+                $destinations[] = $location;
             }
-            $destinations[] = $location;
         }
     }
-}
-
-$from = isset($_GET['from']) ? new DateTimeImmutable($_GET['from']) : new DateTimeImmutable();
-$to = isset($_GET['to']) ? new DateTimeImmutable($_GET['to']) : $from->add(new DateInterval('P1D'));
-$board = $timetable->getDepartureBoard($station->crsCode, $from, $to, TimeType::PUBLIC_DEPARTURE);
-if (is_array($destinations)) {
-    $board = $board->filter(array_map(fn(Location $station) => $station->crsCode, $destinations), TimeType::PUBLIC_ARRIVAL);
+    if (is_array($destinations)) {
+        $board = $board->filter(array_map(fn(Location $station) => $station->crsCode, $destinations), TimeType::PUBLIC_ARRIVAL);
+    }
 }
 
 $date = null;
@@ -74,7 +78,7 @@ $date = null;
         <link rel="stylesheet" href="board.css" />
         <title><?= 
             html(
-                sprintf(
+                $station === null ? 'Departure board' : sprintf(
                     'Departures from %s %s between %s and %s'
                     , $station->name 
                     , (is_array($destinations) 
@@ -87,18 +91,16 @@ $date = null;
         ?></title>
     </head>
     <body>
-        <h1>Departures from <?= html($station->name) ?></h1>
-        <p>
+    <form action="<?= html($_SERVER['PHP_SELF']) ?>" method="GET">
+            <datalist id="stations">
 <?php
-if (is_array($destinations)) {
+foreach ($stations->getAllStationNames() as $name) {
 ?>
-            Calling at <?= implode(' or ', array_map(fn(Location $station) => $station->name, $destinations)) ?>
+                <option value="<?= html($name) ?>" />
 <?php
 }
 ?>
-            between <?= html($from->format('Y-m-d H:i')) ?> and <?= html($to->format('Y-m-d H:i')) ?>
-        </p>
-        <form action="<?= html($_SERVER['PHP_SELF']) ?>" method="GET">
+            </datalist>
 <?php
 foreach ($_GET as $key => $value) {
     if (!in_array($key, ['station', 'filter'], true)) {
@@ -109,22 +111,36 @@ foreach ($_GET as $key => $value) {
 }
 ?>
             <p>
-                Show departures from: <input type="text" name="station" size="32" value="<?= html($station->name)?>"/>
+                Show departures from: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($station?->name)?>"/>
             </p>
             <p>
                 Show only trains calling at (optional): <br/>
-                <input type="text" name="filter[]" size="32" value="<?= html(($destinations[0] ?? null)?->name) ?>"/><br/>
-                <input type="text" name="filter[]" size="32" value="<?= html(($destinations[1] ?? null)?->name) ?>"/><br/>
-                <input type="text" name="filter[]" size="32" value="<?= html(($destinations[2] ?? null)?->name) ?>"/><br/>
+                <input autocomplete="off" list="stations" type="text" name="filter[]" size="32" value="<?= html(($destinations[0] ?? null)?->name) ?>"/><br/>
+                <input autocomplete="off" list="stations" type="text" name="filter[]" size="32" value="<?= html(($destinations[1] ?? null)?->name) ?>"/><br/>
+                <input autocomplete="off" list="stations" type="text" name="filter[]" size="32" value="<?= html(($destinations[2] ?? null)?->name) ?>"/><br/>
                 <input type="submit" />
             </p>
         </form>
 <?php
-if ($station instanceof Station) {
+if ($station !== null) {
+?>  
+        <h1>Departures from <?= html($station->name) ?></h1>
+        <p>
+<?php
+    if (is_array($destinations)) {
+?>
+            Calling at <?= implode(' or ', array_map(fn(Location $station) => $station->name, $destinations)) ?>
+<?php
+    }
+?>
+            between <?= html($from->format('Y-m-d H:i')) ?> and <?= html($to->format('Y-m-d H:i')) ?>
+        </p>
+<?php
+    if ($station instanceof Station) {
 ?>
         <p>Minimum connection time is <span class="time"><?= html(show_minutes($station->minimumConnectionTime)) ?></span><?= $station->tocConnectionTimes === [] ? '.' : ', with the exception of the following:' ?></p>
 <?php
-    if ($station->tocConnectionTimes !== []) {
+        if ($station->tocConnectionTimes !== []) {
 ?>
         <table>
             <thead>
@@ -132,7 +148,7 @@ if ($station instanceof Station) {
             </thead>
             <tbody>
 <?php
-        foreach ($station->tocConnectionTimes as $entry) {
+            foreach ($station->tocConnectionTimes as $entry) {
 ?>
                 <tr>
                     <td><?= html($entry->arrivingToc) ?></td>
@@ -140,13 +156,13 @@ if ($station instanceof Station) {
                     <td class="time"><?= html(show_minutes($entry->connectionTime)) ?></td>
                 </tr>
 <?php
-        }
+            }
 ?>
             </tbody>
         </table>
 <?php
+        }
     }
-}
 ?>
         <table>
             <thead>
@@ -161,18 +177,18 @@ if ($station instanceof Station) {
             </thead>
             <tbody>
 <?php
-foreach ($board->calls as $service_call) {
-    $current_date = $service_call->timestamp->format('Y-m-d');
-    if ($current_date !== $date) {
-        $date = $current_date;
+    foreach ($board->calls as $service_call) {
+        $current_date = $service_call->timestamp->format('Y-m-d');
+        if ($current_date !== $date) {
+            $date = $current_date;
 ?>
                 <tr>
                     <th colspan="6"><?= html($date) ?></th>
                 </tr>
 <?php
-    }
-    $portions_count = count($service_call->destinations);
-    $portion_uids = array_keys($service_call->destinations);
+        }
+        $portions_count = count($service_call->destinations);
+        $portion_uids = array_keys($service_call->destinations);
 ?>
                 <tr>
                     <td class="time <?= $service_call->isValidConnection($from, $_GET['connecting_toc'] ?? null) ? 'valid_connection' : 'invalid_connection' ?>" rowspan="<?= html($portions_count) ?>"><?= html($service_call->timestamp->format('H:i')) ?></td>
@@ -180,13 +196,13 @@ foreach ($board->calls as $service_call) {
                     <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->toc) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html(substr($service_call->serviceProperty->rsid, 0, 6)) ?></td>
 <?php
-    foreach ($portion_uids as $i => $uid) {
-        if ($i > 0) {
+        foreach ($portion_uids as $i => $uid) {
+            if ($i > 0) {
 ?>
                 </tr>
                 <tr>
 <?php
-        }
+            }
 ?>
                     <td class="destination"><?= html($service_call->destinations[$uid]->location->name) ?></td>
                     <td><?=                        
@@ -218,13 +234,16 @@ foreach ($board->calls as $service_call) {
                         )
                     ?></td>
 <?php
-    }
+        }
 ?>
                 </tr>
 <?php
-}
+    }
 ?>
             </tbody>
         </table>
+<?php
+}
+?>
     </body>
 </html>

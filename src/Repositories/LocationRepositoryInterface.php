@@ -21,4 +21,9 @@ interface LocationRepositoryInterface {
      * @param array<string, string> $aliases
      */
     public function insertAliases(array $aliases) : void;
+
+    /**
+     * @return string[]
+     */
+    public function getAllStationNames() : array;
 }

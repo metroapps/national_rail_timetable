@@ -63,6 +63,18 @@ class MongodbLocationRepository implements LocationRepositoryInterface {
         $this->tiplocCache = [];
     }
 
+    public function getAllStationNames(): array {
+        return $this->collection->distinct(
+            'name'
+            , [
+                '$or' => [
+                    ['alias' => ['$exists' => true]],
+                    ['crsCode' => ['$ne' => null]],
+                ],
+            ]
+        );
+    }
+
     private function processResult(Cursor $cursor) : ?Location {
         $result = null;
         foreach ($cursor as $item) {

@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailJourneyPlanner\Repositories;
 
 use Miklcct\NationalRailJourneyPlanner\Models\Location;
+use Miklcct\NationalRailJourneyPlanner\Models\Station;
+
 use function is_string;
 
 class MemoryLocationRepository implements LocationRepositoryInterface {
@@ -51,6 +53,10 @@ class MemoryLocationRepository implements LocationRepositoryInterface {
 
     public function insertAliases(array $aliases) : void {
         $this->locationsByName += $aliases;
+    }
+
+    public function getAllStationNames() : array {
+        return array_keys(array_filter($this->locationsByName, fn($location) => is_string($location) || $location instanceof Station));
     }
 
     /** @var array<string, Location> */
