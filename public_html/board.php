@@ -96,7 +96,7 @@ $date = null;
 <?php
 foreach ($stations->getAllStationNames() as $name) {
 ?>
-                <option value="<?= html($name) ?>" />
+                <option value="<?= html($name) ?>"></option>
 <?php
 }
 ?>
@@ -105,31 +105,33 @@ foreach ($stations->getAllStationNames() as $name) {
 foreach ($_GET as $key => $value) {
     if (!in_array($key, ['station', 'filter'], true)) {
 ?>
-            <input type="hidden" key="<?= html($key) ?>" value="<?= html($value) ?>" />
+            <input type="hidden" name="<?= html($key) ?>" value="<?= html($value) ?>" />
 <?php
     }
 }
 ?>
             <p>
-                Show departures from: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($station?->name)?>"/>
+                <label>Show departures from: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($station?->name)?>"/></label>
             </p>
             <p>
                 Show only trains calling at (optional): <br/>
                 <input autocomplete="off" list="stations" type="text" name="filter[]" size="32" value="<?= html(($destinations[0] ?? null)?->name) ?>"/><br/>
                 <input autocomplete="off" list="stations" type="text" name="filter[]" size="32" value="<?= html(($destinations[1] ?? null)?->name) ?>"/><br/>
                 <input autocomplete="off" list="stations" type="text" name="filter[]" size="32" value="<?= html(($destinations[2] ?? null)?->name) ?>"/><br/>
+            </p>
+            <p>
                 <input type="submit" />
             </p>
         </form>
 <?php
 if ($station !== null) {
 ?>  
-        <h1>Departures from <?= html($station->name) ?></h1>
+        <h1>Departures from <?= html($station->name) ?> (<?= html($station->crsCode ?? '') ?>)</h1>
         <p>
 <?php
     if (is_array($destinations)) {
 ?>
-            Calling at <?= implode(' or ', array_map(fn(Location $station) => $station->name, $destinations)) ?>
+            Calling at <?= html(implode(' or ', array_map(fn(Location $station) => $station->name . (isset($station->crsCode) ? " ($station->crsCode)" : ''), $destinations))) ?>
 <?php
     }
 ?>
