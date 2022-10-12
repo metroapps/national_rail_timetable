@@ -27,6 +27,34 @@ class DepartureBoard implements Persistable {
         $this->calls = $calls;
     }
 
+    public function filter(array $crses, TimeType $time_type) : static {
+        return new static(
+            $this->crs
+            , $this->from
+            , $this->to
+            , $this->timeType
+            , array_filter(
+                $this->calls
+                , function (ServiceCallWithDestinationAndCalls $service_call) use ($time_type, $crses) : bool {
+                    return !in_array($this->timeType, [TimeType::PUBLIC_ARRIVAL, TimeType::WORKING_ARRIVAL], true)
+                            && array_filter(
+                                $service_call->subsequentCalls
+                                , static function (ServiceCallWithDestination $filter_call) use ($time_type, $crses) : bool {
+                                    return in_array($filter_call->call->location->crsCode, $crses, true);
+                                }
+                            ) !== []
+                        || !in_array($this->timeType, [TimeType::PUBLIC_DEPARTURE, TimeType::WORKING_DEPARTURE], true)
+                            && array_filter(
+                                $service_call->precedingCalls
+                                , static function (ServiceCallWithDestination $filter_call) use ($time_type, $crses) : bool {
+                                    return in_array($filter_call->call->location->crsCode, $crses, true);
+                                }
+                            ) !== [];
+                    }
+            )
+        );
+    }
+
     /** @var ServiceCallWithDestinationAndCalls[] */
     #[ElementType(ServiceCallWithDestinationAndCalls::class)]
     public readonly array $calls;
