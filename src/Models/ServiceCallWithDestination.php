@@ -6,6 +6,8 @@ namespace Miklcct\NationalRailJourneyPlanner\Models;
 use DateTimeImmutable;
 use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
 use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
+use Miklcct\NationalRailJourneyPlanner\Models\Points\DestinationPoint;
+use Miklcct\NationalRailJourneyPlanner\Models\Points\OriginPoint;
 use Miklcct\NationalRailJourneyPlanner\Models\Points\TimingPoint;
 
 // This class can be used to identify which portion(s) of the train will call
@@ -27,10 +29,10 @@ class ServiceCallWithDestination extends ServiceCall {
         $this->destinations = $destinations;
     }
 
-    /** @var Location[] */
-    #[ElementType(Location::class)]
+    /** @var OriginPoint[] */
+    #[ElementType(OriginPoint::class)]
     public readonly array $origins;
-    /** @var Location[] */
-    #[ElementType(Location::class)]
+    /** @var DestinationPoint[] */
+    #[ElementType(DestinationPoint::class)]
     public readonly array $destinations;
 }
