@@ -48,22 +48,30 @@ $destination_stations = isset($_GET['filter'])
 if (is_array($destination_stations) && in_array(null, $destination_stations, true)) {
     throw new InvalidArgumentException('Destination station can\'t be found!');
 }
-
-$board = $timetable->getDepartureBoard($station->crsCode, new DateTimeImmutable($_GET['from']), new DateTimeImmutable($_GET['to']), TimeType::PUBLIC_DEPARTURE);
+$from = isset($_GET['from']) ? new DateTimeImmutable($_GET['from']) : new DateTimeImmutable();
+$to = isset($_GET['to']) ? new DateTimeImmutable($_GET['to']) : (new DateTimeImmutable())->add(new DateInterval('P1D'));
+$board = $timetable->getDepartureBoard($station->crsCode, $from, $to, TimeType::PUBLIC_DEPARTURE);
 if (is_array($destination_stations)) {
     $board = $board->filter(array_map(fn(Location $station) => $station->crsCode, $destination_stations), TimeType::PUBLIC_ARRIVAL);
 }
+
+$date = null;
 
 ?>
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Departures from <?= 
+        <title><?= 
             html(
-                $station->name 
-                . (is_array($destination_stations) 
-                    ? ' to ' . implode(', ', array_map(fn(Location $station) => $station->name, $destination_stations))
-                    : '')
+                sprintf(
+                    'Departures from %s %s between %s and %s'
+                    , $station->name 
+                    , (is_array($destination_stations) 
+                        ? ' to ' . implode(', ', array_map(fn(Location $station) => $station->name, $destination_stations))
+                        : '')
+                    , $from->format('Y-m-d H:i')
+                    , $to->format('Y-m-d H:i')
+                )
             )
         ?></title>
     </head>
@@ -81,6 +89,15 @@ if (is_array($destination_stations)) {
             <tbody>
 <?php
 foreach ($board->calls as $service_call) {
+    $current_date = $service_call->timestamp->format('Y-m-d');
+    if ($current_date !== $date) {
+        $date = $current_date;
+?>
+                <tr>
+                    <th colspan="5"><?= html($date) ?></th>
+                </tr>
+<?php
+    }
     $portions_count = count($service_call->destinations);
     $portion_uids = array_keys($service_call->destinations);
 ?>
