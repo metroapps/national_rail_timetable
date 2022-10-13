@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
+use Miklcct\NationalRailJourneyPlanner\Repositories\LocationRepositoryInterface;
 use MongoDB\BSON\Persistable;
 use function is_string;
 
@@ -18,6 +19,27 @@ class Location implements Persistable {
     public function isSuperior(Location|string|null $existing) : bool {
         return !is_string($existing) && (
             $existing === null || $this->superiorScore() > $existing->superiorScore()
+        );
+    }
+
+    public function promoteToStation(LocationRepositoryInterface $repository) : ?Station {
+        if ($this->crsCode === null) {
+            return null;
+        }
+        $station = $repository->getLocationByCrs($this->crsCode);
+        if (!$station instanceof Station) {
+            return null;
+        }
+        return new Station(
+            $this->tiploc
+            , $station->crsCode
+            , $this->name
+            , $station->minorCrsCode
+            , $station->interchange
+            , $station->easting
+            , $station->northing
+            , $station->minimumConnectionTime
+            , $station->tocConnectionTimes
         );
     }
 

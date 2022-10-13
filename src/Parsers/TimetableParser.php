@@ -418,6 +418,6 @@ class TimetableParser {
             return $this->locationRepository->getLocationByCrs(substr($location, 0, 3));
         }
         $location = $this->locationRepository->getLocationByTiploc($location);
-        return ($location->crsCode !== null ? $this->locationRepository->getLocationByCrs($location->crsCode) : null) ?? $location;
+        return $location->promoteToStation($this->locationRepository) ?? $location;
     }
 }
