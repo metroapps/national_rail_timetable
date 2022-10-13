@@ -27,19 +27,6 @@ class DepartureBoard implements Persistable {
         $this->calls = $calls;
     }
 
-    public function filterValidConnection(DateTimeImmutable $time, ?string $other_toc) : static {
-        return new static(
-            $this->crs
-            , $this->from
-            , $this->to
-            , $this->timeType
-            , array_filter(
-                $this->calls
-                , fn(ServiceCall $call) => $call->isValidConnection($time, $other_toc)
-            )
-        );
-    }
-
     public function isOvertaken(ServiceCallWithDestinationAndCalls $service_call, string $destination_crs, string $portion_uid) : bool {
         if (in_array($this->timeType, [TimeType::WORKING_DEPARTURE, TimeType::PUBLIC_DEPARTURE])) {
             return array_filter(

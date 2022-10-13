@@ -19,3 +19,11 @@ h1 {
 .overtaken {
     color: lightgrey;
 }
+
+.valid_connection {
+    color: green;
+}
+
+.invalid_connection {
+    color: red;
+}

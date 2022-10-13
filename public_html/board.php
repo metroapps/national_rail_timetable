@@ -60,9 +60,6 @@ if (!empty($_GET['station'])) {
             throw new InvalidArgumentException('Destination station can\'t be found!');
         }
     }
-    if (!empty($_GET['connecting_toc'])) {
-        $board = $board->filterValidConnection($from, $_GET['connecting_toc']);
-    }
     if ($destination !== null) {
         $board = $board->filterByDestination($destination->crsCode);
     }
@@ -127,13 +124,6 @@ if ($station !== null) {
     }
 ?>
             from <?= html($from->format('Y-m-d H:i')) ?>
-<?php
-    if (!empty($_GET['connecting_toc'])) {
-?>
-            for a valid connection from <?= html($_GET['connecting_toc']) ?>
-<?php
-    }
-?>
         </h1>
 <?php
     if ($station instanceof Station) {
@@ -199,7 +189,7 @@ if ($station !== null) {
         );
 ?>
                 <tr class="<?= !in_array(false, $overtaken_portions, true) ? 'overtaken' : '' ?>">
-                    <td rowspan="<?= html($portions_count) ?>" class="time"><?= html($service_call->timestamp->format('H:i')) ?></td>
+                    <td class="time <?= $service_call->isValidConnection($from, $_GET['connecting_toc'] ?? null) ? 'valid_connection' : 'invalid_connection' ?>" rowspan="<?= html($portions_count) ?>"><?= html($service_call->timestamp->format('H:i')) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= match ($service_call->mode) {
                         Mode::BUS => 'BUS',
                         Mode::SHIP => 'SHIP',
