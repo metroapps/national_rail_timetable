@@ -5,6 +5,7 @@ namespace Miklcct\NationalRailJourneyPlanner\Parsers;
 
 use DateTimeZone;
 use LogicException;
+use Miklcct\NationalRailJourneyPlanner\Models\Date;
 use Miklcct\NationalRailJourneyPlanner\Models\FixedLink;
 use Miklcct\NationalRailJourneyPlanner\Models\Station;
 use Miklcct\NationalRailJourneyPlanner\Models\Time;
@@ -73,22 +74,22 @@ class FixedLinkParser {
                     $priority = (int)$fields[1];
                     break;
                 case 'F':
-                    $startDate = DateTimeImmutable::createFromFormat(
-                        'd/m/Y'
-                        ,
-                        $fields[1]
-                        ,
-                        new DateTimeZone('Europe/London')
-                    )->setTime(0, 0);
+                    $startDate = Date::fromDateTimeInterface(
+                        DateTimeImmutable::createFromFormat(
+                            'd/m/Y'
+                            , $fields[1]
+                            , new DateTimeZone('Europe/London')
+                        )->setTime(0, 0)
+                        );
                     break;
                 case 'U':
-                    $endDate = DateTimeImmutable::createFromFormat(
-                        'd/m/Y'
-                        ,
-                        $fields[1]
-                        ,
-                        new DateTimeZone('Europe/London')
-                    )->setTime(0, 0);
+                    $endDate = Date::fromDateTimeInterface(
+                        DateTimeImmutable::createFromFormat(
+                            'd/m/Y'
+                            , $fields[1]
+                            , new DateTimeZone('Europe/London')
+                        )->setTime(0, 0)
+                    );
                     break;
                 case 'R':
                     $weekdays = $this->helper->parseWeekdays($fields[1]);
