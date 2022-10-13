@@ -33,12 +33,6 @@ class DepartureBoard implements Persistable {
                 $service_call->subsequentCalls
                 , fn(ServiceCallWithDestination $filter_call) : bool =>
                     in_array($portion_uid, array_keys($filter_call->destinations), true)
-                    && $filter_call->call->location->crsCode === $destination_crs
-            ) === []
-            || array_filter(
-                $service_call->subsequentCalls
-                , fn(ServiceCallWithDestination $filter_call) : bool =>
-                    in_array($portion_uid, array_keys($filter_call->destinations), true)
                     && $filter_call->call->location->crsCode === $destination_crs 
                     && array_filter(
                         $this->calls
@@ -55,12 +49,6 @@ class DepartureBoard implements Persistable {
         }
         if (in_array($this->timeType, [TimeType::WORKING_ARRIVAL, TimeType::PUBLIC_ARRIVAL])) {
             return array_filter(
-                $service_call->precedingCalls
-                , fn(ServiceCallWithDestination $filter_call) : bool =>
-                    in_array($portion_uid, array_keys($filter_call->destinations), true)
-                    && $filter_call->call->location->crsCode === $destination_crs
-            ) === []
-            || array_filter(
                 $service_call->precedingCalls
                 , fn(ServiceCallWithDestination $filter_call) : bool =>
                     $filter_call->call->location->crsCode === $destination_crs && array_filter(
@@ -85,21 +73,79 @@ class DepartureBoard implements Persistable {
             , $this->from
             , $this->to
             , $this->timeType
-            , array_filter(
-                $this->calls
-                , fn(ServiceCallWithDestinationAndCalls $service_call) : bool =>
-                    !in_array($this->timeType, [TimeType::PUBLIC_ARRIVAL, TimeType::WORKING_ARRIVAL], true)
-                        && array_filter(
+            , array_map(
+                function (ServiceCallWithDestinationAndCalls $service_call) use ($filter_crs): ServiceCallWithDestinationAndCalls {
+                    if (!in_array($this->timeType, [TimeType::PUBLIC_ARRIVAL, TimeType::WORKING_ARRIVAL], true)) {
+                        $destinations = array_merge(
+                            ...array_map(
+                                fn(ServiceCallWithDestination $filter_call) => $filter_call->destinations
+                                , array_filter(
+                                    $service_call->subsequentCalls
+                                    , fn(ServiceCallWithDestination $filter_call) : bool =>
+                                        $filter_call->call->location->crsCode === $filter_crs
+                                )
+                            )
+                        );
+                        $subsequentCalls = array_filter(
                             $service_call->subsequentCalls
                             , fn(ServiceCallWithDestination $filter_call) : bool =>
-                                $filter_call->call->location->crsCode === $filter_crs
-                        ) !== []
-                    || !in_array($this->timeType, [TimeType::PUBLIC_DEPARTURE, TimeType::WORKING_DEPARTURE], true)
-                        && array_filter(
+                                array_intersect_key($destinations, $filter_call->destinations) !== []
+                        );
+                    } else {
+                        $destinatons = $service_call->destinations;
+                        $subsequentCalls = $service_call->subsequentCalls;
+                    }
+                    if (!in_array($this->timeType, [TimeType::PUBLIC_DEPARTURE, TimeType::WORKING_DEPARTURE], true)) {
+                        $origins = array_merge(
+                            ...array_map(
+                                fn(ServiceCallWithDestination $filter_call) => $filter_call->origins
+                                , array_filter(
+                                    $service_call->precedingCalls
+                                    , fn(ServiceCallWithDestination $filter_call) : bool =>
+                                        $filter_call->call->location->crsCode === $filter_crs
+                                )
+                            )
+                        );
+                        $precedingCalls = array_filter(
                             $service_call->precedingCalls
                             , fn(ServiceCallWithDestination $filter_call) : bool =>
-                                $filter_call->call->location->crsCode === $filter_crs
-                    ) !== []
+                                array_intersect_key($origins, $filter_call->origins) !== []
+                        );
+                    } else {
+                        $origins = $service_call->origins;
+                        $precedingCalls = $service_call->precedingCalls;
+                    }
+                    return new ServiceCallWithDestinationAndCalls(
+                        $service_call->timestamp
+                        , $service_call->timeType
+                        , $service_call->uid
+                        , $service_call->date
+                        , $service_call->call
+                        , $service_call->mode
+                        , $service_call->toc
+                        , $service_call->serviceProperty
+                        , $origins
+                        , $destinations
+                        , $precedingCalls
+                        , $subsequentCalls
+                    );
+                }
+                , array_filter(
+                    $this->calls
+                    , fn(ServiceCallWithDestinationAndCalls $service_call) : bool =>
+                        !in_array($this->timeType, [TimeType::PUBLIC_ARRIVAL, TimeType::WORKING_ARRIVAL], true)
+                            && array_filter(
+                                $service_call->subsequentCalls
+                                , fn(ServiceCallWithDestination $filter_call) : bool =>
+                                    $filter_call->call->location->crsCode === $filter_crs
+                            ) !== []
+                        || !in_array($this->timeType, [TimeType::PUBLIC_DEPARTURE, TimeType::WORKING_DEPARTURE], true)
+                            && array_filter(
+                                $service_call->precedingCalls
+                                , fn(ServiceCallWithDestination $filter_call) : bool =>
+                                    $filter_call->call->location->crsCode === $filter_crs
+                        ) !== []
+                )
             )
         );
     }
