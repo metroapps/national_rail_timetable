@@ -12,6 +12,7 @@ set_error_handler(
     }
 );
 
+use Miklcct\NationalRailJourneyPlanner\Enums\Activity;
 use Miklcct\NationalRailJourneyPlanner\Enums\Mode;
 use MongoDB\Client;
 use Miklcct\NationalRailJourneyPlanner\Repositories\MongodbLocationRepository;
@@ -261,7 +262,9 @@ if ($station !== null) {
         );
 ?>
                 <tr class="<?= !in_array(false, $overtaken_portions, true) ? 'overtaken' : '' ?>">
-                    <td class="time <?= $connecting_time === null || !$station instanceof Station ? '' : ($service_call->isValidConnection($connecting_time, $_GET['connecting_toc'] ?? null) ? 'valid_connection' : 'invalid_connection') ?>" rowspan="<?= html($portions_count) ?>"><?= html($service_call->timestamp->format('H:i')) ?></td>
+                    <td class="time <?= $connecting_time === null || !$station instanceof Station ? '' : ($service_call->isValidConnection($connecting_time, $_GET['connecting_toc'] ?? null) ? 'valid_connection' : 'invalid_connection') ?>" rowspan="<?= html($portions_count) ?>">
+                        <?= html($service_call->timestamp->format('H:i') . (in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? 'x' : '')) ?>
+                    </td>
                     <td rowspan="<?= html($portions_count) ?>"><?= match ($service_call->mode) {
                         Mode::BUS => 'BUS',
                         Mode::SHIP => 'SHIP',
@@ -286,21 +289,29 @@ if ($station !== null) {
                             , array_map(
                                 static function(ServiceCallWithDestination $service_call) use ($destination): string { 
                                     $station = $service_call->call->location;
-                                    return sprintf(
-                                        '<a href="%s" class="%s">%s (%s)</a>'
-                                        , $_SERVER['PHP_SELF'] . '?' . http_build_query(
-                                            [
-                                                'station' => $station->name,
-                                                'from' => $service_call->timestamp->format('c'),
-                                                'connecting_time' => $service_call->timestamp->format('c'),
-                                                'connecting_toc' => $service_call->toc,
-                                                'permanent_only' => $_GET['permanent_only'] ?? ''
-                                            ]
+                                    return $station->crsCode === null
+                                        ? sprintf(
+                                            '%s (%s%s)'
+                                            , html($station->name)
+                                            , html($service_call->timestamp->format('H:i'))
+                                            , in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? 'x' : ''
                                         )
-                                        , $station->crsCode === $destination?->crsCode ? 'destination' : ''
-                                        , html($station->name)
-                                        , html($service_call->timestamp->format('H:i'))
-                                    );
+                                        : sprintf(
+                                            '<a href="%s" class="%s">%s (%s%s)</a>'
+                                            , $_SERVER['PHP_SELF'] . '?' . http_build_query(
+                                                [
+                                                    'station' => $station->name,
+                                                    'from' => $service_call->timestamp->format('c'),
+                                                    'connecting_time' => $service_call->timestamp->format('c'),
+                                                    'connecting_toc' => $service_call->toc,
+                                                    'permanent_only' => $_GET['permanent_only'] ?? ''
+                                                ]
+                                            )
+                                            , $station->crsCode === $destination?->crsCode ? 'destination' : ''
+                                            , html($station->name)
+                                            , html($service_call->timestamp->format('H:i'))
+                                            , in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? 'x' : ''
+                                        );
                                 }
                                 , array_filter(
                                     $service_call->subsequentCalls
