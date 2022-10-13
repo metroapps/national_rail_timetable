@@ -292,7 +292,7 @@ if ($station !== null) {
                                     return $station->crsCode === null
                                         ? sprintf(
                                             '%s (%s%s)'
-                                            , html($station->name)
+                                            , html(preg_replace('/ \(.*\)$/', '', $station->name))
                                             , html($service_call->timestamp->format('H:i'))
                                             , in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? 'x' : ''
                                         )
@@ -308,7 +308,7 @@ if ($station !== null) {
                                                 ]
                                             )
                                             , $station->crsCode === $destination?->crsCode ? 'destination' : ''
-                                            , html($station->name)
+                                            , html(preg_replace('/ \(.*\)$/', '', $station->name))
                                             , html($service_call->timestamp->format('H:i'))
                                             , in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? 'x' : ''
                                         );

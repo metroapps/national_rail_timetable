@@ -33,7 +33,7 @@ class Location implements Persistable {
         return new Station(
             $this->tiploc
             , $station->crsCode
-            , $this->name
+            , $station->name
             , $station->minorCrsCode
             , $station->interchange
             , $station->easting
