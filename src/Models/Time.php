@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailJourneyPlanner\Models;
 
 use JsonSerializable;
+use DateTimeInterface;
 use MongoDB\BSON\Persistable;
 
 class Time implements JsonSerializable, Persistable {
@@ -32,6 +33,14 @@ class Time implements JsonSerializable, Persistable {
             && $result->toHalfMinutes() < $last_call->toHalfMinutes() - 120
             ? $result->addDay()
             : $result;
+    }
+
+    public static function fromDateTimeInterface(DateTimeInterface $datetime) : static {
+        return new static(
+            hours: (int)$datetime->format('G')
+            , minutes: (int)$datetime->format('i')
+            , halfMinute: ((int)$datetime->format('s')) >= 30
+        );
     }
 
     public function addDay() : static {
