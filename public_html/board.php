@@ -125,7 +125,7 @@ foreach ($stations->getAllStationNames() as $name) {
                 <label>from (leave empty for now) <input type="datetime-local" name="from" value="<?= html(empty($_GET['from']) ? '' : substr($from->format('c'), 0, 16)) ?>"/></label>
             </p>
             <p>
-                <label>Show valid connections at: <input type="datetime-local" name="connecting_time" value="<?= html($connecting_time !== null ? substr($connecting_time->format('c'), 0, 16) : '') ?>"/>
+                <label>Show valid connections at: <input type="datetime-local" name="connecting_time" value="<?= html(isset($connecting_time) ? substr($connecting_time->format('c'), 0, 16) : '') ?>"/>
                 from TOC: <input type="text" name="connecting_toc" size="8" value="<?= html($_GET['connecting_toc'] ?? '') ?>"/></label></br>
             </p>
             <p>
