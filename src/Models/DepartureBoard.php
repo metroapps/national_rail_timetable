@@ -40,7 +40,59 @@ class DepartureBoard implements Persistable {
         );
     }
 
-    public function filterByDestination(string $filter_crs, bool $not_overtaken = false) : static {
+    public function isOvertaken(ServiceCallWithDestinationAndCalls $service_call, string $destination_crs, string $portion_uid) : bool {
+        if (in_array($this->timeType, [TimeType::WORKING_DEPARTURE, TimeType::PUBLIC_DEPARTURE])) {
+            return array_filter(
+                $service_call->subsequentCalls
+                , fn(ServiceCallWithDestination $filter_call) : bool =>
+                    in_array($portion_uid, array_keys($filter_call->destinations), true)
+                    && $filter_call->call->location->crsCode === $destination_crs
+            ) === []
+            || array_filter(
+                $service_call->subsequentCalls
+                , fn(ServiceCallWithDestination $filter_call) : bool =>
+                    in_array($portion_uid, array_keys($filter_call->destinations), true)
+                    && $filter_call->call->location->crsCode === $destination_crs 
+                    && array_filter(
+                        $this->calls
+                        , static fn(ServiceCallWithDestinationAndCalls $other_call) : bool =>
+                            $other_call->timestamp >= $service_call->timestamp
+                            && array_filter(
+                                $other_call->subsequentCalls
+                                , static fn(ServiceCallWithDestination $compare_filter_call) : bool =>
+                                    $compare_filter_call->call->location->crsCode === $destination_crs
+                                    && $compare_filter_call->timestamp < $filter_call->timestamp
+                            ) !== []
+                    ) !== []
+            ) !== [];
+        }
+        if (in_array($this->timeType, [TimeType::WORKING_ARRIVAL, TimeType::PUBLIC_ARRIVAL])) {
+            return array_filter(
+                $service_call->precedingCalls
+                , fn(ServiceCallWithDestination $filter_call) : bool =>
+                    in_array($portion_uid, array_keys($filter_call->destinations), true)
+                    && $filter_call->call->location->crsCode === $destination_crs
+            ) === []
+            || array_filter(
+                $service_call->precedingCalls
+                , fn(ServiceCallWithDestination $filter_call) : bool =>
+                    $filter_call->call->location->crsCode === $destination_crs && array_filter(
+                        $this->calls
+                        , static fn(ServiceCallWithDestinationAndCalls $other_call) : bool =>
+                            $other_call->timestamp <= $service_call->timestamp
+                            && array_filter(
+                                $other_call->precedingCalls
+                                , static fn(ServiceCallWithDestination $compare_filter_call) : bool =>
+                                    $compare_filter_call->call->location->crsCode === $destination_crs
+                                    && $compare_filter_call->timestamp > $filter_call->timestamp
+                            ) !== []
+                    ) !== []
+            ) !== [];
+        }
+        return false;
+    }
+
+    public function filterByDestination(string $filter_crs) : static {
         return new static(
             $this->crs
             , $this->from
@@ -54,40 +106,12 @@ class DepartureBoard implements Persistable {
                             $service_call->subsequentCalls
                             , fn(ServiceCallWithDestination $filter_call) : bool =>
                                 $filter_call->call->location->crsCode === $filter_crs
-                                && (
-                                    !$not_overtaken 
-                                    || array_filter(
-                                        $this->calls
-                                        , static fn(ServiceCallWithDestinationAndCalls $other_call) : bool =>
-                                            $other_call->timestamp >= $service_call->timestamp
-                                            && array_filter(
-                                                $other_call->subsequentCalls
-                                                , static fn(ServiceCallWithDestination $compare_filter_call) : bool =>
-                                                    $compare_filter_call->call->location->crsCode === $filter_crs
-                                                    && $compare_filter_call->timestamp < $filter_call->timestamp
-                                            ) !== []
-                                    ) === []
-                                )
                         ) !== []
                     || !in_array($this->timeType, [TimeType::PUBLIC_DEPARTURE, TimeType::WORKING_DEPARTURE], true)
                         && array_filter(
                             $service_call->precedingCalls
                             , fn(ServiceCallWithDestination $filter_call) : bool =>
                                 $filter_call->call->location->crsCode === $filter_crs
-                                && (
-                                    !$not_overtaken 
-                                    || array_filter(
-                                        $this->calls
-                                        , static fn(ServiceCallWithDestinationAndCalls $other_call) : bool =>
-                                            $other_call->timestamp <= $service_call->timestamp
-                                            && array_filter(
-                                                $other_call->precedingCalls
-                                                , static fn(ServiceCallWithDestination $compare_filter_call) : bool =>
-                                                    $compare_filter_call->call->location->crsCode === $filter_crs
-                                                    && $compare_filter_call->timestamp > $filter_call->timestamp
-                                            ) !== []
-                                    ) === []
-                                )
                     ) !== []
             )
         );

@@ -64,7 +64,7 @@ if (!empty($_GET['station'])) {
         $board = $board->filterValidConnection($from, $_GET['connecting_toc']);
     }
     if ($destination !== null) {
-        $board = $board->filterByDestination($destination->crsCode, !empty($_GET['not_overtaken']));
+        $board = $board->filterByDestination($destination->crsCode);
     }
 }
 
@@ -102,7 +102,6 @@ foreach ($stations->getAllStationNames() as $name) {
             <p>
                 <label>Show departures at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($station?->name)?>"/></label><br/>
                 <label>only trains calling at (optional): <input autocomplete="off" list="stations" type="text" name="filter" size="32" value="<?= html($destination?->name) ?>"/></label><br/>
-                <label>Non-overtaken trains only: <input type="checkbox" name="not_overtaken" <?= !empty($_GET['not_overtaken']) ? 'checked="checked"' : '' ?>/></label><br/>
                 <label>from (leave empty for now) <input type="datetime-local" name="from" value="<?= html(isset($from) ? substr($from->format('c'), 0, 19) : '') ?>"/></label>
             </p>
             <p>
@@ -191,10 +190,17 @@ if ($station !== null) {
         }
         $portions_count = count($service_call->destinations);
         $portion_uids = array_keys($service_call->destinations);
+        $overtaken_portions = array_combine(
+            $portion_uids
+            , array_map(
+                fn(string $uid) : bool => $destination !== null ? $board->isOvertaken($service_call, $destination->crsCode, $uid) : false
+                , $portion_uids
+            )
+        );
 ?>
-                <tr>
-                    <td class="time"><?= html($service_call->timestamp->format('H:i')) ?></td>
-                    <td><?= match ($service_call->mode) {
+                <tr class="<?= !in_array(false, $overtaken_portions, true) ? 'overtaken' : '' ?>">
+                    <td rowspan="<?= html($portions_count) ?>" class="time"><?= html($service_call->timestamp->format('H:i')) ?></td>
+                    <td rowspan="<?= html($portions_count) ?>"><?= match ($service_call->mode) {
                         Mode::BUS => 'BUS',
                         Mode::SHIP => 'SHIP',
                         default => '',
@@ -207,12 +213,12 @@ if ($station !== null) {
             if ($i > 0) {
 ?>
                 </tr>
-                <tr>
+                <tr class="<?= !in_array(false, $overtaken_portions, true) ? 'overtaken' : '' ?>">
 <?php
             }
 ?>
-                    <td class="destination"><?= html($service_call->destinations[$uid]->location->name) ?></td>
-                    <td><?=                        
+                    <td class="destination <?= $overtaken_portions[$uid] ? 'overtaken' : '' ?>"><?= html($service_call->destinations[$uid]->location->name) ?></td>
+                    <td class="<?= $overtaken_portions[$uid] ? 'overtaken' : '' ?>"><?=                        
                         implode(
                             ', '
                             , array_map(

@@ -1,3 +1,8 @@
+html {
+    color: black;
+    background-color: white;
+}
+
 table, th, td {
     border: 1px black solid;
     border-collapse: collapse;
@@ -9,4 +14,8 @@ h1 {
 
 .time, .destination {
     font-weight: bold;
+}
+
+.overtaken {
+    color: lightgrey;
 }
