@@ -19,7 +19,4 @@ class MemoryFixedLinkRepository implements FixedLinkRepositoryInterface {
                     && ($destination_crs === null || $fixed_link->destination->crsCode === $destination_crs)
         );
     }
-
-    /** @var FixedLink[] */
-    private array $fixedLinks;
 }

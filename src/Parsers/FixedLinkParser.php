@@ -108,6 +108,18 @@ class FixedLinkParser {
                 , $endDate
                 , $weekdays
             );
+            $fixed_links[] = new FixedLink(
+                $mode
+                , $destination
+                , $origin
+                , $transferTime
+                , $startTime
+                , $endTime
+                , $priority
+                , $startDate
+                , $endDate
+                , $weekdays
+            );
         }
         $this->fixedLinkRepository->insert($fixed_links);
     }

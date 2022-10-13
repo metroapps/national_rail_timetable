@@ -48,16 +48,16 @@ $destination = null;
 
 if (!empty($_GET['station'])) {
     $station = $stations->getLocationByCrs(strtoupper($_GET['station'])) ?? $stations->getLocationByName(strtoupper($_GET['station']));
-    if (!$station instanceof Station) {
+    if ($station === null) {
         throw new InvalidArgumentException('Station can\'t be found!');
     }
 
     $time_zone = new DateTimeZone('Europe/London');
-    $from = isset($_GET['from']) ? new DateTimeImmutable($_GET['from']) : new DateTimeImmutable('now');
-    $from = $from->setTimezone($time_zone);
+    $from = isset($_GET['from']) ? new DateTimeImmutable($_GET['from'], $time_zone) : new DateTimeImmutable('now');
     $from = $from->setTime((int)$from->format('H'), (int)$from->format('i'), 0);
     $to = $from->add(new DateInterval('P1DT4H30M'));
     $board = $timetable->getDepartureBoard($station->crsCode, $from, $to, TimeType::PUBLIC_DEPARTURE);
+    $connecting_time = !empty($_GET['connecting_time']) ? new DateTimeImmutable($_GET['connecting_time'], $time_zone) : null;
     if (!empty($_GET['filter'])) {
         $input = strtoupper($_GET['filter']);
         $destination = $stations->getLocationByCrs($input) ?? $stations->getLocationByName($input);
@@ -70,7 +70,7 @@ if (!empty($_GET['station'])) {
     }
     /** @var FixedLink[] */
     $station_links = [];
-    $fixed_link_departure_time = $from->add(new DateInterval(sprintf('PT%dM', $station->minimumConnectionTime)));
+    $fixed_link_departure_time = isset($connecting_time) && $station instanceof Station ? $connecting_time->add(new DateInterval(sprintf('PT%dM', $station->minimumConnectionTime))) : $from;
     foreach ($fixed_links->get($station->crsCode, null) as $fixed_link) {
         $arrival_time = $fixed_link->getArrivalTime($fixed_link_departure_time);
         $existing = $station_links[$fixed_link->destination->crsCode] ?? null;
@@ -97,12 +97,12 @@ $date = null;
         <title><?= 
             html(
                 $station === null ? 'Departure board' : sprintf(
-                    'Departures at %s %s from %s'
+                    'Departures at %s %s %s'
                     , $station->name 
                     , $destination !== null 
                         ? ' to ' . $destination->name
                         : ''
-                    , $from->format('Y-m-d H:i')
+                    , empty($_GET['from']) ? 'now' : 'from ' . $from->format('Y-m-d H:i')
                 )
             )
         ?></title>
@@ -121,10 +121,11 @@ foreach ($stations->getAllStationNames() as $name) {
             <p>
                 <label>Show departures at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($station?->name)?>"/></label><br/>
                 <label>only trains calling at (optional): <input autocomplete="off" list="stations" type="text" name="filter" size="32" value="<?= html($destination?->name) ?>"/></label><br/>
-                <label>from (leave empty for now) <input type="datetime-local" name="from" value="<?= html(isset($from) ? substr($from->format('c'), 0, 19) : '') ?>"/></label>
+                <label>from (leave empty for now) <input type="datetime-local" name="from" value="<?= html(empty($_GET['from']) ? '' : substr($from->format('c'), 0, 16)) ?>"/></label>
             </p>
             <p>
-                <label>Show valid connections from TOC: <input type="text" name="connecting_toc" size="8" value="<?= html($_GET['connecting_toc'] ?? '') ?>"/></label></br>
+                <label>Show valid connections at: <input type="datetime-local" name="connecting_time" value="<?= html($connecting_time !== null ? substr($connecting_time->format('c'), 0, 16) : '') ?>"/>
+                from TOC: <input type="text" name="connecting_toc" size="8" value="<?= html($_GET['connecting_toc'] ?? '') ?>"/></label></br>
             </p>
             <p>
                 <label>Show permanent timetable instead of actual timetable: <input type="checkbox" name="permanent_only" <?= !empty($_GET['permanent_only']) ? 'checked="checked"' : '' ?>/></label><br/>
@@ -144,12 +145,23 @@ if ($station !== null) {
             calling at <?= html($destination->name . (isset($destination->crsCode) ? " ($destination->crsCode)" : '')) ?>
 <?php
     }
+    if (!empty($_GET['from'])) {
 ?>
             from <?= html($from->format('Y-m-d H:i')) ?>
+<?php
+    } else {
+?>
+            now
+<?php
+    }
+?>
         </h1>
+<?php
+    if ($station instanceof Station) {
+?>
         <p>Minimum connection time is <span class="time"><?= html(show_minutes($station->minimumConnectionTime)) ?></span><?= $station->tocConnectionTimes === [] ? '.' : ', with the exception of the following:' ?></p>
 <?php
-    if ($station->tocConnectionTimes !== []) {
+        if ($station->tocConnectionTimes !== []) {
 ?>
         <table>
             <thead>
@@ -157,7 +169,7 @@ if ($station !== null) {
             </thead>
             <tbody>
 <?php
-        foreach ($station->tocConnectionTimes as $entry) {
+            foreach ($station->tocConnectionTimes as $entry) {
 ?>
                 <tr>
                     <td><?= html($entry->arrivingToc) ?></td>
@@ -170,19 +182,19 @@ if ($station !== null) {
             </tbody>
         </table>
 <?php
-    }
+        }
 
-    if (!empty($station_links)) {
+        if (!empty($station_links)) {
 ?>
         <table>
             <thead>
-                <tr><th colspan="6">Fixed links as of <?= html($from->add(new DateInterval(sprintf("PT%dM", $station->minimumConnectionTime)))->format('Y-m-d H:i')) ?></th></tr>
+                <tr><th colspan="6">Fixed links as of <?= html($fixed_link_departure_time->format('Y-m-d H:i')) ?></th></tr>
                 <tr><th>Transfer to</th><th>Mode</th><th>From</th><th>To</th><th>Minutes</th><th>Arrival</th></tr>
             </thead>
             <tbody>
 <?php
-        foreach ($station_links as $link) {
-            $arrival_time = $link->getArrivalTime($fixed_link_departure_time);
+            foreach ($station_links as $link) {
+                $arrival_time = $link->getArrivalTime($fixed_link_departure_time);
 ?>
                 <tr>
                     <td class="destination">
@@ -190,7 +202,8 @@ if ($station !== null) {
                             $_SERVER['PHP_SELF'] . '?' . http_build_query(
                                 [
                                     'station' => $link->destination->name,
-                                    'from' => $arrival_time->format('c'),
+                                    'from' => ($connecting_time ?? $from)->format('c'),
+                                    'connecting_time' => $arrival_time->format('c'),
                                     'permanent_only' => $_GET['permanent_only'] ?? ''
                                 ]
                             )
@@ -205,11 +218,12 @@ if ($station !== null) {
                     <td class="time"><?= html($arrival_time->format('H:i')) ?></td>
                 </tr>
 <?php
-        }
+            }
 ?>
             </tbody>
         </table>
 <?php
+        }
     }
 ?>
         <table>
@@ -247,7 +261,7 @@ if ($station !== null) {
         );
 ?>
                 <tr class="<?= !in_array(false, $overtaken_portions, true) ? 'overtaken' : '' ?>">
-                    <td class="time <?= $service_call->isValidConnection($from, $_GET['connecting_toc'] ?? null) ? 'valid_connection' : 'invalid_connection' ?>" rowspan="<?= html($portions_count) ?>"><?= html($service_call->timestamp->format('H:i')) ?></td>
+                    <td class="time <?= $connecting_time === null || !$station instanceof Station ? '' : ($service_call->isValidConnection($connecting_time, $_GET['connecting_toc'] ?? null) ? 'valid_connection' : 'invalid_connection') ?>" rowspan="<?= html($portions_count) ?>"><?= html($service_call->timestamp->format('H:i')) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= match ($service_call->mode) {
                         Mode::BUS => 'BUS',
                         Mode::SHIP => 'SHIP',
@@ -278,6 +292,7 @@ if ($station !== null) {
                                             [
                                                 'station' => $station->name,
                                                 'from' => $service_call->timestamp->format('c'),
+                                                'connecting_time' => $service_call->timestamp->format('c'),
                                                 'connecting_toc' => $service_call->toc,
                                                 'permanent_only' => $_GET['permanent_only'] ?? ''
                                             ]

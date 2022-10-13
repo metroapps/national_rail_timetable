@@ -56,7 +56,7 @@ class MemoryLocationRepository implements LocationRepositoryInterface {
     }
 
     public function getAllStationNames() : array {
-        return array_keys(array_filter($this->locationsByName, fn($location) => is_string($location) || $location instanceof Station));
+        return array_keys(array_filter($this->locationsByName, fn($location) => is_string($location) || $location->crsCode !== null));
     }
 
     /** @var array<string, Location> */

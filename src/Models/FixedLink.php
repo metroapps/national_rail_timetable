@@ -33,8 +33,8 @@ class FixedLink implements Persistable {
         $departure = $departure->setTimezone($timezone);
         $time = Time::fromDateTimeInterface($departure);
         $date_valid = $this->weekdays[(int)$departure->format('w')]
-            && ($this->startDate !== null ? $this->startDate->toDateTimeImmutable(new Time(0, 0), $timezone) <= $timestamp : true)
-            && ($this->endDate !== null ? $this->endDate->toDateTimeImmutable(new Time(23, 59, true), $timezone) >= $timestamp : true);
+            && ($this->startDate !== null ? $this->startDate->toDateTimeImmutable(new Time(0, 0), $timezone) <= $departure : true)
+            && ($this->endDate !== null ? $this->endDate->toDateTimeImmutable(new Time(23, 59, true), $timezone) >= $departure : true);
         $time_valid = $this->startTime->toHalfMinutes() <= $time->toHalfMinutes()
             && $this->endTime->toHalfMinutes() >= $time->toHalfMinutes();
         if ($date_valid && $time_valid) return $departure->add(new DateInterval(sprintf('PT%dM', $this->transferTime)));
