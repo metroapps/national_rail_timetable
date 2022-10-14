@@ -36,6 +36,7 @@ use Miklcct\NationalRailJourneyPlanner\Repositories\ServiceRepositoryInterface;
 use function array_filter;
 use function array_map;
 use function fgets;
+use function Miklcct\NationalRailJourneyPlanner\get_full_station_name;
 use function str_contains;
 use function str_split;
 use function str_starts_with;
@@ -406,7 +407,7 @@ class TimetableParser {
         }
         return new TiplocLocation(
             tiploc: $columns[1]
-            , name: $columns[5]
+            , name: get_full_station_name($columns[5])
             , crsCode: $columns[8] === '' ? null : $columns[8]
             , stanox: $stanox
         );

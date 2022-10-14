@@ -27,3 +27,12 @@ function get_all_tocs() : array {
     $result ??= json_decode(file_get_contents(__DIR__ . '/../resource/toc.json'), true);
     return $result;
 }
+
+/**
+ * Get the full version of truncated station name
+ */
+function get_full_station_name(string $name) : string {
+    static $mapping;
+    $mapping ??= json_decode(file_get_contents(__DIR__ . '/../resource/long_station_names.json'), true);
+    return $mapping[$name] ?? $name;
+}

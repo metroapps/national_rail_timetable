@@ -45,7 +45,7 @@ class Location implements Persistable {
     }
 
     public function getShortName() : string {
-        return preg_replace('/ \(.*/', '', $this->name);
+        return preg_replace('/ \(.*\)$/', '', $this->name);
     }
 
     private function superiorScore() : int {

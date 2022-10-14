@@ -9,6 +9,7 @@ use Miklcct\NationalRailJourneyPlanner\Repositories\LocationRepositoryInterface;
 use function array_filter;
 use function fgetcsv;
 use function fgets;
+use function Miklcct\NationalRailJourneyPlanner\get_full_station_name;
 use function str_starts_with;
 
 class StationParser {
@@ -57,7 +58,7 @@ class StationParser {
             $stations[] = new Station(
                 tiploc: $columns[5]
                 , crsCode: $columns[8]
-                , name: $columns[2]
+                , name: get_full_station_name($columns[2])
                 , interchange: (int)$columns[4]
                 , minorCrsCode: $columns[6]
                 , easting: ((int)$columns[9] - 10000) * 100
@@ -80,7 +81,7 @@ class StationParser {
         // parse aliases
         while (str_starts_with($line, 'L')) {
             $columns = $this->helper->parseLine($line, [1, 4, 26, 5, 26, 20]);
-            $aliases[$columns[4]] = $columns[2];
+            $aliases[get_full_station_name($columns[4])] = get_full_station_name($columns[2]);
             $line = fgets($msn_file);
         }
 
