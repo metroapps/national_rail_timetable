@@ -10,6 +10,9 @@ use Miklcct\NationalRailJourneyPlanner\Models\FixedLink;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCall;
 use Psr\Http\Message\StreamFactoryInterface;
 
+use function Miklcct\NationalRailJourneyPlanner\get_all_tocs;
+use function Miklcct\ThinPhpApp\Escaper\html;
+
 class BoardView extends BoardFormView {
     public function __construct(
         StreamFactoryInterface $streamFactory
@@ -90,5 +93,9 @@ class BoardView extends BoardFormView {
                 'permanent_only' => $this->permanentOnly ?? ''
             ]
         );
+    }
+
+    public function getTocSpan(string $toc) : string {
+        return sprintf('<abbr title="%s">%s</abbr>', html(get_all_tocs()[$toc] ?? ''), html($toc));
     }
 }

@@ -18,3 +18,12 @@ function array_rotate(array $array, int $offset) : array {
         , array_slice($array, 0, $offset)
     );
 }
+
+/**
+ * Get the list of all TOCs in code => name format
+ */
+function get_all_tocs() : array {
+    static $result;
+    $result ??= json_decode(file_get_contents(__DIR__ . '/../resource/toc.json'), true);
+    return $result;
+}

@@ -9,6 +9,8 @@ use Miklcct\NationalRailJourneyPlanner\Enums\Mode;
 use Miklcct\NationalRailJourneyPlanner\Models\Station;
 use Miklcct\NationalRailJourneyPlanner\Models\Location;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCallWithDestination;
+
+use function Miklcct\NationalRailJourneyPlanner\get_all_tocs;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 /** @var BoardFormView $this */
@@ -38,7 +40,17 @@ foreach ($this->stations as $station) {
             </p>
             <p>
                 <label>Show valid connections at: <input type="datetime-local" name="connecting_time" value="<?= html($this->getFormData()['connecting_time'] ?? null) ?>"/>
-                from TOC: <input type="text" name="connecting_toc" size="8" value="<?= html($this->getFormData()['connecting_toc'] ?? '') ?>"/></label></br>
+                from TOC: <select name="connecting_toc">
+                    <option></option>
+<?php
+/** @var Location */
+foreach (get_all_tocs() as $code => $name) {
+?>
+                    <option value="<?= html($code) ?>" <?= $code === ($this->getFormData()['connecting_toc'] ?? null) ? 'selected="selected"' : '' ?>><?= html($name) ?></option>
+<?php
+}
+?>
+                </select></label></br>
             </p>
             <p>
                 <label>Show permanent timetable instead of actual timetable: <input type="checkbox" name="permanent_only" <?= !empty($this->getFormData()['permanent_only']) ? 'checked="checked"' : '' ?>/></label><br/>
@@ -67,8 +79,8 @@ if ($this instanceof BoardView) {
             foreach ($this->station->tocConnectionTimes as $entry) {
 ?>
                 <tr>
-                    <td><?= html($entry->arrivingToc) ?></td>
-                    <td><?= html($entry->departingToc) ?></td>
+                    <td><?= $this->getTocSpan($entry->arrivingToc) ?></td>
+                    <td><?= $this->getTocSpan($entry->departingToc) ?></td>
                     <td><?= html($entry->connectionTime) ?></td>
                 </tr>
 <?php
@@ -158,7 +170,7 @@ if ($this instanceof BoardView) {
                         default => '',
                     } ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->call->platform) ?></td>
-                    <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->toc) ?></td>
+                    <td rowspan="<?= html($portions_count) ?>"><?= $this->getTocSpan($service_call->toc) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html(substr($service_call->serviceProperty->rsid, 0, 6)) ?></td>
 <?php
         foreach ($portion_uids as $i => $uid) {
