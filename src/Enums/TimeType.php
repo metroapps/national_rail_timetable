@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Enums;
+namespace Miklcct\NationalRailTimetable\Enums;
 
 enum TimeType : string {
     case WORKING_ARRIVAL = 'working_arrival';

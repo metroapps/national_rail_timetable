@@ -1,22 +1,22 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Repositories;
+namespace Miklcct\NationalRailTimetable\Repositories;
 
 use InvalidArgumentException;
-use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
-use Miklcct\NationalRailJourneyPlanner\Enums\AssociationDay;
-use Miklcct\NationalRailJourneyPlanner\Enums\AssociationType;
-use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
-use Miklcct\NationalRailJourneyPlanner\Models\Association;
-use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
-use Miklcct\NationalRailJourneyPlanner\Models\Date;
-use Miklcct\NationalRailJourneyPlanner\Models\DatedAssociation;
-use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
-use Miklcct\NationalRailJourneyPlanner\Models\FullService;
-use Miklcct\NationalRailJourneyPlanner\Models\Points\CallingPoint;
-use Miklcct\NationalRailJourneyPlanner\Models\Service;
-use Miklcct\NationalRailJourneyPlanner\Models\ServiceCall;
+use Miklcct\NationalRailTimetable\Enums\AssociationCategory;
+use Miklcct\NationalRailTimetable\Enums\AssociationDay;
+use Miklcct\NationalRailTimetable\Enums\AssociationType;
+use Miklcct\NationalRailTimetable\Enums\ShortTermPlanning;
+use Miklcct\NationalRailTimetable\Models\Association;
+use Miklcct\NationalRailTimetable\Models\AssociationEntry;
+use Miklcct\NationalRailTimetable\Models\Date;
+use Miklcct\NationalRailTimetable\Models\DatedAssociation;
+use Miklcct\NationalRailTimetable\Models\DatedService;
+use Miklcct\NationalRailTimetable\Models\FullService;
+use Miklcct\NationalRailTimetable\Models\Points\CallingPoint;
+use Miklcct\NationalRailTimetable\Models\Service;
+use Miklcct\NationalRailTimetable\Models\ServiceCall;
 use function count;
 
 abstract class AbstractServiceRepository implements ServiceRepositoryInterface {

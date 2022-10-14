@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner;
+namespace Miklcct\NationalRailTimetable;
 
 use function array_slice;
 

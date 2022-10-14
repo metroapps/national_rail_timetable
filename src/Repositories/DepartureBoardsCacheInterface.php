@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Repositories;
+namespace Miklcct\NationalRailTimetable\Repositories;
 
 use DateTimeImmutable;
-use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
-use Miklcct\NationalRailJourneyPlanner\Models\DepartureBoard;
+use Miklcct\NationalRailTimetable\Enums\TimeType;
+use Miklcct\NationalRailTimetable\Models\DepartureBoard;
 
 interface DepartureBoardsCacheInterface {
     public function getDepartureBoard(

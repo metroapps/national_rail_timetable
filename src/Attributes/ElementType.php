@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Attributes;
+namespace Miklcct\NationalRailTimetable\Attributes;
 
 use Attribute;
 

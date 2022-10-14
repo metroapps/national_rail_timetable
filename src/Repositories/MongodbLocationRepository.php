@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Repositories;
+namespace Miklcct\NationalRailTimetable\Repositories;
 
-use Miklcct\NationalRailJourneyPlanner\Models\Location;
-use Miklcct\NationalRailJourneyPlanner\Models\Station;
+use Miklcct\NationalRailTimetable\Models\Location;
+use Miklcct\NationalRailTimetable\Models\Station;
 use MongoDB\Collection;
 use MongoDB\Driver\Cursor;
 use function array_keys;

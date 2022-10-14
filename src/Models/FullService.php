@@ -1,20 +1,20 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Models;
+namespace Miklcct\NationalRailTimetable\Models;
 
 use DateInterval;
 use DateTimeImmutable;
 use LogicException;
-use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
-use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
-use Miklcct\NationalRailJourneyPlanner\Models\Points\CallingPoint;
-use Miklcct\NationalRailJourneyPlanner\Models\Points\DestinationPoint;
-use Miklcct\NationalRailJourneyPlanner\Models\Points\HasArrival;
-use Miklcct\NationalRailJourneyPlanner\Models\Points\HasDeparture;
-use Miklcct\NationalRailJourneyPlanner\Models\Points\OriginPoint;
-use Miklcct\NationalRailJourneyPlanner\Models\Points\PassingPoint;
-use Miklcct\NationalRailJourneyPlanner\Models\Points\TimingPoint;
+use Miklcct\NationalRailTimetable\Enums\AssociationCategory;
+use Miklcct\NationalRailTimetable\Enums\TimeType;
+use Miklcct\NationalRailTimetable\Models\Points\CallingPoint;
+use Miklcct\NationalRailTimetable\Models\Points\DestinationPoint;
+use Miklcct\NationalRailTimetable\Models\Points\HasArrival;
+use Miklcct\NationalRailTimetable\Models\Points\HasDeparture;
+use Miklcct\NationalRailTimetable\Models\Points\OriginPoint;
+use Miklcct\NationalRailTimetable\Models\Points\PassingPoint;
+use Miklcct\NationalRailTimetable\Models\Points\TimingPoint;
 use UnexpectedValueException;
 use function array_filter;
 use function array_map;

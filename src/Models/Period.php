@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Models;
+namespace Miklcct\NationalRailTimetable\Models;
 
-use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
+use Miklcct\NationalRailTimetable\Attributes\ElementType;
 use MongoDB\BSON\Persistable;
 
 class Period implements Persistable {

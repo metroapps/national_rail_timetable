@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Models;
+namespace Miklcct\NationalRailTimetable\Models;
 
-use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
-use Miklcct\NationalRailJourneyPlanner\Enums\Catering;
-use Miklcct\NationalRailJourneyPlanner\Enums\Power;
-use Miklcct\NationalRailJourneyPlanner\Enums\Reservation;
-use Miklcct\NationalRailJourneyPlanner\Enums\TrainCategory;
+use Miklcct\NationalRailTimetable\Attributes\ElementType;
+use Miklcct\NationalRailTimetable\Enums\Catering;
+use Miklcct\NationalRailTimetable\Enums\Power;
+use Miklcct\NationalRailTimetable\Enums\Reservation;
+use Miklcct\NationalRailTimetable\Enums\TrainCategory;
 use MongoDB\BSON\Persistable;
 use function substr;
 

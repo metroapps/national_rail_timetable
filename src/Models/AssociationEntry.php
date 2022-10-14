@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Models;
+namespace Miklcct\NationalRailTimetable\Models;
 
-use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
+use Miklcct\NationalRailTimetable\Enums\ShortTermPlanning;
 use MongoDB\BSON\Persistable;
 
 abstract class AssociationEntry implements Persistable {

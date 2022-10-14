@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Models;
+namespace Miklcct\NationalRailTimetable\Models;
 
 use DateTimeImmutable;
-use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
-use Miklcct\NationalRailJourneyPlanner\Models\Points\TimingPoint;
+use Miklcct\NationalRailTimetable\Enums\TimeType;
+use Miklcct\NationalRailTimetable\Models\Points\TimingPoint;
 use MongoDB\BSON\Persistable;
 use DateInterval;
-use Miklcct\NationalRailJourneyPlanner\Enums\Mode;
+use Miklcct\NationalRailTimetable\Enums\Mode;
 
 class ServiceCall implements Persistable {
     use BsonSerializeTrait;

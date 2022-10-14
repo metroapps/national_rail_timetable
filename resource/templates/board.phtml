@@ -1,16 +1,16 @@
 <?php
 declare(strict_types=1);
 
-use Miklcct\NationalRailJourneyPlanner\Views\BoardFormView;
-use Miklcct\NationalRailJourneyPlanner\Views\BoardView;
-use Miklcct\NationalRailJourneyPlanner\Models\FixedLink;
-use Miklcct\NationalRailJourneyPlanner\Enums\Activity;
-use Miklcct\NationalRailJourneyPlanner\Enums\Mode;
-use Miklcct\NationalRailJourneyPlanner\Models\Station;
-use Miklcct\NationalRailJourneyPlanner\Models\Location;
-use Miklcct\NationalRailJourneyPlanner\Models\ServiceCallWithDestination;
+use Miklcct\NationalRailTimetable\Views\BoardFormView;
+use Miklcct\NationalRailTimetable\Views\BoardView;
+use Miklcct\NationalRailTimetable\Models\FixedLink;
+use Miklcct\NationalRailTimetable\Enums\Activity;
+use Miklcct\NationalRailTimetable\Enums\Mode;
+use Miklcct\NationalRailTimetable\Models\Station;
+use Miklcct\NationalRailTimetable\Models\Location;
+use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 
-use function Miklcct\NationalRailJourneyPlanner\get_all_tocs;
+use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 /** @var BoardFormView $this */

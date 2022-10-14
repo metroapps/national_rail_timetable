@@ -1,16 +1,16 @@
 <?php
 declare(strict_types = 1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Views;
+namespace Miklcct\NationalRailTimetable\Views;
 
 use DateTimeImmutable;
-use Miklcct\NationalRailJourneyPlanner\Models\DepartureBoard;
-use Miklcct\NationalRailJourneyPlanner\Models\Location;
-use Miklcct\NationalRailJourneyPlanner\Models\FixedLink;
-use Miklcct\NationalRailJourneyPlanner\Models\ServiceCall;
+use Miklcct\NationalRailTimetable\Models\DepartureBoard;
+use Miklcct\NationalRailTimetable\Models\Location;
+use Miklcct\NationalRailTimetable\Models\FixedLink;
+use Miklcct\NationalRailTimetable\Models\ServiceCall;
 use Psr\Http\Message\StreamFactoryInterface;
 
-use function Miklcct\NationalRailJourneyPlanner\get_all_tocs;
+use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 class BoardView extends BoardFormView {

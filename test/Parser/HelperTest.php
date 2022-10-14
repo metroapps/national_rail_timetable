@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Test\Miklcct\NationalRailJourneyPlanner\Parser;
+namespace Test\Miklcct\NationalRailTimetable\Parser;
 
-use Miklcct\NationalRailJourneyPlanner\Parsers\Helper;
+use Miklcct\NationalRailTimetable\Parsers\Helper;
 use PHPUnit\Framework\TestCase;
 
 class HelperTest extends TestCase {

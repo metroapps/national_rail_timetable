@@ -1,24 +1,24 @@
 <?php
 declare(strict_types = 1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Controllers;
+namespace Miklcct\NationalRailTimetable\Controllers;
 
 use DateTimeZone;
 use DateTimeImmutable;
 use DateInterval;
-use Miklcct\NationalRailJourneyPlanner\Models\Station;
-use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
-use Miklcct\NationalRailJourneyPlanner\Views\BoardFormView;
+use Miklcct\NationalRailTimetable\Models\Station;
+use Miklcct\NationalRailTimetable\Enums\TimeType;
+use Miklcct\NationalRailTimetable\Views\BoardFormView;
 use Miklcct\ThinPhpApp\Controller\Application;
 use Miklcct\ThinPhpApp\Response\ViewResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Http\Factory\Guzzle\StreamFactory;
 use InvalidArgumentException;
-use Miklcct\NationalRailJourneyPlanner\Repositories\FixedLinkRepositoryInterface;
-use Miklcct\NationalRailJourneyPlanner\Repositories\LocationRepositoryInterface;
-use Miklcct\NationalRailJourneyPlanner\Repositories\ServiceRepositoryInterface;
-use Miklcct\NationalRailJourneyPlanner\Views\BoardView;
+use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
+use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
+use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryInterface;
+use Miklcct\NationalRailTimetable\Views\BoardView;
 
 class BoardController extends Application {
     public function __construct(

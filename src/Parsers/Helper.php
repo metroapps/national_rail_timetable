@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Parsers;
+namespace Miklcct\NationalRailTimetable\Parsers;
 
 use function array_map;
 use function array_slice;
-use function Miklcct\NationalRailJourneyPlanner\array_rotate;
+use function Miklcct\NationalRailTimetable\array_rotate;
 use function str_split;
 
 class Helper {

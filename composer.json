@@ -17,7 +17,7 @@
     },
     "autoload" : {
         "psr-4" : {
-            "Miklcct\\NationalRailJourneyPlanner\\" : "src/"
+            "Miklcct\\NationalRailTimetable\\" : "src/"
         },
         "files" : [
             "src/functions.php"
@@ -25,7 +25,7 @@
     },
     "autoload-dev" : {
         "psr-4" : {
-            "Test\\Miklcct\\NationalRailJourneyPlanner\\" : "test/"
+            "Test\\Miklcct\\NationalRailTimetable\\" : "test/"
         }
     }
 }

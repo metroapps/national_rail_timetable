@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Models\Points;
+namespace Miklcct\NationalRailTimetable\Models\Points;
 
-use Miklcct\NationalRailJourneyPlanner\Enums\Activity;
-use Miklcct\NationalRailJourneyPlanner\Models\Time;
+use Miklcct\NationalRailTimetable\Enums\Activity;
+use Miklcct\NationalRailTimetable\Models\Time;
 
 trait DepartureTrait {
     public readonly Time $workingDeparture;

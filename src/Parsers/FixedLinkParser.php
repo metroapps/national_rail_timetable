@@ -1,16 +1,16 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Parsers;
+namespace Miklcct\NationalRailTimetable\Parsers;
 
 use DateTimeZone;
 use LogicException;
-use Miklcct\NationalRailJourneyPlanner\Models\Date;
-use Miklcct\NationalRailJourneyPlanner\Models\FixedLink;
-use Miklcct\NationalRailJourneyPlanner\Models\Station;
-use Miklcct\NationalRailJourneyPlanner\Models\Time;
-use Miklcct\NationalRailJourneyPlanner\Repositories\FixedLinkRepositoryInterface;
-use Miklcct\NationalRailJourneyPlanner\Repositories\LocationRepositoryInterface;
+use Miklcct\NationalRailTimetable\Models\Date;
+use Miklcct\NationalRailTimetable\Models\FixedLink;
+use Miklcct\NationalRailTimetable\Models\Station;
+use Miklcct\NationalRailTimetable\Models\Time;
+use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
+use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 use Safe\DateTimeImmutable;
 use function explode;
 use function fgetcsv;

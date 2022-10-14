@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Models;
+namespace Miklcct\NationalRailTimetable\Models;
 
 use BackedEnum;
 use DateTimeInterface;
-use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
+use Miklcct\NationalRailTimetable\Attributes\ElementType;
 use MongoDB\BSON\UTCDateTime;
 use ReflectionClass;
 use stdClass;

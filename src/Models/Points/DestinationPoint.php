@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Models\Points;
+namespace Miklcct\NationalRailTimetable\Models\Points;
 
-use Miklcct\NationalRailJourneyPlanner\Models\BsonSerializeTrait;
-use Miklcct\NationalRailJourneyPlanner\Models\Location;
-use Miklcct\NationalRailJourneyPlanner\Models\Time;
+use Miklcct\NationalRailTimetable\Models\BsonSerializeTrait;
+use Miklcct\NationalRailTimetable\Models\Location;
+use Miklcct\NationalRailTimetable\Models\Time;
 
 class DestinationPoint extends TimingPoint implements HasArrival {
     use BsonSerializeTrait;

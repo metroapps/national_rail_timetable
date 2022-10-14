@@ -1,17 +1,17 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Repositories;
+namespace Miklcct\NationalRailTimetable\Repositories;
 
 use DateTimeImmutable;
-use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
-use Miklcct\NationalRailJourneyPlanner\Models\AssociationEntry;
-use Miklcct\NationalRailJourneyPlanner\Models\Date;
-use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
-use Miklcct\NationalRailJourneyPlanner\Models\DepartureBoard;
-use Miklcct\NationalRailJourneyPlanner\Models\Service;
-use Miklcct\NationalRailJourneyPlanner\Models\ServiceCallWithDestination;
-use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
+use Miklcct\NationalRailTimetable\Enums\TimeType;
+use Miklcct\NationalRailTimetable\Models\AssociationEntry;
+use Miklcct\NationalRailTimetable\Models\Date;
+use Miklcct\NationalRailTimetable\Models\DatedService;
+use Miklcct\NationalRailTimetable\Models\DepartureBoard;
+use Miklcct\NationalRailTimetable\Models\Service;
+use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
+use Miklcct\NationalRailTimetable\Models\ServiceEntry;
 use function array_filter;
 use function array_keys;
 use function array_values;

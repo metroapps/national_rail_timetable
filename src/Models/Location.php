@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Models;
+namespace Miklcct\NationalRailTimetable\Models;
 
-use Miklcct\NationalRailJourneyPlanner\Repositories\LocationRepositoryInterface;
+use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 use MongoDB\BSON\Persistable;
 use function is_string;
 use function Safe\preg_replace;

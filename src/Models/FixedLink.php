@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Models;
+namespace Miklcct\NationalRailTimetable\Models;
 
 use DateInterval;
 use DateTime;
 use DateTimeImmutable;
 use DateTimeZone;
-use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
+use Miklcct\NationalRailTimetable\Attributes\ElementType;
 use MongoDB\BSON\Persistable;
 
 class FixedLink implements Persistable {

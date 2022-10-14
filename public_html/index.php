@@ -4,10 +4,10 @@ declare(strict_types=1);
 use GuzzleHttp\Psr7\ServerRequest;
 use Miklcct\ThinPhpApp\Response\ViewResponseFactory;
 use Http\Factory\Guzzle\ResponseFactory;
-use Miklcct\NationalRailJourneyPlanner\Controllers\BoardController;
-use Miklcct\NationalRailJourneyPlanner\Repositories\MongodbFixedLinkRepository;
-use Miklcct\NationalRailJourneyPlanner\Repositories\MongodbLocationRepository;
-use Miklcct\NationalRailJourneyPlanner\Repositories\MongodbServiceRepository;
+use Miklcct\NationalRailTimetable\Controllers\BoardController;
+use Miklcct\NationalRailTimetable\Repositories\MongodbFixedLinkRepository;
+use Miklcct\NationalRailTimetable\Repositories\MongodbLocationRepository;
+use Miklcct\NationalRailTimetable\Repositories\MongodbServiceRepository;
 use MongoDB\Client;
 use function Http\Response\send;
 

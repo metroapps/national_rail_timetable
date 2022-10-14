@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Models\Points;
+namespace Miklcct\NationalRailTimetable\Models\Points;
 
-use Miklcct\NationalRailJourneyPlanner\Models\Time;
+use Miklcct\NationalRailTimetable\Models\Time;
 
 interface HasDeparture {
     public function getWorkingDeparture() : Time;

@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Repositories;
+namespace Miklcct\NationalRailTimetable\Repositories;
 
-use Miklcct\NationalRailJourneyPlanner\Models\Location;
+use Miklcct\NationalRailTimetable\Models\Location;
 
 interface LocationRepositoryInterface {
     public function getLocationByCrs(string $crs) : ?Location;

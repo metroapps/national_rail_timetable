@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Repositories;
+namespace Miklcct\NationalRailTimetable\Repositories;
 
 use MongoDB\Collection;
-use Miklcct\NationalRailJourneyPlanner\Models\FixedLink;
+use Miklcct\NationalRailTimetable\Models\FixedLink;
 
 class MongodbFixedLinkRepository implements FixedLinkRepositoryInterface {
     public function __construct(private readonly Collection $collection) {

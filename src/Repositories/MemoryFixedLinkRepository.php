@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Repositories;
+namespace Miklcct\NationalRailTimetable\Repositories;
 
-use Miklcct\NationalRailJourneyPlanner\Models\FixedLink;
+use Miklcct\NationalRailTimetable\Models\FixedLink;
 use function array_merge;
 
 class MemoryFixedLinkRepository implements FixedLinkRepositoryInterface {

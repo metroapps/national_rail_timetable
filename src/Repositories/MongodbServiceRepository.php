@@ -1,18 +1,18 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Repositories;
+namespace Miklcct\NationalRailTimetable\Repositories;
 
 use DateTimeImmutable;
-use Miklcct\NationalRailJourneyPlanner\Enums\BankHoliday;
-use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
-use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
-use Miklcct\NationalRailJourneyPlanner\Models\Date;
-use Miklcct\NationalRailJourneyPlanner\Models\DatedService;
-use Miklcct\NationalRailJourneyPlanner\Models\DepartureBoard;
-use Miklcct\NationalRailJourneyPlanner\Models\Service;
-use Miklcct\NationalRailJourneyPlanner\Models\ServiceCall;
-use Miklcct\NationalRailJourneyPlanner\Models\ServiceEntry;
+use Miklcct\NationalRailTimetable\Enums\BankHoliday;
+use Miklcct\NationalRailTimetable\Enums\ShortTermPlanning;
+use Miklcct\NationalRailTimetable\Enums\TimeType;
+use Miklcct\NationalRailTimetable\Models\Date;
+use Miklcct\NationalRailTimetable\Models\DatedService;
+use Miklcct\NationalRailTimetable\Models\DepartureBoard;
+use Miklcct\NationalRailTimetable\Models\Service;
+use Miklcct\NationalRailTimetable\Models\ServiceCall;
+use Miklcct\NationalRailTimetable\Models\ServiceEntry;
 use MongoDB\BSON\Regex;
 use MongoDB\Collection;
 use stdClass;

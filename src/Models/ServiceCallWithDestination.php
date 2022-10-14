@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Models;
+namespace Miklcct\NationalRailTimetable\Models;
 
 use DateTimeImmutable;
-use Miklcct\NationalRailJourneyPlanner\Attributes\ElementType;
-use Miklcct\NationalRailJourneyPlanner\Enums\Mode;
-use Miklcct\NationalRailJourneyPlanner\Enums\TimeType;
-use Miklcct\NationalRailJourneyPlanner\Models\Points\DestinationPoint;
-use Miklcct\NationalRailJourneyPlanner\Models\Points\OriginPoint;
-use Miklcct\NationalRailJourneyPlanner\Models\Points\TimingPoint;
+use Miklcct\NationalRailTimetable\Attributes\ElementType;
+use Miklcct\NationalRailTimetable\Enums\Mode;
+use Miklcct\NationalRailTimetable\Enums\TimeType;
+use Miklcct\NationalRailTimetable\Models\Points\DestinationPoint;
+use Miklcct\NationalRailTimetable\Models\Points\OriginPoint;
+use Miklcct\NationalRailTimetable\Models\Points\TimingPoint;
 
 // This class can be used to identify which portion(s) of the train will call
 class ServiceCallWithDestination extends ServiceCall {

@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailJourneyPlanner\Models;
+namespace Miklcct\NationalRailTimetable\Models;
 
-use Miklcct\NationalRailJourneyPlanner\Enums\AssociationCategory;
-use Miklcct\NationalRailJourneyPlanner\Enums\AssociationDay;
-use Miklcct\NationalRailJourneyPlanner\Enums\AssociationType;
-use Miklcct\NationalRailJourneyPlanner\Enums\ShortTermPlanning;
+use Miklcct\NationalRailTimetable\Enums\AssociationCategory;
+use Miklcct\NationalRailTimetable\Enums\AssociationDay;
+use Miklcct\NationalRailTimetable\Enums\AssociationType;
+use Miklcct\NationalRailTimetable\Enums\ShortTermPlanning;
 
 class Association extends AssociationEntry {
     use BsonSerializeTrait;
