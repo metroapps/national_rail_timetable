@@ -4,6 +4,9 @@ declare(strict_types = 1);
 namespace Miklcct\NationalRailTimetable\Views;
 
 use DateTimeImmutable;
+use Miklcct\NationalRailTimetable\Enums\Catering;
+use Miklcct\NationalRailTimetable\Enums\Mode;
+use Miklcct\NationalRailTimetable\Enums\Reservation;
 use Miklcct\NationalRailTimetable\Models\DepartureBoard;
 use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\FixedLink;
@@ -100,7 +103,38 @@ class BoardView extends BoardFormView {
         );
     }
 
-    public function getTocSpan(string $toc) : string {
+    public function showToc(string $toc) : string {
         return sprintf('<abbr title="%s">%s</abbr>', html(get_all_tocs()[$toc] ?? ''), html($toc));
+    }
+
+    public function showFacilities(ServiceCall $service_call) : string {
+        $result = match($service_call->mode) {
+            Mode::BUS => '<img src="/images/bus.png" alt="bus" title="Bus service" /><br/>',
+            Mode::SHIP => '<img src="/images/ship.png" alt="ship" title="Ferry service" /><br/>',
+            default => '',
+        };
+        foreach ($service_call->serviceProperty->caterings as $catering) {
+            $result .= match($catering) {
+                Catering::BUFFET => '<img src="/images/buffer.png" alt="buffet" title="Buffet" />',
+                Catering::FIRST_CLASS_RESTAURANT => '<img src="/images/first_class_restaurant.png" alt="first class restaurant" title="Restaurant for first class passengers" />',
+                Catering::HOT_FOOD => '<img src="/images/first_class_restaurant.png" alt="hot food" title="Hot food" />',
+                Catering::RESTAURANT => '<img src="/images/restaurant.png" alt="restaurant" title="Restaurant" />',
+                Catering::TROLLEY => '<img src="/images/trolley.png" alt="restaurant" title="Trolley" />',
+                default => '',
+            };
+        }
+        $result .= match ($service_call->serviceProperty->reservation) {
+            Reservation::AVAILABLE => '<img src="/images/reservation_available.png" alt="reservation available" title="Reservation available" />',
+            Reservation::RECOMMENDED => '<img src="/images/reservation_recommended.png" alt="reservation recommended" title="Reservation recommended" />',
+            Reservation::COMPULSORY => '<img src="/images/reservation_compulsory.png" alt="reservation compulsory" title="Reservation compulsory" />',
+            default => '',
+        };
+        if ($service_call->serviceProperty->seatingClasses[1]) {
+            $result .= '<img src="/images/first_class.png" alt="first class" title="First class available" />';
+        }
+        if (array_filter($service_call->serviceProperty->sleeperClasses)) {
+            $result .= '<img src="/images/sleeper.png" alt="sleeper" title="Sleeper available" />';
+        }
+        return $result;
     }
 }
