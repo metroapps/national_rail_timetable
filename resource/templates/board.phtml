@@ -193,7 +193,7 @@ if ($this instanceof BoardView) {
                                         $link === null ? '<span class="%2$s">%3$s (%4$s%5$s)</span>' : '<a href="%s" class="%s">%s (%s%s)</a>'
                                         , $link
                                         , $station->crsCode === $this->destination?->crsCode ? 'destination' : ''
-                                        , html(preg_replace('/ \(.*\)$/', '', $station->name))
+                                        , $station->getShortName()
                                         , html($service_call->timestamp->format('H:i'))
                                         , in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? 'x' : ''
                                     );
