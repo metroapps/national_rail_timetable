@@ -6,6 +6,7 @@ namespace Miklcct\NationalRailJourneyPlanner\Models;
 use Miklcct\NationalRailJourneyPlanner\Repositories\LocationRepositoryInterface;
 use MongoDB\BSON\Persistable;
 use function is_string;
+use function Safe\preg_replace;
 
 class Location implements Persistable {
     use BsonSerializeTrait;
@@ -41,6 +42,10 @@ class Location implements Persistable {
             , $station->minimumConnectionTime
             , $station->tocConnectionTimes
         );
+    }
+
+    public function getShortName() : string {
+        return preg_replace('/ \(.*\)$/', '', $this->name);
     }
 
     private function superiorScore() : int {

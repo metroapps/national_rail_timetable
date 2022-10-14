@@ -10,16 +10,16 @@ use function is_string;
 
 class MemoryLocationRepository implements LocationRepositoryInterface {
     public function getLocationByCrs(string $crs) : ?Location {
-        return $this->locationsByCrs[$crs] ?? null;
+        return $this->locationsByCrs[strtoupper($crs)] ?? null;
     }
 
     public function getLocationByName(string $name) : ?Location {
-        $result = $this->locationsByName[$name] ?? null;
+        $result = $this->locationsByName[strtoupper($name)] ?? null;
         return is_string($result) ? $this->getLocationByName($result) : $result;
     }
 
     public function getLocationByTiploc(string $tiploc) : ?Location {
-        return $this->locationsByTiploc[$tiploc] ?? null;
+        return $this->locationsByTiploc[strtoupper($tiploc)] ?? null;
     }
 
     public function insertLocations(array $locations) : void {

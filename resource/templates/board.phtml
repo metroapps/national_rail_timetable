@@ -1,0 +1,208 @@
+<?php
+declare(strict_types=1);
+
+use Miklcct\NationalRailJourneyPlanner\Views\BoardFormView;
+use Miklcct\NationalRailJourneyPlanner\Views\BoardView;
+use Miklcct\NationalRailJourneyPlanner\Models\FixedLink;
+use Miklcct\NationalRailJourneyPlanner\Enums\Activity;
+use Miklcct\NationalRailJourneyPlanner\Enums\Mode;
+use Miklcct\NationalRailJourneyPlanner\Models\Station;
+use Miklcct\NationalRailJourneyPlanner\Models\ServiceCallWithDestination;
+use function Miklcct\ThinPhpApp\Escaper\html;
+
+/** @var BoardFormView $this */
+?>
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="board.css" />
+        <title><?= html($this->getTitle()) ?></title>
+    </head>
+    <body>
+    <form action="<?= html($this->boardUrl) ?>" method="GET">
+            <datalist id="stations">
+<?php
+foreach ($this->stationNames as $name) {
+?>
+                <option value="<?= html($name) ?>"></option>
+<?php
+}
+?>
+            </datalist>
+            <p>
+                <label>Show departures at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($this->getFormData()['station'] ?? null)?>"/></label><br/>
+                <label>only trains calling at (optional): <input autocomplete="off" list="stations" type="text" name="filter" size="32" value="<?= html($this->getFormData()['filter'] ?? null) ?>"/></label><br/>
+                <label>from (leave empty for now) <input type="datetime-local" name="from" value="<?= html($this->getFormData()['from'] ?? null) ?>"/></label>
+            </p>
+            <p>
+                <label>Show valid connections at: <input type="datetime-local" name="connecting_time" value="<?= html($this->getFormData()['connecting_time'] ?? null) ?>"/>
+                from TOC: <input type="text" name="connecting_toc" size="8" value="<?= html($this->getFormData()['connecting_toc'] ?? '') ?>"/></label></br>
+            </p>
+            <p>
+                <label>Show permanent timetable instead of actual timetable: <input type="checkbox" name="permanent_only" <?= !empty($this->getFormData()['permanent_only']) ? 'checked="checked"' : '' ?>/></label><br/>
+            </p>
+            <p>
+                <input type="submit" />
+            </p>
+        </form>
+<?php
+if ($this instanceof BoardView) {
+?>  
+        <h1><?= html($this->getHeading()) ?></h1>
+<?php
+    if ($this->station instanceof Station) {
+?>
+        <p>Minimum connection time is <span class="time"><?= html($this->station->minimumConnectionTime . ($this->station->minimumConnectionTime === 1 ? ' minute' : ' minutes')) ?></span><?= $this->station->tocConnectionTimes === [] ? '.' : ', with the exception of the following:' ?></p>
+<?php
+        if ($this->station->tocConnectionTimes !== []) {
+?>
+        <table>
+            <thead>
+                <tr><th>From</th><th>To</th><th>Minutes</th></tr>
+            </thead>
+            <tbody>
+<?php
+            foreach ($this->station->tocConnectionTimes as $entry) {
+?>
+                <tr>
+                    <td><?= html($entry->arrivingToc) ?></td>
+                    <td><?= html($entry->departingToc) ?></td>
+                    <td><?= html($entry->connectionTime) ?></td>
+                </tr>
+<?php
+            }
+?>
+            </tbody>
+        </table>
+<?php
+        }
+
+        if (!empty($this->fixedLinks)) {
+?>
+        <table>
+            <thead>
+                <tr><th colspan="6">Fixed links as of <?= html($this->fixedLinkDepartureTime->format('Y-m-d H:i')) ?></th></tr>
+                <tr><th>Transfer to</th><th>Mode</th><th>From</th><th>To</th><th>Minutes</th><th>Arrival</th></tr>
+            </thead>
+            <tbody>
+<?php
+            /** @var FixedLink */
+            foreach ($this->fixedLinks as $link) {
+                $arrival_time = $link->getArrivalTime($this->fixedLinkDepartureTime);
+?>
+                <tr>
+                    <td class="destination">
+                        <a href="<?= html($this->getFixedLinkUrl($link)) ?>">
+                            <?= html($link->destination->getShortName()) ?>
+                        </a>
+                    </td>
+                    <td><?= html($link->mode) ?></td>
+                    <td><?= html($link->startTime) ?></td>
+                    <td><?= html($link->endTime) ?></td>
+                    <td><?= html($link->transferTime) ?></td>
+                    <td class="time"><?= html($arrival_time->format('H:i')) ?></td>
+                </tr>
+<?php
+            }
+?>
+            </tbody>
+        </table>
+<?php
+        }
+    }
+?>
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Mode</th>
+                    <th>Pl.</th>
+                    <th>TOC</th>
+                    <th>Train number</th>
+                    <th>Destination</th>
+                    <th>Calling at</th>
+                </tr>
+            </thead>
+            <tbody>
+<?php
+    $date = null;
+    foreach ($this->board->calls as $service_call) {
+        $current_date = $service_call->timestamp->format('Y-m-d');
+        if ($current_date !== $date) {
+            $date = $current_date;
+?>
+                <tr>
+                    <th colspan="7"><?= html($date) ?></th>
+                </tr>
+<?php
+        }
+        $portions_count = count($service_call->destinations);
+        $portion_uids = array_keys($service_call->destinations);
+        $overtaken_portions = array_combine(
+            $portion_uids
+            , array_map(
+                fn(string $uid) : bool => $this->destination !== null ? $this->board->isOvertaken($service_call, $this->destination->crsCode, $uid) : false
+                , $portion_uids
+            )
+        );
+?>
+                <tr class="<?= !in_array(false, $overtaken_portions, true) ? 'overtaken' : '' ?>">
+                    <td class="time <?= $this->connectingTime === null || !$this->station instanceof Station ? '' : ($service_call->isValidConnection($this->connectingTime, $this->connectingToc ?? null) ? 'valid_connection' : 'invalid_connection') ?>" rowspan="<?= html($portions_count) ?>">
+                        <?= html($service_call->timestamp->format('H:i') . (in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? 'x' : '')) ?>
+                    </td>
+                    <td rowspan="<?= html($portions_count) ?>"><?= match ($service_call->mode) {
+                        Mode::BUS => 'BUS',
+                        Mode::SHIP => 'SHIP',
+                        default => '',
+                    } ?></td>
+                    <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->call->platform) ?></td>
+                    <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->toc) ?></td>
+                    <td rowspan="<?= html($portions_count) ?>"><?= html(substr($service_call->serviceProperty->rsid, 0, 6)) ?></td>
+<?php
+        foreach ($portion_uids as $i => $uid) {
+            if ($i > 0) {
+?>
+                </tr>
+                <tr class="<?= !in_array(false, $overtaken_portions, true) ? 'overtaken' : '' ?>">
+<?php
+            }
+?>
+                    <td class="destination <?= $overtaken_portions[$uid] ? 'overtaken' : '' ?>"><?= html($service_call->destinations[$uid]->location->getShortName()) ?></td>
+                    <td class="<?= $overtaken_portions[$uid] ? 'overtaken' : '' ?>"><?=                        
+                        implode(
+                            ', '
+                            , array_map(
+                                function(ServiceCallWithDestination $service_call): string { 
+                                    $station = $service_call->call->location;
+                                    $link = $this->getArrivalLink($service_call);
+                                    return sprintf(
+                                        $link === null ? '<span class="%2$s">%3$s (%4$s%5$s)</span>' : '<a href="%s" class="%s">%s (%s%s)</a>'
+                                        , $link
+                                        , $station->crsCode === $this->destination?->crsCode ? 'destination' : ''
+                                        , html(preg_replace('/ \(.*\)$/', '', $station->name))
+                                        , html($service_call->timestamp->format('H:i'))
+                                        , in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? 'x' : ''
+                                    );
+                                }
+                                , array_filter(
+                                    $service_call->subsequentCalls
+                                    , fn(ServiceCallWithDestination $service_call) : bool =>
+                                        in_array($uid, array_keys($service_call->destinations), true)
+                                )
+                            )
+                        )
+                    ?></td>
+<?php
+        }
+?>
+                </tr>
+<?php
+    }
+?>
+            </tbody>
+        </table>
+<?php
+}
+?>
+    </body>
+</html>

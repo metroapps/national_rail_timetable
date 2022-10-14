@@ -7,7 +7,9 @@
         "thecodingmachine/safe": "^2.1",
         "mongodb/mongodb": "^1.12",
         "ext-mongodb" : "*",
-        "miklcct/thin_php_app": "^0.6.1"
+        "miklcct/thin_php_app": "^0.6.1",
+        "guzzlehttp/guzzle": "^7.5",
+        "http-interop/http-factory-guzzle": "^1.2"
     },
     "require-dev" : {
         "roave/security-advisories" : "dev-latest",
