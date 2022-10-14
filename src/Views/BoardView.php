@@ -115,7 +115,7 @@ class BoardView extends BoardFormView {
         };
         foreach ($service_call->serviceProperty->caterings as $catering) {
             $result .= match($catering) {
-                Catering::BUFFET => '<img src="/images/buffer.png" alt="buffet" title="Buffet" />',
+                Catering::BUFFET => '<img src="/images/buffet.png" alt="buffet" title="Buffet" />',
                 Catering::FIRST_CLASS_RESTAURANT => '<img src="/images/first_class_restaurant.png" alt="first class restaurant" title="Restaurant for first class passengers" />',
                 Catering::HOT_FOOD => '<img src="/images/first_class_restaurant.png" alt="hot food" title="Hot food" />',
                 Catering::RESTAURANT => '<img src="/images/restaurant.png" alt="restaurant" title="Restaurant" />',
