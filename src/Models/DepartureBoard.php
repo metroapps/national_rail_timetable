@@ -51,7 +51,9 @@ class DepartureBoard implements Persistable {
             return array_filter(
                 $service_call->precedingCalls
                 , fn(ServiceCallWithDestination $filter_call) : bool =>
-                    $filter_call->call->location->crsCode === $destination_crs && array_filter(
+                    in_array($portion_uid, array_keys($filter_call->origins), true)
+                    && $filter_call->call->location->crsCode === $destination_crs 
+                    && array_filter(
                         $this->calls
                         , static fn(ServiceCallWithDestinationAndCalls $other_call) : bool =>
                             $other_call->timestamp <= $service_call->timestamp
@@ -92,7 +94,7 @@ class DepartureBoard implements Persistable {
                                 array_intersect_key($destinations, $filter_call->destinations) !== []
                         );
                     } else {
-                        $destinatons = $service_call->destinations;
+                        $destinations = $service_call->destinations;
                         $subsequentCalls = $service_call->subsequentCalls;
                     }
                     if (!in_array($this->timeType, [TimeType::PUBLIC_DEPARTURE, TimeType::WORKING_DEPARTURE], true)) {

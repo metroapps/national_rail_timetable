@@ -34,7 +34,18 @@ foreach ($this->stations as $station) {
 ?>
             </datalist>
             <p>
-                <label>Show departures at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($this->getFormData()['station'] ?? null)?>"/></label><br/>
+                Show 
+<?php
+foreach (['departures', 'arrivals'] as $mode) {
+?>
+                <label>
+                    <input type="radio" name="mode" value="<?= html($mode) ?>" <?= ($this->getFormData()['mode'] ?? 'departures') === $mode ? 'checked = "checked"' : ''?>/>
+                    <?= html($mode) ?>
+                </label>
+<?php
+}
+?>
+                <label>at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($this->getFormData()['station'] ?? null)?>"/></label><br/>
                 <label>only trains calling at (optional): <input autocomplete="off" list="stations" type="text" name="filter" size="32" value="<?= html($this->getFormData()['filter'] ?? null) ?>"/></label><br/>
                 <label>from (leave empty for now) <input type="datetime-local" name="from" value="<?= html($this->getFormData()['from'] ?? null) ?>"/></label>
             </p>
@@ -96,13 +107,13 @@ if ($this instanceof BoardView) {
         <table>
             <thead>
                 <tr><th colspan="6">Fixed links as of <?= html($this->fixedLinkDepartureTime->format('Y-m-d H:i')) ?></th></tr>
-                <tr><th>Transfer to</th><th>Mode</th><th>From</th><th>To</th><th>Minutes</th><th>Arrival</th></tr>
+                <tr><th>Transfer to</th><th>Mode</th><th>From</th><th>To</th><th>Minutes</th><th><?= $this->arrivalMode ? 'Departure' : 'Arrival' ?></th></tr>
             </thead>
             <tbody>
 <?php
             /** @var FixedLink */
             foreach ($this->fixedLinks as $link) {
-                $arrival_time = $link->getArrivalTime($this->fixedLinkDepartureTime);
+                $arrival_time = $link->getArrivalTime($this->fixedLinkDepartureTime, $this->arrivalMode);
 ?>
                 <tr>
                     <td class="destination">
@@ -133,14 +144,14 @@ if ($this instanceof BoardView) {
                     <th>Pl.</th>
                     <th>TOC</th>
                     <th>Train number</th>
-                    <th>Destination</th>
+                    <th><?= $this->arrivalMode ? 'Origin' : 'Destination' ?></th>
                     <th>Calling at</th>
                 </tr>
             </thead>
             <tbody>
 <?php
     $date = null;
-    foreach ($this->board->calls as $service_call) {
+    foreach ($this->arrivalMode ? array_reverse($this->board->calls, true) : $this->board->calls as $service_call) {
         $current_date = $service_call->timestamp->format('Y-m-d');
         if ($current_date !== $date) {
             $date = $current_date;
@@ -150,8 +161,9 @@ if ($this instanceof BoardView) {
                 </tr>
 <?php
         }
-        $portions_count = count($service_call->destinations);
-        $portion_uids = array_keys($service_call->destinations);
+        $destinations = $this->arrivalMode ? $service_call->origins : $service_call->destinations;
+        $portions_count = count($destinations);
+        $portion_uids = array_keys($destinations);
         $overtaken_portions = array_combine(
             $portion_uids
             , array_map(
@@ -181,7 +193,7 @@ if ($this instanceof BoardView) {
 <?php
             }
 ?>
-                    <td class="destination <?= $overtaken_portions[$uid] ? 'overtaken' : '' ?>"><?= html($service_call->destinations[$uid]->location->getShortName()) ?></td>
+                    <td class="destination <?= $overtaken_portions[$uid] ? 'overtaken' : '' ?>"><?= html($destinations[$uid]->location->getShortName()) ?></td>
                     <td class="<?= $overtaken_portions[$uid] ? 'overtaken' : '' ?>"><?=                        
                         implode(
                             ', '
@@ -199,9 +211,9 @@ if ($this instanceof BoardView) {
                                     );
                                 }
                                 , array_filter(
-                                    $service_call->subsequentCalls
+                                    $this->arrivalMode ? $service_call->precedingCalls : $service_call->subsequentCalls
                                     , fn(ServiceCallWithDestination $service_call) : bool =>
-                                        in_array($uid, array_keys($service_call->destinations), true)
+                                        in_array($uid, array_keys($this->arrivalMode ? $service_call->origins : $service_call->destinations), true)
                                 )
                             )
                         )

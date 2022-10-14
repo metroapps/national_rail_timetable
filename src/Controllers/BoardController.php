@@ -56,28 +56,39 @@ class BoardController extends Application {
             }
         }
 
+        $arrival_mode = $query['mode'] === 'arrivals';
         $timezone = new DateTimeZone('Europe/London');
         $from = new DateTimeImmutable(empty($query['from']) ? 'now' : $query['from'], $timezone);
         $from = $from->setTime((int)$from->format('H'), (int)$from->format('i'), 0);
-        $to = $from->add(new DateInterval('P1DT4H30M'));
+        $to = $arrival_mode ? $from->sub(new DateInterval('P1DT4H30M')) : $from->add(new DateInterval('P1DT4H30M'));
         $connecting_time = !empty($_GET['connecting_time']) ? new DateTimeImmutable($_GET['connecting_time'], $timezone) : null;
-        $board = $this->serviceRepository->getDepartureBoard($station->crsCode, $from, $to, TimeType::PUBLIC_DEPARTURE);
+        $board = $this->serviceRepository->getDepartureBoard(
+            $station->crsCode
+            , $arrival_mode ? $to : $from
+            , $arrival_mode ? $from : $to
+            , $arrival_mode ? TimeType::PUBLIC_ARRIVAL : TimeType::PUBLIC_DEPARTURE
+        );
         if ($destination !== null) {
             $board = $board->filterByDestination($destination->crsCode);
         }
 
         /** @var FixedLink[] */
         $fixed_links = [];
-        $fixed_link_departure_time = isset($connecting_time) && $station instanceof Station ? $connecting_time->add(new DateInterval(sprintf('PT%dM', $station->minimumConnectionTime))) : $from;
+        $fixed_link_departure_time 
+            = isset($connecting_time) && $station instanceof Station 
+                ? $arrival_mode 
+                    ? $connecting_time->sub(new DateInterval(sprintf('PT%dM', $station->minimumConnectionTime))) 
+                    : $connecting_time->add(new DateInterval(sprintf('PT%dM', $station->minimumConnectionTime))) 
+                : $from;
         foreach ($this->fixedLinkRepository->get($station->crsCode, null) as $fixed_link) {
-            $arrival_time = $fixed_link->getArrivalTime($fixed_link_departure_time);
+            $arrival_time = $fixed_link->getArrivalTime($fixed_link_departure_time, $arrival_mode);
             $existing = $fixed_links[$fixed_link->destination->crsCode] ?? null;
             if (
                 ($destination === null || $destination->crsCode === $fixed_link->destination->crsCode)
                 && $arrival_time !== null
                 && (
                     !$existing 
-                    || $arrival_time < $existing->getArrivalTime($fixed_link_departure_time) 
+                    || ($arrival_mode ? $arrival_time > $existing->getArrivalTime($fixed_link_departure_time) : $arrival_time < $existing->getArrivalTime($fixed_link_departure_time)) 
                     || $arrival_time == $existing->getArrivalTime($fixed_link_departure_time) && $fixed_link->priority > $existing->priority
                 )
             ) {
@@ -100,6 +111,7 @@ class BoardController extends Application {
                 , $fixed_link_departure_time
                 , !empty($query['permanent_only'])
                 , empty($query['from'])
+                , $arrival_mode
             )
         );
     }

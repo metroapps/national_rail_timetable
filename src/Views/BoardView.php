@@ -28,13 +28,15 @@ class BoardView extends BoardFormView {
         , protected readonly ?DateTimeImmutable $fixedLinkDepartureTime
         , protected readonly bool $permanentOnly
         , protected readonly bool $now
+        , protected readonly bool $arrivalMode
     ) {
         parent::__construct($streamFactory, $boardUrl, $stations);
     }
 
     public function getTitle() : string {
         return sprintf(
-            'Departures at %s %s %s'
+            '%s at %s %s %s'
+            , $this->arrivalMode ? 'Arrivals' : 'Departures'
             , $this->station->name 
             , $this->destination !== null 
                 ? ' to ' . $this->destination->name
@@ -44,13 +46,13 @@ class BoardView extends BoardFormView {
     }
 
     public function getHeading() : string {
-        $result = 'Departures at ' . $this->getNameAndCrs($this->station);
+        $result = ($this->arrivalMode ? 'Arrivals at ' : 'Departures at ') . $this->getNameAndCrs($this->station);
 
         if ($this->destination !== null) {
             $result .= ' calling at ' . $this->getNameAndCrs($this->destination);
         }
         $result .= ' ';
-        $result .= $this->now ? 'now' : $this->boardTime->format('Y-m-d H:i');
+        $result .= $this->now ? 'now' : 'from ' . $this->boardTime->format('Y-m-d H:i');
         return $result;
     }
 
@@ -66,8 +68,9 @@ class BoardView extends BoardFormView {
             [
                 'station' => $fixed_link->destination->crsCode,
                 'from' => ($this->connectingTime ?? $this->boardTime)->format('c'),
-                'connecting_time' => $fixed_link->getArrivalTime($this->fixedLinkDepartureTime)->format('c'),
+                'connecting_time' => $fixed_link->getArrivalTime($this->fixedLinkDepartureTime, $this->arrivalMode)->format('c'),
                 'permanent_only' => $this->permanentOnly,
+                'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
             ]
         );
     }
@@ -80,6 +83,7 @@ class BoardView extends BoardFormView {
             'connecting_time' => substr($this->connectingTime?->format('c') ?? '', 0, 16),
             'connecting_toc' => $this->connectingToc,
             'permanent_only' => $this->permanentOnly,
+            'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
         ];
     }
 
@@ -90,7 +94,8 @@ class BoardView extends BoardFormView {
                 'from' => $service_call->timestamp->format('c'),
                 'connecting_time' => $service_call->timestamp->format('c'),
                 'connecting_toc' => $service_call->toc,
-                'permanent_only' => $this->permanentOnly ?? ''
+                'permanent_only' => $this->permanentOnly ?? '',
+                'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
             ]
         );
     }
