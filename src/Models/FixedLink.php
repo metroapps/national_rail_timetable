@@ -39,12 +39,16 @@ class FixedLink implements Persistable {
             && $this->endTime->toHalfMinutes() >= $time->toHalfMinutes();
         if ($date_valid && $time_valid) return $departure->add(new DateInterval(sprintf('PT%dM', $this->transferTime)));
         if ($date_valid && $time->toHalfMinutes() < $this->startTime->toHalfMinutes()) {
-            return $this->getArrivalTime($departure->setTime($this->startTime->hours, $this->startTime->minutes));
+            $next_time = $departure->setTime($this->startTime->hours, $this->startTime->minutes);
+        } elseif ($this->endDate !== null && $departure > $this->endDate->toDateTimeImmutable(new Time(23, 59, true))) {
+            $next_time = null;
+        } else {
+            $next_time = $departure->add(new DateInterval('P1D'))->setTime(0, 0);
         }
-        if ($this->endDate !== null && $departure > $this->endDate->toDateTimeImmutable(new Time(23, 59, true))) {
-            return null;
+        if ($next_time !== null && $next_time->getTimestamp() - $departure->getTimestamp() < 60 * 60 * 6) {
+            return $this->getArrivalTime($next_time);
         }
-        return $this->getArrivalTime($departure->add(new DateInterval('P1D'))->setTime(0, 0));
+        return null;
     }
 
     /** @var bool[] 7 bits specifying if it is active on each of the weekdays */

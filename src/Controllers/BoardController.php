@@ -74,6 +74,7 @@ class BoardController extends Application {
             $existing = $fixed_links[$fixed_link->destination->crsCode] ?? null;
             if (
                 ($destination === null || $destination->crsCode === $fixed_link->destination->crsCode)
+                && $arrival_time !== null
                 && (
                     !$existing 
                     || $arrival_time < $existing->getArrivalTime($fixed_link_departure_time) 
