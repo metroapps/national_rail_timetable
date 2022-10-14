@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailJourneyPlanner\Repositories;
 
 use Miklcct\NationalRailJourneyPlanner\Models\Location;
+use Miklcct\NationalRailJourneyPlanner\Models\Station;
 use MongoDB\Collection;
 use MongoDB\Driver\Cursor;
 use function array_keys;
@@ -66,16 +67,21 @@ class MongodbLocationRepository implements LocationRepositoryInterface {
         $this->tiplocCache = [];
     }
 
-    public function getAllStationNames(): array {
-        return $this->collection->distinct(
-            'name'
-            , [
-                '$or' => [
-                    ['alias' => ['$exists' => true]],
-                    ['crsCode' => ['$ne' => null]],
-                ],
-            ]
-        );
+    public function getAllStations(): array {
+        $this->crsCache = [];
+        foreach ($this->collection->find(['crsCode' => ['$ne' => null]]) as $result) {
+            if ($result instanceof Location) {
+                $crs = $result->crsCode;
+                if ($crs !== null) {
+                    if (!isset($this->crsCache[$crs]) || $result->isSuperior($this->crsCache[$crs]))
+                    $this->crsCache[$crs] = $result;
+                    if ($result instanceof Station && $result->minorCrsCode !== null) {
+                        $this->crsCache[$result->minorCrsCode] = $result;
+                    }
+                }
+            }
+        }
+        return $this->crsCache;
     }
 
     private function processResult(Cursor $cursor) : ?Location {

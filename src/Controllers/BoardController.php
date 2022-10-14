@@ -36,7 +36,7 @@ class BoardController extends Application {
                 new BoardFormView(
                     new StreamFactory()
                     , $self
-                    , $this->locationRepository->getAllStationNames()
+                    , $this->locationRepository->getAllStations()
                 )
             );
         }
@@ -88,9 +88,9 @@ class BoardController extends Application {
             new BoardView(
                 new StreamFactory()
                 , $self
-                , $this->locationRepository->getAllStationNames()
+                , $this->locationRepository->getAllStations()
                 , $board
-                , empty($query['from']) ? null : $from
+                , $from
                 , $connecting_time
                 , empty($query['connecting_toc']) ? null : $query['connecting_toc']
                 , $station
@@ -98,6 +98,7 @@ class BoardController extends Application {
                 , $fixed_links
                 , $fixed_link_departure_time
                 , !empty($query['permanent_only'])
+                , empty($query['from'])
             )
         );
     }

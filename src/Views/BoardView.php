@@ -14,9 +14,9 @@ class BoardView extends BoardFormView {
     public function __construct(
         StreamFactoryInterface $streamFactory
         , string $boardUrl
-        , array $stationNames
+        , array $stations
         , protected readonly DepartureBoard $board
-        , protected readonly ?DateTimeImmutable $boardTime
+        , protected readonly DateTimeImmutable $boardTime
         , protected readonly ?DateTimeImmutable $connectingTime
         , protected readonly ?string $connectingToc
         , protected readonly Location $station
@@ -24,8 +24,9 @@ class BoardView extends BoardFormView {
         , protected readonly ?array $fixedLinks
         , protected readonly ?DateTimeImmutable $fixedLinkDepartureTime
         , protected readonly bool $permanentOnly
+        , protected readonly bool $now
     ) {
-        parent::__construct($streamFactory, $boardUrl, $stationNames);
+        parent::__construct($streamFactory, $boardUrl, $stations);
     }
 
     public function getTitle() : string {
@@ -35,7 +36,7 @@ class BoardView extends BoardFormView {
             , $this->destination !== null 
                 ? ' to ' . $this->destination->name
                 : ''
-            , $this->boardTime === null ? 'now' : 'from ' . $this->boardTime->format('Y-m-d H:i')
+            , $this->now ? 'now' : 'from ' . $this->boardTime->format('Y-m-d H:i')
         );
     }
 
@@ -46,7 +47,7 @@ class BoardView extends BoardFormView {
             $result .= ' calling at ' . $this->getNameAndCrs($this->destination);
         }
         $result .= ' ';
-        $result .= $this->boardTime !== null ? $this->boardTime->format('Y-m-d H:i') : 'now';
+        $result .= $this->now ? 'now' : $this->boardTime->format('Y-m-d H:i');
         return $result;
     }
 
@@ -60,7 +61,7 @@ class BoardView extends BoardFormView {
     public function getFixedLinkUrl(FixedLink $fixed_link) {
         return $this->boardUrl . '?' . http_build_query(
             [
-                'station' => $fixed_link->destination->name,
+                'station' => $fixed_link->destination->crsCode,
                 'from' => ($this->connectingTime ?? $this->boardTime)->format('c'),
                 'connecting_time' => $fixed_link->getArrivalTime($this->fixedLinkDepartureTime)->format('c'),
                 'permanent_only' => $this->permanentOnly,
@@ -70,9 +71,9 @@ class BoardView extends BoardFormView {
 
     public function getFormData(): array {
         return [
-            'station' => $this->station->name,
-            'filter' => $this->destination?->name,
-            'from' => substr($this->boardTime?->format('c') ?? '', 0, 16),
+            'station' => $this->station->crsCode,
+            'filter' => $this->destination?->crsCode,
+            'from' => $this->now ? '' : substr($this->boardTime->format('c') ?? '', 0, 16),
             'connecting_time' => substr($this->connectingTime?->format('c') ?? '', 0, 16),
             'connecting_toc' => $this->connectingToc,
             'permanent_only' => $this->permanentOnly,
@@ -82,7 +83,7 @@ class BoardView extends BoardFormView {
     public function getArrivalLink(ServiceCall $service_call) {
         return $this->boardUrl . '?' . http_build_query(
             [
-                'station' => $service_call->call->location->name,
+                'station' => $service_call->call->location->crsCode,
                 'from' => $service_call->timestamp->format('c'),
                 'connecting_time' => $service_call->timestamp->format('c'),
                 'connecting_toc' => $service_call->toc,

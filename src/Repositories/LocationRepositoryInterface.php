@@ -23,7 +23,7 @@ interface LocationRepositoryInterface {
     public function insertAliases(array $aliases) : void;
 
     /**
-     * @return string[]
+     * @return Location[]
      */
-    public function getAllStationNames() : array;
+    public function getAllStations() : array;
 }

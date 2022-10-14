@@ -7,6 +7,7 @@ use Miklcct\NationalRailJourneyPlanner\Models\FixedLink;
 use Miklcct\NationalRailJourneyPlanner\Enums\Activity;
 use Miklcct\NationalRailJourneyPlanner\Enums\Mode;
 use Miklcct\NationalRailJourneyPlanner\Models\Station;
+use Miklcct\NationalRailJourneyPlanner\Models\Location;
 use Miklcct\NationalRailJourneyPlanner\Models\ServiceCallWithDestination;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
@@ -22,9 +23,10 @@ use function Miklcct\ThinPhpApp\Escaper\html;
     <form action="<?= html($this->boardUrl) ?>" method="GET">
             <datalist id="stations">
 <?php
-foreach ($this->stationNames as $name) {
+/** @var Location */
+foreach ($this->stations as $station) {
 ?>
-                <option value="<?= html($name) ?>"></option>
+                <option value="<?= html($station->crsCode) ?>"><?= html($station->name) ?></option>
 <?php
 }
 ?>

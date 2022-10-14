@@ -10,7 +10,7 @@ class BoardFormView extends PhpTemplate {
     public function __construct(
         StreamFactoryInterface $streamFactory
         , protected readonly string $boardUrl
-        , protected readonly array $stationNames
+        , protected readonly array $stations
     ) {
         parent::__construct($streamFactory);
     }
