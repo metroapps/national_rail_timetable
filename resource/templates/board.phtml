@@ -162,7 +162,7 @@ if ($this instanceof BoardView) {
 ?>
                 <tr class="<?= !in_array(false, $overtaken_portions, true) ? 'overtaken' : '' ?>">
                     <td class="time <?= $this->connectingTime === null || !$this->station instanceof Station ? '' : ($service_call->isValidConnection($this->connectingTime, $this->connectingToc ?? null) ? 'valid_connection' : 'invalid_connection') ?>" rowspan="<?= html($portions_count) ?>">
-                        <?= html($service_call->timestamp->format('H:i') . (in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? 'x' : '')) ?>
+                        <?= html($service_call->timestamp->format('H:i')) . (in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? '<abbr title="request stop">x</abbr>' : '') ?>
                     </td>
                     <td rowspan="<?= html($portions_count) ?>"><?= match ($service_call->mode) {
                         Mode::BUS => 'BUS',
@@ -191,11 +191,11 @@ if ($this instanceof BoardView) {
                                     $link = $this->getArrivalLink($service_call);
                                     return sprintf(
                                         $link === null ? '<span class="%2$s">%3$s (%4$s%5$s)</span>' : '<a href="%s" class="%s">%s (%s%s)</a>'
-                                        , $link
+                                        , html($link)
                                         , $station->crsCode === $this->destination?->crsCode ? 'destination' : ''
-                                        , $station->getShortName()
+                                        , html($station->getShortName())
                                         , html($service_call->timestamp->format('H:i'))
-                                        , in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? 'x' : ''
+                                        , in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? '<abbr title="request stop">x</abbr>' : ''
                                     );
                                 }
                                 , array_filter(
