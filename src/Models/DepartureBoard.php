@@ -44,8 +44,8 @@ class DepartureBoard implements Persistable {
                                     $compare_filter_call->call->location->crsCode === $destination_crs
                                     && $compare_filter_call->timestamp < $filter_call->timestamp
                             ) !== []
-                    ) !== []
-            ) !== [];
+                    ) === []
+            ) === [];
         }
         if (in_array($this->timeType, [TimeType::WORKING_ARRIVAL, TimeType::PUBLIC_ARRIVAL])) {
             return array_filter(
@@ -63,8 +63,8 @@ class DepartureBoard implements Persistable {
                                     $compare_filter_call->call->location->crsCode === $destination_crs
                                     && $compare_filter_call->timestamp > $filter_call->timestamp
                             ) !== []
-                    ) !== []
-            ) !== [];
+                    ) === []
+            ) === [];
         }
         return false;
     }
