@@ -13,6 +13,8 @@ use function Http\Response\send;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+set_time_limit(300);
+ini_set('memory_limit', '4G');
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 set_error_handler(
