@@ -5,11 +5,9 @@ use Miklcct\NationalRailTimetable\Views\BoardFormView;
 use Miklcct\NationalRailTimetable\Views\BoardView;
 use Miklcct\NationalRailTimetable\Models\FixedLink;
 use Miklcct\NationalRailTimetable\Enums\Activity;
-use Miklcct\NationalRailTimetable\Enums\Mode;
 use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
-use Miklcct\NationalRailTimetable\Views\ServiceView;
 
 use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\ThinPhpApp\Escaper\html;
@@ -114,11 +112,16 @@ if ($this instanceof BoardView) {
 <?php
             /** @var FixedLink */
             foreach ($this->fixedLinks as $link) {
-                $arrival_time = $link->getArrivalTime($this->fixedLinkDepartureTime, $this->arrivalMode);
+                $kgx_hack = $this->station->crsCode === 'KGX' && $link->destination->crsCode === 'STP'
+                    || $this->station->crsCode === 'STP' && $link->destination->crsCode === 'KGX';
+                $departure_time = $kgx_hack && $this->connectingTime !== null
+                    ? $this->arrivalMode ? $this->connectingTime->sub(new DateInterval('PT5M')) : $this->connectingTime->add(new DateInterval('PT5M'))
+                    : $this->fixedLinkDepartureTime;
+                $arrival_time = $link->getArrivalTime($departure_time, $this->arrivalMode);
 ?>
                 <tr>
                     <td class="destination">
-                        <a href="<?= html($this->getFixedLinkUrl($link)) ?>">
+                        <a href="<?= html($this->getFixedLinkUrl($link, $departure_time)) ?>">
                             <?= html($link->destination->getShortName()) ?>
                         </a>
                     </td>
