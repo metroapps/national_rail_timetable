@@ -6,6 +6,7 @@ namespace Miklcct\NationalRailTimetable;
 use Psr\Container\ContainerInterface;
 use DI\ContainerBuilder;
 use Http\Factory\Guzzle\ResponseFactory;
+use Miklcct\NationalRailTimetable\Config\Config;
 use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\MongodbFixedLinkRepository;
@@ -58,8 +59,12 @@ function get_container() : ContainerInterface {
     if ($container === null) {
         $container = (new ContainerBuilder())->addDefinitions(
             [
+                Config::class => static fn() : Config => require __DIR__ . '/../config.php',
                 Database::class => 
-                    static fn() => (new Client(driverOptions: ['typeMap' => ['array' => 'array']]))->selectDatabase('national_rail'),
+                    static function(ContainerInterface $container) {
+                        $config = $container->get(Config::class);
+                        return (new Client(uri: $config->mongodbUri ?? 'mongodb://127.0.0.1/', uriOptions: $config->mongodbUriOptions ?? [], driverOptions: ['typeMap' => ['array' => 'array']]))->selectDatabase($config->databaseName);
+                    },
                 LocationRepositoryInterface::class => 
                     static fn(ContainerInterface $container) => new MongodbLocationRepository($container->get(Database::class)->selectCollection('locations')),
                 ServiceRepositoryFactoryInterface::class =>
