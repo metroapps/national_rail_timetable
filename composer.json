@@ -9,7 +9,8 @@
         "ext-mongodb" : "*",
         "miklcct/thin_php_app": "^0.6.1",
         "guzzlehttp/guzzle": "^7.5",
-        "http-interop/http-factory-guzzle": "^1.2"
+        "http-interop/http-factory-guzzle": "^1.2",
+        "php-di/php-di": "^6.4"
     },
     "require-dev" : {
         "roave/security-advisories" : "dev-latest",

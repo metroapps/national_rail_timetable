@@ -17,14 +17,14 @@ use Http\Factory\Guzzle\StreamFactory;
 use InvalidArgumentException;
 use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
-use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryInterface;
+use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
 use Miklcct\NationalRailTimetable\Views\BoardView;
 
 class BoardController extends Application {
     public function __construct(
         private readonly ViewResponseFactoryInterface $viewResponseFactory
         , private readonly LocationRepositoryInterface $locationRepository
-        , private readonly ServiceRepositoryInterface $serviceRepository
+        , private readonly ServiceRepositoryFactoryInterface $serviceRepositoryFactory
         , private readonly FixedLinkRepositoryInterface $fixedLinkRepository
     ) {}
     
@@ -62,7 +62,8 @@ class BoardController extends Application {
         $from = $from->setTime((int)$from->format('H'), (int)$from->format('i'), 0);
         $to = $arrival_mode ? $from->sub(new DateInterval('P1DT4H30M')) : $from->add(new DateInterval('P1DT4H30M'));
         $connecting_time = !empty($_GET['connecting_time']) ? new DateTimeImmutable($_GET['connecting_time'], $timezone) : null;
-        $board = $this->serviceRepository->getDepartureBoard(
+        $permanent_only = !empty($query['permanent_only']);
+        $board = ($this->serviceRepositoryFactory)($permanent_only)->getDepartureBoard(
             $station->crsCode
             , $arrival_mode ? $to : $from
             , $arrival_mode ? $from : $to
@@ -109,7 +110,7 @@ class BoardController extends Application {
                 , $destination
                 , $fixed_links
                 , $fixed_link_departure_time
-                , !empty($query['permanent_only'])
+                , $permanent_only
                 , empty($query['from'])
                 , $arrival_mode
             )

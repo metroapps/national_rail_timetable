@@ -3,6 +3,22 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable;
 
+use Psr\Container\ContainerInterface;
+use DI\ContainerBuilder;
+use Http\Factory\Guzzle\ResponseFactory;
+use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
+use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
+use Miklcct\NationalRailTimetable\Repositories\MongodbFixedLinkRepository;
+use Miklcct\NationalRailTimetable\Repositories\MongodbLocationRepository;
+use Miklcct\NationalRailTimetable\Repositories\MongodbServiceRepositoryFactory;
+use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
+use Miklcct\ThinPhpApp\Response\ViewResponseFactory;
+use Miklcct\ThinPhpApp\Response\ViewResponseFactoryInterface;
+use MongoDB\Client;
+use MongoDB\Database;
+use Psr\Http\Message\ResponseFactoryInterface;
+
+use function DI\autowire;
 use function array_slice;
 
 /**
@@ -35,4 +51,30 @@ function get_full_station_name(string $name) : string {
     static $mapping;
     $mapping ??= json_decode(file_get_contents(__DIR__ . '/../resource/long_station_names.json'), true);
     return $mapping[$name] ?? $name;
+}
+
+function get_container() : ContainerInterface {
+    static $container;
+    if ($container === null) {
+        $container = (new ContainerBuilder())->addDefinitions(
+            [
+                Database::class => 
+                    static fn() => (new Client(driverOptions: ['typeMap' => ['array' => 'array']]))->selectDatabase('national_rail'),
+                LocationRepositoryInterface::class => 
+                    static fn(ContainerInterface $container) => new MongodbLocationRepository($container->get(Database::class)->selectCollection('locations')),
+                ServiceRepositoryFactoryInterface::class =>
+                    static function(ContainerInterface $container) {
+                        /** @var Database */
+                        $database = $container->get(Database::class);
+                        return new MongodbServiceRepositoryFactory($database->selectCollection('services'), $database->selectCollection('associations'));
+                    },
+                FixedLinkRepositoryInterface::class =>
+                    static fn(ContainerInterface $container) => new MongodbFixedLinkRepository($container->get(Database::class)->selectCollection('fixed_links')),
+                ViewResponseFactoryInterface::class => autowire(ViewResponseFactory::class),
+                ResponseFactoryInterface::class => autowire(ResponseFactory::class),
+            ]
+        )
+        ->build();
+    }
+    return $container;
 }
