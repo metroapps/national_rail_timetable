@@ -32,8 +32,12 @@ $timezone = new DateTimeZone('Europe/London');
         <p><?= html(get_all_tocs()[$service->toc] ?? '') ?></p>
         <table>
 <?php
+$service_property = null;
+$service_property_changed = false;
 foreach ($service->points as $point) {
-    if (isset($point->serviceProperty)) {
+    if (isset($point->serviceProperty) && $point->serviceProperty != $service_property) {
+        $service_property = $point->serviceProperty;
+        $service_property_changed = true;
         if ($point->isPublicCall() && $point instanceof HasArrival && $point->getPublicArrival() !== null) {
 ?>
             <tr>
@@ -51,7 +55,7 @@ foreach ($service->points as $point) {
     if (
         $point->isPublicCall() 
         && (
-            !isset($point->serviceProperty) && $point instanceof HasArrival && $point->getPublicArrival() !== null 
+            !$service_property_changed && $point instanceof HasArrival && $point->getPublicArrival() !== null 
             || $point instanceof HasDeparture && $point->getPublicDeparture() !== null
         )
     ) {
@@ -59,11 +63,12 @@ foreach ($service->points as $point) {
             <tr>
                 <td><?= html($point->location->getShortName()) ?></td>
                 <td><?= html($point->platform) ?></td>
-                <td class="time"><?= !isset($point->serviceProperty) ? $this->showTime($point, false) : '' ?></td>
+                <td class="time"><?= !$service_property_changed ? $this->showTime($point, false) : '' ?></td>
                 <td class="time"><?= $this->showTime($point, true) ?></td>
                 <td><?= implode('<br/>', array_filter(array_map(fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
             </tr>
 <?php
+        $service_property_changed = false;
     }
 }
 ?>
