@@ -28,6 +28,14 @@ h1 {
     color: red;
 }
 
+.train_info {
+    text-align: center;
+}
+
+.train_number {
+    font-weight: bold;
+}
+
 @media (hover: none) {
     [title] {
       position: relative;

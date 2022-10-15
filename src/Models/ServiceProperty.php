@@ -47,6 +47,21 @@ class ServiceProperty implements Persistable {
         return $result === [] ? null : $result;
     }
 
+    public function showIcons() : string {
+        $result = '';
+        foreach ($this->caterings as $catering) {
+            $result .= $catering->showIcon();
+        }
+        $result .= $this->reservation->showIcon();
+        if ($this->seatingClasses[1]) {
+            $result .= '<img src="/images/first_class.png" alt="first class" title="First class available" />';
+        }
+        if (array_filter($this->sleeperClasses)) {
+            $result .= '<img src="/images/sleeper.png" alt="sleeper" title="Sleeper available" />';
+        }
+        return $result;
+    }
+
     /** @var Catering[] */
     #[ElementType(Catering::class)]
     public readonly array $caterings;

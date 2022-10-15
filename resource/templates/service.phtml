@@ -1,0 +1,72 @@
+<?php
+declare(strict_types=1);
+
+use Miklcct\NationalRailTimetable\Enums\Activity;
+use Miklcct\NationalRailTimetable\Models\Points\HasArrival;
+use Miklcct\NationalRailTimetable\Models\Points\HasDeparture;
+use Miklcct\NationalRailTimetable\Views\ServiceView;
+
+use function Miklcct\NationalRailTimetable\get_all_tocs;
+use function Miklcct\ThinPhpApp\Escaper\html;
+use Miklcct\NationalRailTimetable\Models\Service;
+use Miklcct\NationalRailTimetable\Views\BoardView;
+
+/** @var ServiceView $this */
+
+/** @var Service $service */
+$service = $this->datedService->service;
+$date = $this->datedService->date;
+$timezone = new DateTimeZone('Europe/London');
+?>
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="board.css" />
+        <title>
+            <?= html($this->getTitle()) ?>
+        </title>
+    </head>
+    <body>
+        <h1><?= html($this->getTitle()) ?></h1>
+        <p><?= html(get_all_tocs()[$service->toc] ?? '') ?></p>
+        <table>
+<?php
+foreach ($service->points as $point) {
+    if (isset($point->serviceProperty)) {
+        if ($point->isPublicCall() && $point instanceof HasArrival && $point->getPublicArrival() !== null) {
+?>
+            <tr>
+                <td><?= html($point->location->getShortName()) ?></td>
+                <td><?= html($point->platform) ?></td>
+                <td class="time"><?= $this->showTime($point, false) ?></td>
+                <td class="time"></td>
+                <td><?= implode('<br/>', array_filter(array_map(fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
+            </tr>
+
+<?php
+        }
+        $this->showServiceInformation($point->serviceProperty);
+    }
+    if (
+        $point->isPublicCall() 
+        && (
+            !isset($point->serviceProperty) && $point instanceof HasArrival && $point->getPublicArrival() !== null 
+            || $point instanceof HasDeparture && $point->getPublicDeparture() !== null
+        )
+    ) {
+?>
+            <tr>
+                <td><?= html($point->location->getShortName()) ?></td>
+                <td><?= html($point->platform) ?></td>
+                <td class="time"><?= !isset($point->serviceProperty) ? $this->showTime($point, false) : '' ?></td>
+                <td class="time"><?= $this->showTime($point, true) ?></td>
+                <td><?= implode('<br/>', array_filter(array_map(fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
+            </tr>
+<?php
+    }
+}
+?>
+        </table>
+    </body>
+</html>

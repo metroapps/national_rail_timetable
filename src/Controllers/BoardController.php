@@ -44,7 +44,7 @@ class BoardController extends Application {
         $station = $this->locationRepository->getLocationByCrs($query['station'])
             ?? $this->locationRepository->getLocationByName($query['station']);
         if ($station?->crsCode === null) {
-            throw new InvalidArgumentException('Station cannot be found.');
+            throw new InvalidArgumentException('The station cannot be found.');
         }
 
         $destination = null;
@@ -52,7 +52,7 @@ class BoardController extends Application {
             $destination = $this->locationRepository->getLocationByCrs($query['filter'])
                 ?? $this->locationRepository->getLocationByName($query['filter']);
             if ($destination?->crsCode === null) {
-                throw new InvalidArgumentException('Destination cannot be found.');
+                throw new InvalidArgumentException('The destination cannot be found.');
             }
         }
 

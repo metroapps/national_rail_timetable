@@ -18,4 +18,18 @@ enum Activity : string {
     case PICK_UP = 'U';
     case UNADVERTISED = 'N';
     case REVERSE = 'RM';
+
+    public function getDescription() : string {
+        return match($this) {
+            self::DETACH => 'Detach portion(s)',
+            self::ATTACH_DETACH => 'Attach / detach portions(s)',
+            self::ATTACH => 'Attach portion(s)',
+            self::SET_DOWN => 'Set down only',
+            self::REQUEST_STOP => 'Request stop',
+            self::PICK_UP => 'Pick up only',
+            self::UNADVERTISED => 'Unadvertised stop',
+            self::REVERSE => 'Reverse direction',
+            default => '',
+        };
+    }
 }

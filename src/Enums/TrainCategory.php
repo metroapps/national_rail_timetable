@@ -20,4 +20,18 @@ enum TrainCategory : string {
     public function isPassengerTrain() : bool {
         return true;
     }
+
+    public function getDescription() : string {
+        return match ($this) {
+            TrainCategory::NONE => '',
+            TrainCategory::METRO => 'Metro Train',
+            TrainCategory::ORDINARY => 'Local Train',
+            TrainCategory::CHANNEL_TUNNEL => 'Channel Tunnel Train',
+            TrainCategory::EXPRESS => 'Express Train',
+            TrainCategory::SLEEPER => 'Sleeper',
+            TrainCategory::REPLACEMENT_BUS => 'Rail Replacement Bus',
+            TrainCategory::BUS => 'Service Bus',
+            TrainCategory::SHIP => 'Ship',  
+        };
+    }
 }

@@ -11,4 +11,15 @@ enum Catering : string {
     case WHEELCHAIR_ONLY = 'P';
     case RESTAURANT = 'R';
     case TROLLEY = 'T';
+
+    public function showIcon() : string {
+        return match($this) {
+            Catering::BUFFET => '<img src="/images/buffet.png" alt="buffet" title="Buffet" />',
+            Catering::FIRST_CLASS_RESTAURANT => '<img src="/images/first_class_restaurant.png" alt="first class restaurant" title="Restaurant for first class passengers" />',
+            Catering::HOT_FOOD => '<img src="/images/first_class_restaurant.png" alt="hot food" title="Hot food" />',
+            Catering::RESTAURANT => '<img src="/images/restaurant.png" alt="restaurant" title="Restaurant" />',
+            Catering::TROLLEY => '<img src="/images/trolley.png" alt="restaurant" title="Trolley" />',
+            default => '',
+        };
+    }
 }
