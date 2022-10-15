@@ -42,9 +42,6 @@ class StationParser {
             $line = fgets($msn_file);
         } while (str_starts_with($line, '/!!'));
 
-        // skip file header record
-        fgets($msn_file);
-
         $stations = [];
 
         for (
