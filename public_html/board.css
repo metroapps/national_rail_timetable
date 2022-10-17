@@ -53,3 +53,8 @@ h1 {
       padding: 3px;
     }
 }
+
+#permanent_warning {
+    color: red;
+    font-weight: bold;
+}

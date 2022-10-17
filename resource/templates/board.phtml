@@ -74,6 +74,11 @@ if ($this instanceof BoardView) {
 ?>  
         <h1><?= html($this->getHeading()) ?></h1>
 <?php
+    if ($this->permanentOnly) {
+?>
+        <p id="permanent_warning">Warning: Permanent timetable instead of actual timetable shown</p>
+<?php
+    }
     if ($this->station instanceof Station) {
 ?>
         <p>Minimum connection time is <span class="time"><?= html($this->station->minimumConnectionTime . ($this->station->minimumConnectionTime === 1 ? ' minute' : ' minutes')) ?></span><?= $this->station->tocConnectionTimes === [] ? '.' : ', with the exception of the following:' ?></p>
