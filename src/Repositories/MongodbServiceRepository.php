@@ -222,19 +222,27 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         }
         unset($possibility);
 
+        // index possibilities with their UID and date
+        $possibilities = array_combine(
+            array_map(fn(DatedService $dated_service) => $dated_service->service->uid . '_' . $dated_service->date, $possibilities)
+            , $possibilities
+        );
+
         /** @var ServiceCall[] */
         $results = array_merge(
-            ...array_map(
-                static fn(DatedService $possibility) =>
-                    $possibility->service instanceof Service
-                        ? $possibility->getCalls($time_type, $crs, $from, $to)
-                        : []
-                , $possibilities
+            ...array_values(
+                array_map(
+                    static fn(DatedService $possibility) =>
+                        $possibility->service instanceof Service
+                            ? $possibility->getCalls($time_type, $crs, $from, $to)
+                            : []
+                    , $possibilities
+                )
             )
         );
         $results = $this->sortCallResults($results);
         foreach ($results as &$result) {
-            $dated_service = $this->getFullService($this->getService($result->uid, $result->date));
+            $dated_service = $this->getFullService($possibilities[$result->uid . '_' . $result->date]);
             $full_results = $dated_service->getCalls($time_type, $crs, $from, $to, true);
             foreach ($full_results as $full_result) {
                 if ($result->timestamp == $full_result->timestamp) {
