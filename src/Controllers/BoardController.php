@@ -60,13 +60,13 @@ class BoardController extends Application {
         $timezone = new DateTimeZone('Europe/London');
         $from = new DateTimeImmutable(empty($query['from']) ? 'now' : $query['from'], $timezone);
         $from = $from->setTime((int)$from->format('H'), (int)$from->format('i'), 0);
-        $to = $arrival_mode ? $from->sub(new DateInterval('P1DT4H30M')) : $from->add(new DateInterval('P1DT4H30M'));
+        $to = $arrival_mode ? $from->sub(new DateInterval('P1DT4H30M')) : $from->add(new DateInterval('P1DT4H31M'));
         $connecting_time = !empty($_GET['connecting_time']) ? new DateTimeImmutable($_GET['connecting_time'], $timezone) : null;
         $permanent_only = !empty($query['permanent_only']);
         $board = ($this->serviceRepositoryFactory)($permanent_only)->getDepartureBoard(
             $station->crsCode
             , $arrival_mode ? $to : $from
-            , $arrival_mode ? $from : $to
+            , $arrival_mode ? $from->add(new DateInterval('PT1M')) : $to
             , $arrival_mode ? TimeType::PUBLIC_ARRIVAL : TimeType::PUBLIC_DEPARTURE
         );
         if ($destination !== null) {

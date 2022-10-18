@@ -43,6 +43,7 @@ class FullService extends DatedService {
                     $this->service->getAssociationPoint(...)
                     , [$a->associationEntry, $b->associationEntry]
                 );
+                /** @var Time[] */
                 $times = array_map(
                     static fn(TimingPoint $point) =>
                         $point instanceof HasDeparture ? $point->getPublicOrWorkingDeparture() : (
