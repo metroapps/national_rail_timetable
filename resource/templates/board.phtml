@@ -10,6 +10,7 @@ use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 
 use function Miklcct\NationalRailTimetable\get_all_tocs;
+use function Miklcct\NationalRailTimetable\show_date_offset;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 /** @var BoardFormView $this */
@@ -112,23 +113,45 @@ if ($this instanceof BoardView) {
 ?>
         <table>
             <thead>
-                <tr><th colspan="6">Fixed links as of <?= html($this->fixedLinkDepartureTime->format('Y-m-d H:i')) ?></th></tr>
-                <tr><th>Transfer to</th><th>Mode</th><th>From</th><th>To</th><th>Minutes</th><th><?= $this->arrivalMode ? 'Departure' : 'Arrival' ?></th></tr>
+                <tr><th colspan="6">
+                    Fixed links 
+                    <?= html(
+                        $this->fixedLinkDepartureTime !== null 
+                        ? 'as of ' . $this->fixedLinkDepartureTime->format('Y-m-d H:i') 
+                        : 'on ' . $this->boardDate) 
+                    ?>
+                </th></tr>
+                <tr>
+                    <th>Transfer to</th>
+                    <th>Mode</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Minutes</th>
+<?php
+            if ($this->fixedLinkDepartureTime !== null) {
+?>
+                    <th><?= $this->arrivalMode ? 'Departure' : 'Arrival' ?></th>
+<?php
+            }
+?>
+                </tr>
             </thead>
             <tbody>
 <?php
             /** @var FixedLink */
             foreach ($this->fixedLinks as $link) {
-                $kgx_hack = $this->station->crsCode === 'KGX' && $link->destination->crsCode === 'STP'
-                    || $this->station->crsCode === 'STP' && $link->destination->crsCode === 'KGX';
-                $departure_time = $kgx_hack && $this->connectingTime !== null
-                    ? $this->arrivalMode ? $this->connectingTime->sub(new DateInterval('PT5M')) : $this->connectingTime->add(new DateInterval('PT5M'))
-                    : $this->fixedLinkDepartureTime;
-                $arrival_time = $link->getArrivalTime($departure_time, $this->arrivalMode);
+                if ($this->fixedLinkDepartureTime) {
+                    $kgx_hack = $this->station->crsCode === 'KGX' && $link->destination->crsCode === 'STP'
+                        || $this->station->crsCode === 'STP' && $link->destination->crsCode === 'KGX';
+                    $departure_time = $kgx_hack && $this->connectingTime !== null
+                        ? $this->arrivalMode ? $this->connectingTime->sub(new DateInterval('PT5M')) : $this->connectingTime->add(new DateInterval('PT5M'))
+                        : $this->fixedLinkDepartureTime;
+                    $arrival_time = $link->getArrivalTime($departure_time, $this->arrivalMode);
+                }
 ?>
                 <tr>
                     <td class="destination">
-                        <a href="<?= html($this->getFixedLinkUrl($link, $departure_time)) ?>">
+                        <a href="<?= html($this->getFixedLinkUrl($link, $departure_time ?? null)) ?>">
                             <?= html($link->destination->getShortName()) ?>
                         </a>
                     </td>
@@ -136,7 +159,13 @@ if ($this instanceof BoardView) {
                     <td><?= html($link->startTime) ?></td>
                     <td><?= html($link->endTime) ?></td>
                     <td><?= html($link->transferTime) ?></td>
-                    <td class="time"><?= html($arrival_time->format('H:i')) ?></td>
+<?php
+                if ($this->fixedLinkDepartureTime !== null) {
+?>
+                    <td class="time"><?= html($arrival_time->format('H:i')) . show_date_offset($arrival_time, $this->boardDate) ?></td>
+<?php
+                }
+?>
                 </tr>
 <?php
             }
@@ -206,7 +235,7 @@ if ($this instanceof BoardView) {
                             href="<?= html($this->getServiceLink($service_call)) ?>" 
                             class="<?= $this->connectingTime === null || !$this->station instanceof Station ? '' : ($service_call->isValidConnection($this->connectingTime, $this->connectingToc ?? null) ? 'valid_connection' : 'invalid_connection') 
                         ?>"><?= html($timestamp->format('H:i')) ?></a><?=
-                            ($day_offset ? sprintf('<sup class="day_offset"><abbr title="%s">%+d</abbr></sup>', match ($day_offset) {1 => 'next day', -1 => 'previous day', default => sprintf('%+d days', $day_offset)}, $day_offset) : '')
+                            show_date_offset($timestamp, $this->boardDate)
                             . (in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? '<abbr title="request stop">x</abbr>' : '') 
                         ?>    
                     </td>
@@ -232,11 +261,12 @@ if ($this instanceof BoardView) {
                                     $station = $service_call->call->location;
                                     $link = $this->getArrivalLink($service_call);
                                     return sprintf(
-                                        $link === null ? '<span class="%2$s">%3$s (%4$s%5$s)</span>' : '<a href="%s" class="%s">%s (%s%s)</a>'
-                                        , html($link)
+                                        $link === null ? '<span class="%1$s">%3$s (%4$s%5$s%6$s)</span>' : '<span class="%s"><a href="%s">%s</a> (%s%s%s)'
                                         , $station->crsCode !== null && $station->crsCode === $this->destination?->crsCode ? 'destination' : ''
+                                        , html($link)
                                         , html($station->getShortName())
                                         , html($service_call->timestamp->format('H:i'))
+                                        , show_date_offset($service_call->timestamp, $this->boardDate)
                                         , in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? '<abbr title="request stop">x</abbr>' : ''
                                     );
                                 }

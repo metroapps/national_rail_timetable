@@ -56,8 +56,8 @@ class Date implements JsonSerializable, Persistable {
         return (int)$this->toDateTimeImmutable()->format('w');
     }
 
-    public function toDateTimeImmutable(Time $time = null) : DateTimeImmutable {
-        return (new \Safe\DateTimeImmutable())
+    public function toDateTimeImmutable(Time $time = null, ?DateTimeZone $timezone = null) : DateTimeImmutable {
+        return (new \Safe\DateTimeImmutable('now', $timezone))
             ->setDate($this->year, $this->month, $this->day)
             ->setTime($time?->hours ?? 0, $time?->minutes ?? 0, $time?->halfMinute ? 30 : 0);
     }

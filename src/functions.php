@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable;
 
+use DateTimeImmutable;
 use Psr\Container\ContainerInterface;
 use DI\ContainerBuilder;
 use Http\Factory\Guzzle\ResponseFactory;
@@ -112,4 +113,11 @@ function get_container() : ContainerInterface {
         ->build();
     }
     return $container;
+}
+
+    
+function show_date_offset(DateTimeImmutable $timestamp, Date $base) : string {
+    $interval = $base->toDateTimeImmutable()->diff($timestamp->setTime(0, 0, 0));
+    $day_offset = $interval->days * ($interval->invert ? -1 : 1);
+    return $day_offset ? sprintf('<sup class="day_offset"><abbr title="%s">%+d</abbr></sup>', match ($day_offset) {1 => 'next day', -1 => 'previous day', default => sprintf('%+d days', $day_offset)}, $day_offset) : '';
 }

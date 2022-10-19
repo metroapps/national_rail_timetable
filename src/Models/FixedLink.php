@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailTimetable\Models;
 
 use DateInterval;
+use Miklcct\NationalRailTimetable\Models\Date;
 use DateTimeImmutable;
 use Miklcct\NationalRailTimetable\Attributes\ElementType;
 use MongoDB\BSON\Persistable;
@@ -39,11 +40,8 @@ class FixedLink implements Persistable {
         }
 
         $time = Time::fromDateTimeInterface($departure);
-        $date_valid = $this->weekdays[(int)$departure->format('w')]
-            && ($this->startDate !== null ? $this->startDate->toDateTimeImmutable(new Time(0, 0)) <= $departure : true)
-            && ($this->endDate !== null ? $this->endDate->toDateTimeImmutable(new Time(23, 59, true)) >= $departure : true);
-        $time_valid = $this->startTime->toHalfMinutes() <= $time->toHalfMinutes()
-            && $this->endTime->toHalfMinutes() >= $time->toHalfMinutes();
+        $date_valid = $this->isActiveOnDate(Date::fromDateTimeInterface($departure));
+        $time_valid = $this->isActiveAtTime($time);
         if ($date_valid && $time_valid) {
             return $reverse ? $departure : $departure->add($transfer_interval);
         }
@@ -72,6 +70,17 @@ class FixedLink implements Persistable {
             }
             return null;
         }
+    }
+
+    public function isActiveOnDate(Date $date) {
+        return $this->weekdays[$date->toDateTimeImmutable()->format('w')]
+        && ($this->startDate !== null ? $this->startDate->toDateTimeImmutable(new Time(0, 0)) <= $date->toDateTimeImmutable() : true)
+        && ($this->endDate !== null ? $this->endDate->toDateTimeImmutable(new Time(23, 59, true)) >= $date->toDateTimeImmutable() : true);
+    }
+
+    public function isActiveAtTime(Time $time) {
+        return $this->startTime->toHalfMinutes() <= $time->toHalfMinutes()
+            && $this->endTime->toHalfMinutes() >= $time->toHalfMinutes();
     }
 
     /** @var bool[] 7 bits specifying if it is active on each of the weekdays */

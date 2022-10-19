@@ -66,12 +66,12 @@ class BoardView extends BoardFormView {
         return sprintf('%s (%s)', $location->name, $location->crsCode);
     }
 
-    public function getFixedLinkUrl(FixedLink $fixed_link, DateTimeImmutable $departure_time) {
+    public function getFixedLinkUrl(FixedLink $fixed_link, ?DateTimeImmutable $departure_time) {
         return $this->boardUrl . '?' . http_build_query(
             [
                 'station' => $fixed_link->destination->crsCode,
                 'date' => $this->connectingTime !== null ? Date::fromDateTimeInterface($this->connectingTime->sub(new DateInterval($this->arrivalMode ? 'PT4H30M' : 'P0D'))) : $this->boardDate->__toString(),
-                'connecting_time' => $fixed_link->getArrivalTime($departure_time, $this->arrivalMode)->format('c'),
+                'connecting_time' => $departure_time === null ? '' : $fixed_link->getArrivalTime($departure_time, $this->arrivalMode)->format('c'),
                 'permanent_only' => (string)$this->permanentOnly,
                 'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
             ]
