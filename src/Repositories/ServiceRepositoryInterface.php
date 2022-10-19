@@ -76,4 +76,8 @@ interface ServiceRepositoryInterface {
      * @return DatedService[]
      */
     public function getServiceByRsid(string $rsid, Date $date) : array;
+
+    public function getGeneratedDate() : ?Date;
+
+    public function setGeneratedDate(?Date $date);
 }

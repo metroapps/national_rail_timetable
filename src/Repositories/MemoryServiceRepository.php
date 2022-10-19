@@ -96,4 +96,13 @@ class MemoryServiceRepository extends AbstractServiceRepository {
         return $this->findServicesInUidMatchingRsid(array_keys($this->services), $rsid, $date);
     }
 
+    public function getGeneratedDate(): ?Date {
+        return $this->date;
+    }
+
+    public function setGeneratedDate(?Date $date) {
+        $this->date = $date;
+    }
+
+    private ?Date $date = null;
 }

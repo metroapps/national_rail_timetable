@@ -3,6 +3,9 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable;
 
+use DateTimeImmutable;
+use DateTimeInterface;
+use DateTimeZone;
 use Psr\Container\ContainerInterface;
 use DI\ContainerBuilder;
 use Http\Factory\Guzzle\ResponseFactory;
@@ -18,6 +21,7 @@ use Miklcct\ThinPhpApp\Response\ViewResponseFactoryInterface;
 use MongoDB\Client;
 use MongoDB\Database;
 use Psr\Http\Message\ResponseFactoryInterface;
+use Miklcct\NationalRailTimetable\Models\Date;
 
 use function DI\autowire;
 use function array_slice;
@@ -54,17 +58,46 @@ function get_full_station_name(string $name) : string {
     return $mapping[$name] ?? $name;
 }
 
+/**
+ * Return the 2 databases defined in the application
+ * 
+ * The database at index 0 is the one currently used, while the one at index 1 is available for importing new data
+ * 
+ * @return Database[]
+ */
+function get_databases() : array {
+    $container = get_container();
+    /** @var Config */
+    $config = $container->get(Config::class);
+    $databases = array_map(
+        fn (string $name) => $container->get(Client::class)->selectDatabase($name)
+        , [$config->databaseName, $config->alternativeDatabaseName]
+    );
+    /** @var (Date|null)[] */
+    $generated_dates = array_map(
+        fn (Database $database) => $database->selectCollection('services')->findOne(['generated' => ['$exists' => true]])?->generated
+        , $databases
+    );
+    if ($generated_dates[0]?->toDateTimeImmutable() < $generated_dates[1]?->toDateTimeImmutable) {
+        return [$databases[1], $databases[0]];
+    }
+    return $databases;
+}
+
 function get_container() : ContainerInterface {
     static $container;
     if ($container === null) {
         $container = (new ContainerBuilder())->addDefinitions(
             [
+                'new_database' => static fn() => get_databases()[1],
+                Client::class => static function(ContainerInterface $container) : Client {
+                    $config = $container->get(Config::class);
+                    return new Client(uri: $config->mongodbUri ?? 'mongodb://127.0.0.1/', uriOptions: $config->mongodbUriOptions ?? [], driverOptions: ['typeMap' => ['array' => 'array']]);
+                },
                 Config::class => static fn() : Config => require __DIR__ . '/../config.php',
-                Database::class => 
-                    static function(ContainerInterface $container) {
-                        $config = $container->get(Config::class);
-                        return (new Client(uri: $config->mongodbUri ?? 'mongodb://127.0.0.1/', uriOptions: $config->mongodbUriOptions ?? [], driverOptions: ['typeMap' => ['array' => 'array']]))->selectDatabase($config->databaseName);
-                    },
+                Database::class => static function() {
+                    return get_databases()[0];
+                },
                 LocationRepositoryInterface::class => 
                     static fn(ContainerInterface $container) => new MongodbLocationRepository($container->get(Database::class)->selectCollection('locations')),
                 ServiceRepositoryFactoryInterface::class =>

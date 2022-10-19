@@ -63,6 +63,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
                 ['key' => ['uid' => 1]],
                 ['key' => ['points.location.crsCode' => 1, 'period.from' => 1, 'period.to' => 1]],
                 ['key' => ['points.serviceProperty.rsid' => 1]],
+                ['key' => ['generated' => 1]],
             ]
         );
         $this->associationsCollection->createIndexes(
@@ -254,5 +255,13 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         $board = new DepartureBoard($crs, $from, $to, $time_type, $results);
         $this->departureBoardsCache?->putDepartureBoard($board);
         return $board;
+    }
+
+    public function getGeneratedDate(): ?Date {
+        return $this->servicesCollection->findOne(['generated' => ['$exists' => true]])?->generated;
+    }
+
+    public function setGeneratedDate(?Date $date) {
+        $this->servicesCollection->insertOne(['generated' => $date]);
     }
 }
