@@ -4,9 +4,7 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailTimetable\Models;
 
 use DateInterval;
-use DateTime;
 use DateTimeImmutable;
-use DateTimeZone;
 use Miklcct\NationalRailTimetable\Attributes\ElementType;
 use MongoDB\BSON\Persistable;
 
@@ -35,8 +33,6 @@ class FixedLink implements Persistable {
      * @param bool $reverse If true get the departure time from the arrival time instead
      */
     public function getArrivalTime(DateTimeImmutable $departure, bool $reverse = false) : ?DateTimeImmutable {
-        $timezone = new DateTimeZone('Europe/London');
-        $departure = $departure->setTimezone($timezone);
         $transfer_interval = new DateInterval(sprintf('PT%dM', $this->transferTime));
         if ($reverse) {
             $departure = $departure->sub($transfer_interval);
@@ -44,8 +40,8 @@ class FixedLink implements Persistable {
 
         $time = Time::fromDateTimeInterface($departure);
         $date_valid = $this->weekdays[(int)$departure->format('w')]
-            && ($this->startDate !== null ? $this->startDate->toDateTimeImmutable(new Time(0, 0), $timezone) <= $departure : true)
-            && ($this->endDate !== null ? $this->endDate->toDateTimeImmutable(new Time(23, 59, true), $timezone) >= $departure : true);
+            && ($this->startDate !== null ? $this->startDate->toDateTimeImmutable(new Time(0, 0)) <= $departure : true)
+            && ($this->endDate !== null ? $this->endDate->toDateTimeImmutable(new Time(23, 59, true)) >= $departure : true);
         $time_valid = $this->startTime->toHalfMinutes() <= $time->toHalfMinutes()
             && $this->endTime->toHalfMinutes() >= $time->toHalfMinutes();
         if ($date_valid && $time_valid) {

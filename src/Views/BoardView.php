@@ -3,8 +3,8 @@ declare(strict_types = 1);
 
 namespace Miklcct\NationalRailTimetable\Views;
 
+use DateInterval;
 use DateTimeImmutable;
-use DateTimeZone;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\DepartureBoard;
 use Miklcct\NationalRailTimetable\Models\Location;
@@ -13,8 +13,6 @@ use Miklcct\NationalRailTimetable\Models\ServiceCall;
 use Psr\Http\Message\StreamFactoryInterface;
 
 use function Miklcct\NationalRailTimetable\get_all_tocs;
-use function Miklcct\NationalRailTimetable\get_call_hash;
-use function Miklcct\NationalRailTimetable\get_javascript_iso_date;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 class BoardView extends BoardFormView {
@@ -23,7 +21,7 @@ class BoardView extends BoardFormView {
         , string $boardUrl
         , array $stations
         , protected readonly DepartureBoard $board
-        , protected readonly DateTimeImmutable $boardTime
+        , protected readonly Date $boardDate
         , protected readonly ?DateTimeImmutable $connectingTime
         , protected readonly ?string $connectingToc
         , protected readonly Location $station
@@ -46,7 +44,7 @@ class BoardView extends BoardFormView {
             , $this->destination !== null 
                 ? ' to ' . $this->destination->name
                 : ''
-            , $this->now ? 'now' : 'from ' . $this->boardTime->format('Y-m-d H:i')
+            , $this->now ? 'today' : 'on ' . $this->boardDate
         );
     }
 
@@ -57,7 +55,7 @@ class BoardView extends BoardFormView {
             $result .= ' calling at ' . $this->getNameAndCrs($this->destination);
         }
         $result .= ' ';
-        $result .= $this->now ? 'now' : 'from ' . $this->boardTime->format('Y-m-d H:i');
+        $result .= $this->now ? 'today' : 'on ' . $this->boardDate;
         return $result;
     }
 
@@ -72,7 +70,7 @@ class BoardView extends BoardFormView {
         return $this->boardUrl . '?' . http_build_query(
             [
                 'station' => $fixed_link->destination->crsCode,
-                'from' => ($this->connectingTime ?? $this->boardTime)->format('c'),
+                'date' => $this->connectingTime !== null ? Date::fromDateTimeInterface($this->connectingTime->sub(new DateInterval($this->arrivalMode ? 'PT4H30M' : 'P0D'))) : $this->boardDate->__toString(),
                 'connecting_time' => $fixed_link->getArrivalTime($departure_time, $this->arrivalMode)->format('c'),
                 'permanent_only' => (string)$this->permanentOnly,
                 'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
@@ -84,7 +82,7 @@ class BoardView extends BoardFormView {
         return [
             'station' => $this->station->crsCode,
             'filter' => $this->destination?->crsCode,
-            'from' => $this->now ? '' : substr($this->boardTime->format('c') ?? '', 0, 16),
+            'date' => $this->now ? '' : $this->boardDate,
             'connecting_time' => substr($this->connectingTime?->format('c') ?? '', 0, 16),
             'connecting_toc' => $this->connectingToc,
             'permanent_only' => (string)$this->permanentOnly,
@@ -99,13 +97,13 @@ class BoardView extends BoardFormView {
         return $this->boardUrl . '?' . http_build_query(
             [
                 'station' => $service_call->call->location->crsCode,
-                'from' => $service_call->timestamp->format('c'),
+                'date' => $service_call->timestamp->sub(new DateInterval($this->arrivalMode ? 'PT4H30M' : 'P0D'))->format('Y-m-d'),
                 'connecting_time' => $service_call->timestamp->format('c'),
                 'connecting_toc' => $service_call->toc,
                 'permanent_only' => $this->permanentOnly ?? '',
                 'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
             ]
-        ) . '#' . get_call_hash($service_call->timestamp);
+        );
     }
 
     public function getServiceLink(ServiceCall $service_call) {

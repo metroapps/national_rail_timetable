@@ -32,6 +32,10 @@ h1 {
     font-weight: bold;
 }
 
+.time {
+    white-space: nowrap;
+}
+
 .overtaken {
     color: lightgrey;
 }

@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable\Parsers;
 
-use DateTimeZone;
 use LogicException;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\FixedLink;
@@ -78,7 +77,6 @@ class FixedLinkParser {
                         DateTimeImmutable::createFromFormat(
                             'd/m/Y'
                             , $fields[1]
-                            , new DateTimeZone('Europe/London')
                         )->setTime(0, 0)
                         );
                     break;
@@ -87,7 +85,6 @@ class FixedLinkParser {
                         DateTimeImmutable::createFromFormat(
                             'd/m/Y'
                             , $fields[1]
-                            , new DateTimeZone('Europe/London')
                         )->setTime(0, 0)
                     );
                     break;

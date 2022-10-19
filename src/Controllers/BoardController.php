@@ -3,7 +3,6 @@ declare(strict_types = 1);
 
 namespace Miklcct\NationalRailTimetable\Controllers;
 
-use DateTimeZone;
 use DateTimeImmutable;
 use DateInterval;
 use Miklcct\NationalRailTimetable\Models\Station;
@@ -15,6 +14,8 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Http\Factory\Guzzle\StreamFactory;
 use InvalidArgumentException;
+use Miklcct\NationalRailTimetable\Models\Date;
+use Miklcct\NationalRailTimetable\Models\Time;
 use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
@@ -57,17 +58,16 @@ class BoardController extends Application {
         }
 
         $arrival_mode = $query['mode'] === 'arrivals';
-        $timezone = new DateTimeZone('Europe/London');
-        $from = new DateTimeImmutable(empty($query['from']) ? 'now' : $query['from'], $timezone);
-        $from = $from->setTime((int)$from->format('H'), (int)$from->format('i'), 0);
-        $to = $arrival_mode ? $from->sub(new DateInterval('P1DT4H30M')) : $from->add(new DateInterval('P1DT4H31M'));
-        $connecting_time = !empty($_GET['connecting_time']) ? new DateTimeImmutable($_GET['connecting_time'], $timezone) : null;
+        $date = Date::fromDateTimeInterface(new DateTimeImmutable(empty($query['date']) ? 'now' : $query['date']));
+        $from = $date->toDateTimeImmutable(new Time(0, 0));
+        $to = $date->toDateTimeImmutable(new Time(28, 30));
+        $connecting_time = !empty($_GET['connecting_time']) ? new DateTimeImmutable($_GET['connecting_time']) : null;
         $permanent_only = !empty($query['permanent_only']);
         $service_repository = ($this->serviceRepositoryFactory)($permanent_only);
         $board = $service_repository->getDepartureBoard(
             $station->crsCode
-            , $arrival_mode ? $to : $from
-            , $arrival_mode ? $from->add(new DateInterval('PT1M')) : $to
+            , $from
+            , $to
             , $arrival_mode ? TimeType::PUBLIC_ARRIVAL : TimeType::PUBLIC_DEPARTURE
         );
         if ($destination !== null) {
@@ -104,7 +104,7 @@ class BoardController extends Application {
                 , $self
                 , $this->locationRepository->getAllStations()
                 , $board
-                , $from
+                , $date
                 , $connecting_time
                 , empty($query['connecting_toc']) ? null : $query['connecting_toc']
                 , $station
@@ -112,7 +112,7 @@ class BoardController extends Application {
                 , $fixed_links
                 , $fixed_link_departure_time
                 , $permanent_only
-                , empty($query['from'])
+                , empty($query['date'])
                 , $arrival_mode
                 , $service_repository->getGeneratedDate()
             )

@@ -3,9 +3,6 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable;
 
-use DateTimeImmutable;
-use DateTimeInterface;
-use DateTimeZone;
 use Psr\Container\ContainerInterface;
 use DI\ContainerBuilder;
 use Http\Factory\Guzzle\ResponseFactory;
@@ -115,8 +112,4 @@ function get_container() : ContainerInterface {
         ->build();
     }
     return $container;
-}
-
-function get_call_hash(DateTimeImmutable $timestamp) {
-    return 'call_' . sprintf('%012d', $timestamp->getTimestamp());
 }

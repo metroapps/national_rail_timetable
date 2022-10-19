@@ -1,22 +1,17 @@
 <?php
 declare(strict_types=1);
 
-use Miklcct\NationalRailTimetable\Enums\Activity;
-use Miklcct\NationalRailTimetable\Models\Points\HasArrival;
-use Miklcct\NationalRailTimetable\Models\Points\HasDeparture;
+use Miklcct\NationalRailTimetable\Models\Service;
 use Miklcct\NationalRailTimetable\Views\ServiceView;
 
 use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\ThinPhpApp\Escaper\html;
-use Miklcct\NationalRailTimetable\Models\Service;
-use Miklcct\NationalRailTimetable\Views\BoardView;
 
 /** @var ServiceView $this */
 
 /** @var Service $service */
 $service = $this->datedService->service;
 $date = $this->datedService->date;
-$timezone = new DateTimeZone('Europe/London');
 ?>
 
 <!DOCTYPE html>

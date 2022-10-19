@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable\Views;
 
+use DateInterval;
 use DateTimeImmutable;
-use DateTimeZone;
 use LogicException;
 use Miklcct\NationalRailTimetable\Models\Points\HasArrival;
 use Miklcct\NationalRailTimetable\Models\Points\HasDeparture;
@@ -79,12 +79,11 @@ class ServiceView extends PhpTemplate {
         if ($time === null) {
             return '';
         }
-        static $timezone = new DateTimeZone('Europe/London');
         if ($point->location->crsCode !== null) {
             return sprintf(
                 '<a href="%s">%s</a>'
                 , $this->getBoardLink(
-                    $date->toDateTimeImmutable($time, $timezone)
+                    $date->toDateTimeImmutable($time)
                     , $point->location->crsCode
                     , $departure_to_arrival_board ? 'arrivals' : 'departures'
                 )
@@ -98,7 +97,7 @@ class ServiceView extends PhpTemplate {
         return '/index.php?' . http_build_query(
             [
                 'station' => $crs,
-                'from' => $timestamp->format('c'),
+                'date' => $timestamp->sub(new DateInterval($mode === 'arrivals' ? 'PT4H30M' : 'P0D'))->format('Y-m-d'),
                 'connecting_time' => $timestamp->format('c'),
                 'connecting_toc' => $this->datedService->service->toc,
                 'permanent_only' => $this->permanentOnly ?? '',

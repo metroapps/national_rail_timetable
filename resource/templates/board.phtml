@@ -10,7 +10,6 @@ use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 
 use function Miklcct\NationalRailTimetable\get_all_tocs;
-use function Miklcct\NationalRailTimetable\get_call_hash;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 /** @var BoardFormView $this */
@@ -49,7 +48,7 @@ foreach (['departures', 'arrivals'] as $mode) {
 ?>
                 <label>at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($this->getFormData()['station'] ?? null)?>"/></label><br/>
                 <label>only trains calling at (optional): <input autocomplete="off" list="stations" type="text" name="filter" size="32" value="<?= html($this->getFormData()['filter'] ?? null) ?>"/></label><br/>
-                <label>from (leave empty for now) <input type="datetime-local" name="from" value="<?= html($this->getFormData()['from'] ?? null) ?>"/></label>
+                <label>on (leave empty for today) <input type="date" name="date" value="<?= html($this->getFormData()['date'] ?? null) ?>"/></label>
             </p>
             <p>
                 <label>Show valid connections at: <input type="datetime-local" name="connecting_time" value="<?= html($this->getFormData()['connecting_time'] ?? null) ?>"/>
@@ -165,13 +164,6 @@ if ($this instanceof BoardView) {
     $previous_timestamp = null;
     foreach ($this->arrivalMode ? array_reverse($this->board->calls, true) : $this->board->calls as $service_call) {
         $timestamp = $service_call->timestamp;
-        if ($previous_timestamp === null || $timestamp->format('Y-m-d') !== $previous_timestamp->format('Y-m-d')) {
-?>
-                <tr>
-                    <th colspan="7"><?= html($timestamp->format('Y-m-d')) ?></th>
-                </tr>
-<?php
-        }
         $destinations = $this->arrivalMode ? $service_call->origins : $service_call->destinations;
         $portions_count = count($destinations);
         $portion_uids = array_keys($destinations);
@@ -182,12 +174,17 @@ if ($this instanceof BoardView) {
                 , $portion_uids
             )
         );
+        $day_offset = $timestamp->setTime(0, 0, 0)->diff($this->boardDate->toDateTimeImmutable())->days;
 ?>
-                <tr <?= $timestamp != $previous_timestamp ? sprintf('id="%s"', get_call_hash($timestamp)): '' ?> class="<?= !in_array(false, $overtaken_portions, true) ? 'overtaken' : '' ?>">
+                <tr data-timestamp="<?= html($timestamp->getTimestamp()) ?>">
                     <td class="time" rowspan="<?= html($portions_count) ?>">
-                        <a href="<?= html($this->getServiceLink($service_call)) ?>" class="<?= $this->connectingTime === null || !$this->station instanceof Station ? '' : ($service_call->isValidConnection($this->connectingTime, $this->connectingToc ?? null) ? 'valid_connection' : 'invalid_connection') ?>">
-                            <?= html($timestamp->format('H:i')) . (in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? '<abbr title="request stop">x</abbr>' : '') ?>
-                       </a>    
+                        <a 
+                            href="<?= html($this->getServiceLink($service_call)) ?>" 
+                            class="<?= $this->connectingTime === null || !$this->station instanceof Station ? '' : ($service_call->isValidConnection($this->connectingTime, $this->connectingToc ?? null) ? 'valid_connection' : 'invalid_connection') 
+                        ?>"><?= html($timestamp->format('H:i')) ?></a><?=
+                            ($day_offset ? sprintf('<sup class="day_offset"><abbr title="%s">%+d</abbr></sup>', match ($day_offset) {1 => 'next day', -1 => 'previous day', default => sprintf('%+d days', $day_offset)}, $day_offset) : '')
+                            . (in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? '<abbr title="request stop">x</abbr>' : '') 
+                        ?>    
                     </td>
                     <td rowspan="<?= html($portions_count) ?>"><?= $this->showFacilities($service_call) ?></td>
                     <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->call->platform) ?></td>
