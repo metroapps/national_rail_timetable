@@ -6,7 +6,6 @@ namespace Miklcct\NationalRailTimetable\Views;
 use DateTimeImmutable;
 use DateTimeZone;
 use LogicException;
-use Miklcct\NationalRailTimetable\Models\DatedService;
 use Miklcct\NationalRailTimetable\Models\Points\HasArrival;
 use Miklcct\NationalRailTimetable\Models\Points\HasDeparture;
 use Miklcct\NationalRailTimetable\Models\Points\TimingPoint;
@@ -20,24 +19,24 @@ use Miklcct\NationalRailTimetable\Models\Association;
 use Miklcct\NationalRailTimetable\Models\FullService;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\Points\DestinationPoint;
-use Miklcct\NationalRailTimetable\Models\Points\OriginPoint;
 
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 class ServiceView extends PhpTemplate {
     public function __construct(
         StreamFactoryInterface $streamFactory
-        , public readonly FullService $datedService
-        , public readonly bool $permanentOnly
+        , protected readonly FullService $datedService
+        , protected readonly bool $permanentOnly
+        , protected readonly ?Date $generated
     ) {
         parent::__construct($streamFactory);
     }
 
-    public function getPathToTemplate() : string {
+    protected function getPathToTemplate() : string {
         return __DIR__ . '/../../resource/templates/service.phtml';
     }
 
-    public function getTitle() : string {
+    protected function getTitle() : string {
         $service = $this->datedService->service;
         if (!$service instanceof Service) {
             throw new LogicException('The service does not run on the day.');
@@ -58,7 +57,7 @@ class ServiceView extends PhpTemplate {
         );
     }
 
-    public function showRsidWithPortionDescription(string $rsid) : string {
+    protected function showRsidWithPortionDescription(string $rsid) : string {
         $main = substr($rsid, 0, 6);
         $suffix = (int)substr($rsid, 6, 2);
         if ($suffix === 0) {
@@ -95,7 +94,7 @@ class ServiceView extends PhpTemplate {
         return $time->__toString();
     }
 
-    public function getBoardLink(DateTimeImmutable $timestamp, string $crs, string $mode) {
+    protected function getBoardLink(DateTimeImmutable $timestamp, string $crs, string $mode) {
         return '/index.php?' . http_build_query(
             [
                 'station' => $crs,

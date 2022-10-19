@@ -63,7 +63,8 @@ class BoardController extends Application {
         $to = $arrival_mode ? $from->sub(new DateInterval('P1DT4H30M')) : $from->add(new DateInterval('P1DT4H31M'));
         $connecting_time = !empty($_GET['connecting_time']) ? new DateTimeImmutable($_GET['connecting_time'], $timezone) : null;
         $permanent_only = !empty($query['permanent_only']);
-        $board = ($this->serviceRepositoryFactory)($permanent_only)->getDepartureBoard(
+        $service_repository = ($this->serviceRepositoryFactory)($permanent_only);
+        $board = $service_repository->getDepartureBoard(
             $station->crsCode
             , $arrival_mode ? $to : $from
             , $arrival_mode ? $from->add(new DateInterval('PT1M')) : $to
@@ -113,6 +114,7 @@ class BoardController extends Application {
                 , $permanent_only
                 , empty($query['from'])
                 , $arrival_mode
+                , $service_repository->getGeneratedDate()
             )
         );
     }

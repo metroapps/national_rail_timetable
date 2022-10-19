@@ -78,7 +78,7 @@ function get_databases() : array {
         fn (Database $database) => $database->selectCollection('services')->findOne(['generated' => ['$exists' => true]])?->generated
         , $databases
     );
-    if ($generated_dates[0]?->toDateTimeImmutable() < $generated_dates[1]?->toDateTimeImmutable) {
+    if ($generated_dates[0]?->toDateTimeImmutable() < $generated_dates[1]?->toDateTimeImmutable()) {
         return [$databases[1], $databases[0]];
     }
     return $databases;
@@ -115,4 +115,8 @@ function get_container() : ContainerInterface {
         ->build();
     }
     return $container;
+}
+
+function get_call_hash(DateTimeImmutable $timestamp) {
+    return 'call_' . sprintf('%012d', $timestamp->getTimestamp());
 }

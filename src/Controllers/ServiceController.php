@@ -52,6 +52,7 @@ class ServiceController extends Application {
                 new StreamFactory()
                 , $service
                 , $permanent_only
+                , $service_repository->getGeneratedDate()
             )
         );
     }

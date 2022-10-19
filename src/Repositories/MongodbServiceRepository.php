@@ -63,7 +63,6 @@ class MongodbServiceRepository extends AbstractServiceRepository {
                 ['key' => ['uid' => 1]],
                 ['key' => ['points.location.crsCode' => 1, 'period.from' => 1, 'period.to' => 1]],
                 ['key' => ['points.serviceProperty.rsid' => 1]],
-                ['key' => ['generated' => 1]],
             ]
         );
         $this->associationsCollection->createIndexes(
@@ -72,6 +71,10 @@ class MongodbServiceRepository extends AbstractServiceRepository {
                 ['key' => ['secondaryUid' => 1]],
             ]
         );
+    }
+
+    public function addGeneratedIndex() {
+        $this->servicesCollection->createIndex(['generated' => 1]);
     }
 
     public function getService(string $uid, Date $date) : ?DatedService {

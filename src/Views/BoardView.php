@@ -4,10 +4,8 @@ declare(strict_types = 1);
 namespace Miklcct\NationalRailTimetable\Views;
 
 use DateTimeImmutable;
-use Miklcct\NationalRailTimetable\Enums\Catering;
-use Miklcct\NationalRailTimetable\Enums\Mode;
-use Miklcct\NationalRailTimetable\Enums\Reservation;
-use Miklcct\NationalRailTimetable\Enums\TimeType;
+use DateTimeZone;
+use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\DepartureBoard;
 use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\FixedLink;
@@ -15,6 +13,8 @@ use Miklcct\NationalRailTimetable\Models\ServiceCall;
 use Psr\Http\Message\StreamFactoryInterface;
 
 use function Miklcct\NationalRailTimetable\get_all_tocs;
+use function Miklcct\NationalRailTimetable\get_call_hash;
+use function Miklcct\NationalRailTimetable\get_javascript_iso_date;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 class BoardView extends BoardFormView {
@@ -33,6 +33,7 @@ class BoardView extends BoardFormView {
         , protected readonly bool $permanentOnly
         , protected readonly bool $now
         , protected readonly bool $arrivalMode
+        , protected readonly ?Date $generated
     ) {
         parent::__construct($streamFactory, $boardUrl, $stations);
     }
@@ -104,7 +105,7 @@ class BoardView extends BoardFormView {
                 'permanent_only' => $this->permanentOnly ?? '',
                 'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
             ]
-        );
+        ) . '#' . get_call_hash($service_call->timestamp);
     }
 
     public function getServiceLink(ServiceCall $service_call) {

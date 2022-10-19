@@ -10,6 +10,7 @@ use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 
 use function Miklcct\NationalRailTimetable\get_all_tocs;
+use function Miklcct\NationalRailTimetable\get_call_hash;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 /** @var BoardFormView $this */
@@ -19,6 +20,8 @@ use function Miklcct\ThinPhpApp\Escaper\html;
     <head>
         <link rel="stylesheet" href="board.css" />
         <title><?= html($this->getTitle()) ?></title>
+        <script defer="defer" src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
+        <script defer="defer" src="/board.js"></script>
     </head>
     <body>
     <form action="<?= html($this->boardUrl) ?>" method="GET">
@@ -159,14 +162,13 @@ if ($this instanceof BoardView) {
             </thead>
             <tbody>
 <?php
-    $date = null;
+    $previous_timestamp = null;
     foreach ($this->arrivalMode ? array_reverse($this->board->calls, true) : $this->board->calls as $service_call) {
-        $current_date = $service_call->timestamp->format('Y-m-d');
-        if ($current_date !== $date) {
-            $date = $current_date;
+        $timestamp = $service_call->timestamp;
+        if ($previous_timestamp === null || $timestamp->format('Y-m-d') !== $previous_timestamp->format('Y-m-d')) {
 ?>
                 <tr>
-                    <th colspan="7"><?= html($date) ?></th>
+                    <th colspan="7"><?= html($timestamp->format('Y-m-d')) ?></th>
                 </tr>
 <?php
         }
@@ -181,10 +183,10 @@ if ($this instanceof BoardView) {
             )
         );
 ?>
-                <tr class="<?= !in_array(false, $overtaken_portions, true) ? 'overtaken' : '' ?>">
+                <tr <?= $timestamp != $previous_timestamp ? sprintf('id="%s"', get_call_hash($timestamp)): '' ?> class="<?= !in_array(false, $overtaken_portions, true) ? 'overtaken' : '' ?>">
                     <td class="time" rowspan="<?= html($portions_count) ?>">
                         <a href="<?= html($this->getServiceLink($service_call)) ?>" class="<?= $this->connectingTime === null || !$this->station instanceof Station ? '' : ($service_call->isValidConnection($this->connectingTime, $this->connectingToc ?? null) ? 'valid_connection' : 'invalid_connection') ?>">
-                            <?= html($service_call->timestamp->format('H:i')) . (in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? '<abbr title="request stop">x</abbr>' : '') ?>
+                            <?= html($timestamp->format('H:i')) . (in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? '<abbr title="request stop">x</abbr>' : '') ?>
                        </a>    
                     </td>
                     <td rowspan="<?= html($portions_count) ?>"><?= $this->showFacilities($service_call) ?></td>
@@ -230,10 +232,14 @@ if ($this instanceof BoardView) {
 ?>
                 </tr>
 <?php
+        $previous_timestamp = $timestamp;
     }
 ?>
             </tbody>
         </table>
+        <footer>
+            Data updated: <?= $this->generated ?>
+        </footer>
 <?php
 }
 ?>
