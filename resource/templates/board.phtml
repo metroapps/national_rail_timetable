@@ -149,6 +149,17 @@ if ($this instanceof BoardView) {
 ?>
         <table>
             <thead>
+<?php
+    if ($this->arrivalMode) {
+?>
+                <tr><th colspan="7"><a href="<?= $this->getDayOffsetLink(1) ?>">Next day</a></th></tr>
+<?php
+    } else {
+?>
+                <tr><th colspan="7"><a href="<?= $this->getDayOffsetLink(-1) ?>">Previous day</a></th></tr>
+<?php
+    }
+?>
                 <tr>
                     <th>Time</th>
                     <th></th>
@@ -159,6 +170,19 @@ if ($this instanceof BoardView) {
                     <th>Calling at</th>
                 </tr>
             </thead>
+            <tfoot>
+<?php
+    if ($this->arrivalMode) {
+?>
+               <tr><th colspan="7"><a href="<?= $this->getDayOffsetLink(-1) ?>">Previous day</a></th></tr>
+<?php
+    } else {
+?>
+               <tr><th colspan="7"><a href="<?= $this->getDayOffsetLink(1) ?>">Next day</a></th></tr>
+<?php
+    }
+?>
+            </tfoot>
             <tbody>
 <?php
     $previous_timestamp = null;

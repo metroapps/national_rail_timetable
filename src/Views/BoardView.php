@@ -82,7 +82,7 @@ class BoardView extends BoardFormView {
         return [
             'station' => $this->station->crsCode,
             'filter' => $this->destination?->crsCode,
-            'date' => $this->now ? '' : $this->boardDate,
+            'date' => $this->now ? '' : $this->boardDate->__toString(),
             'connecting_time' => substr($this->connectingTime?->format('c') ?? '', 0, 16),
             'connecting_toc' => $this->connectingToc,
             'permanent_only' => (string)$this->permanentOnly,
@@ -101,6 +101,20 @@ class BoardView extends BoardFormView {
                 'connecting_time' => $service_call->timestamp->format('c'),
                 'connecting_toc' => $service_call->toc,
                 'permanent_only' => $this->permanentOnly ?? '',
+                'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
+            ]
+        );
+    }
+
+    public function getDayOffsetLink(int $days) : string {
+        return $this->boardUrl . '?' . http_build_query(
+            [
+                'station' => $this->station->crsCode,
+                'filter' => $this->destination?->crsCode,
+                'date' => $this->boardDate->addDays($days)->__toString(), 
+                'connecting_time' => substr($this->connectingTime?->format('c') ?? '', 0, 16),
+                'connecting_toc' => $this->connectingToc,
+                'permanent_only' => (string)$this->permanentOnly,
                 'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
             ]
         );
