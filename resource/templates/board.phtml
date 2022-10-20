@@ -84,20 +84,17 @@ foreach (['departures', 'arrivals'] as $mode) {
 /** @var Location */
 foreach (get_all_tocs() as $code => $name) {
 ?>
-                        <option 
-                            value="<?= html($code) ?>" 
-                            <?= $code === ($this->getFormData()['connecting_toc'] ?? null) ? 'selected="selected"' : '' ?>
-                        >
-                            <?= html($name) ?>
-                        </option>
+                        <option value="<?= html($code) ?>" <?= 
+                            $code === ($this->getFormData()['connecting_toc'] ?? null) ? 'selected="selected"' : ''
+                        ?>><?= html($name) ?></option>
 <?php
 }
 ?>
                     </select>
-                </label></br>
+                </label>
             </p>
             <p>
-                <label>Show permanent timetable instead of actual timetable: <input type="checkbox" name="permanent_only" <?= !empty($this->getFormData()['permanent_only']) ? 'checked="checked"' : '' ?>/></label><br/>
+                <label>Show permanent timetable instead of actual timetable: <input type="checkbox" name="permanent_only" value="1" <?= !empty($this->getFormData()['permanent_only']) ? 'checked="checked"' : '' ?>/></label><br/>
             </p>
             <p>
                 <input type="submit" />

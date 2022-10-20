@@ -124,8 +124,7 @@ class BoardView extends BoardFormView {
             [
                 'uid' => $service_call->uid,
                 'date' => $service_call->date->__toString(),
-                'permanent_only' => (string)$this->permanentOnly,
-            ]
+            ] + ($this->permanentOnly ? ['permanent_only' => '1'] : [])
         );
     }
 
