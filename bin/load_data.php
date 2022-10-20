@@ -12,9 +12,7 @@ use Miklcct\NationalRailTimetable\Repositories\MongodbLocationRepository;
 use Miklcct\NationalRailTimetable\Repositories\MongodbServiceRepository;
 use MongoDB\Database;
 use Psr\SimpleCache\CacheInterface;
-
-use function Miklcct\NationalRailTimetable\get_container;
-use function Miklcct\NationalRailTimetable\get_databases;
+use RuntimeException;
 
 require __DIR__ . '/../initialise.php';
 ini_set('memory_limit', '16G');
