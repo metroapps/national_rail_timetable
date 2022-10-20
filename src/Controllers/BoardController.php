@@ -5,6 +5,7 @@ namespace Miklcct\NationalRailTimetable\Controllers;
 
 use DateTimeImmutable;
 use DateInterval;
+use DateTimeZone;
 use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\NationalRailTimetable\Enums\TimeType;
 use Miklcct\NationalRailTimetable\Views\BoardFormView;
@@ -21,6 +22,7 @@ use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
 use Miklcct\NationalRailTimetable\Views\BoardView;
+use Safe\DateTimeImmutable as SafeDateTimeImmutable;
 
 class BoardController extends Application {
     public function __construct(
@@ -40,7 +42,7 @@ class BoardController extends Application {
                     , $self
                     , $this->locationRepository->getAllStations()
                 )
-            );
+            )->withAddedHeader('Cache-Control', ['public', 'max-age=604800']);
         }
 
         $station = $this->locationRepository->getLocationByCrs($query['station'])
@@ -115,7 +117,7 @@ class BoardController extends Application {
                     : $a->origin->crsCode <=> $b->origin->crsCode
         );
 
-        return ($this->viewResponseFactory)(
+        $response = ($this->viewResponseFactory)(
             new BoardView(
                 new StreamFactory()
                 , $self
@@ -133,6 +135,12 @@ class BoardController extends Application {
                 , $arrival_mode
                 , $service_repository->getGeneratedDate()
             )
-        );
+        )->withAddedHeader('Cache-Control', ['public']);
+        if (empty($query['date'])) {
+            $response = $response->withAddedHeader('Expires', str_replace('+0000', 'GMT', (new SafeDateTimeImmutable('tomorrow'))->setTimezone(new DateTimeZone('UTC'))->format('r')));
+        } else {
+            $response = $response->withAddedHeader('Cache-Control', 'max-age=21600');
+        }
+        return $response;
     }
 }

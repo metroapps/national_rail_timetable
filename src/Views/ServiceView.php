@@ -103,13 +103,13 @@ class ServiceView extends PhpTemplate {
     protected function getBoardLink(DateTimeImmutable $timestamp, string $crs, string $mode) {
         return '/index.php?' . http_build_query(
             [
-                'station' => $crs,
-                'date' => $timestamp->sub(new DateInterval($mode === 'arrivals' ? 'PT4H30M' : 'P0D'))->format('Y-m-d'),
-                'connecting_time' => $timestamp->format('c'),
-                'connecting_toc' => $this->datedService->service->toc,
-                'permanent_only' => $this->permanentOnly ?? '',
                 'mode' => $mode,
-            ]
+                'station' => $crs,
+                'filter' => '',
+                'date' => $timestamp->sub(new DateInterval($mode === 'arrivals' ? 'PT4H30M' : 'P0D'))->format('Y-m-d'),
+                'connecting_time' => substr($timestamp->format('c'), 0, 16),
+                'connecting_toc' => $this->datedService->service->toc,
+            ] + ($this->permanentOnly ? ['permanent_only' => '1'] : [])
         );
     }
 

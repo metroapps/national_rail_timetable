@@ -69,25 +69,25 @@ class BoardView extends BoardFormView {
     public function getFixedLinkUrl(FixedLink $fixed_link, ?DateTimeImmutable $departure_time) {
         return $this->boardUrl . '?' . http_build_query(
             [
-                'station' => $fixed_link->destination->crsCode,
-                'date' => $this->connectingTime !== null ? Date::fromDateTimeInterface($this->connectingTime->sub(new DateInterval($this->arrivalMode ? 'PT4H30M' : 'P0D'))) : $this->boardDate->__toString(),
-                'connecting_time' => $departure_time === null ? '' : $fixed_link->getArrivalTime($departure_time, $this->arrivalMode)->format('c'),
-                'permanent_only' => (string)$this->permanentOnly,
                 'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
-            ]
+                'station' => $fixed_link->destination->crsCode,
+                'filter' => '',
+                'date' => ($this->connectingTime !== null ? Date::fromDateTimeInterface($this->connectingTime->sub(new DateInterval($this->arrivalMode ? 'PT4H30M' : 'P0D'))) : $this->boardDate)->__toString(),
+                'connecting_time' => $departure_time === null ? '' : substr($fixed_link->getArrivalTime($departure_time, $this->arrivalMode)->format('c'), 0, 16),
+                'connecting_toc' => '',
+            ] + ($this->permanentOnly ? ['permanent_only' => '1'] : [])
         );
     }
 
     public function getFormData(): array {
         return [
+            'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
             'station' => $this->station->crsCode,
-            'filter' => $this->destination?->crsCode,
+            'filter' => $this->destination?->crsCode ?? '',
             'date' => $this->now ? '' : $this->boardDate->__toString(),
             'connecting_time' => substr($this->connectingTime?->format('c') ?? '', 0, 16),
             'connecting_toc' => $this->connectingToc,
-            'permanent_only' => (string)$this->permanentOnly,
-            'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
-        ];
+        ] + ($this->permanentOnly ? ['permanent_only' => '1'] : []);
     }
 
     public function getArrivalLink(ServiceCall $service_call) : ?string {
@@ -96,27 +96,26 @@ class BoardView extends BoardFormView {
         }
         return $this->boardUrl . '?' . http_build_query(
             [
-                'station' => $service_call->call->location->crsCode,
-                'date' => $service_call->timestamp->sub(new DateInterval($this->arrivalMode ? 'PT4H30M' : 'P0D'))->format('Y-m-d'),
-                'connecting_time' => $service_call->timestamp->format('c'),
-                'connecting_toc' => $service_call->toc,
-                'permanent_only' => $this->permanentOnly ?? '',
                 'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
-            ]
+                'station' => $service_call->call->location->crsCode,
+                'filter' => '',
+                'date' => $service_call->timestamp->sub(new DateInterval($this->arrivalMode ? 'PT4H30M' : 'P0D'))->format('Y-m-d'),
+                'connecting_time' => substr($service_call->timestamp->format('c'), 0, 16),
+                'connecting_toc' => $service_call->toc
+            ] + ($this->permanentOnly ? ['permanent_only' => '1'] : [])
         );
     }
 
     public function getDayOffsetLink(int $days) : string {
         return $this->boardUrl . '?' . http_build_query(
             [
+                'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
                 'station' => $this->station->crsCode,
-                'filter' => $this->destination?->crsCode,
+                'filter' => $this->destination?->crsCode ?? '',
                 'date' => $this->boardDate->addDays($days)->__toString(), 
                 'connecting_time' => substr($this->connectingTime?->format('c') ?? '', 0, 16),
                 'connecting_toc' => $this->connectingToc,
-                'permanent_only' => (string)$this->permanentOnly,
-                'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
-            ]
+            ] + ($this->permanentOnly ? ['permanent_only' => '1'] : [])
         );
     }
 
