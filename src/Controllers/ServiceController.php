@@ -43,7 +43,7 @@ class ServiceController extends Application {
         }
 
         if (!$service?->service instanceof Service) {
-            throw new HttpException('The service cannot be found', Http::NOT_FOUND);
+            throw new HttpException('The service cannot be found.', Http::NOT_FOUND);
         }
         $service = $service_repository->getFullService($service);
 
