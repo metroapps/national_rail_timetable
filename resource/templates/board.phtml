@@ -8,6 +8,7 @@ use Miklcct\NationalRailTimetable\Enums\Activity;
 use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
+use Safe\DateTimeImmutable;
 
 use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\NationalRailTimetable\show_time;
@@ -25,7 +26,14 @@ use function Miklcct\ThinPhpApp\Escaper\html;
     </head>
     <body>
         <button id="go_to_top">🔝</button>
-    <form action="<?= html($this->boardUrl) ?>" method="GET">
+<?php
+if ($this->errorMessage !== null) {
+?>
+        <p class="error"><?= html($this->errorMessage) ?></p>
+<?php
+}
+?>
+        <form action="<?= html($this->boardUrl) ?>" method="GET">
             <datalist id="stations">
 <?php
 /** @var Location */
@@ -50,21 +58,43 @@ foreach (['departures', 'arrivals'] as $mode) {
 ?>
                 <label>at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($this->getFormData()['station'] ?? null)?>"/></label><br/>
                 <label>only trains calling at (optional): <input autocomplete="off" list="stations" type="text" name="filter" size="32" value="<?= html($this->getFormData()['filter'] ?? null) ?>"/></label><br/>
-                <label>on (leave empty for today) <input type="date" name="date" value="<?= html($this->getFormData()['date'] ?? null) ?>"/></label>
+                <label>on (leave empty for today)
+                    <input type="date"
+                        name="date"
+                        value="<?= html($this->getFormData()['date'] ?? null) ?>"
+                        min="<?= html((new DateTimeImmutable('-7 days'))->format('Y-m-d')) ?>"
+                        max="<?= html((new DateTimeImmutable('+180 days'))->format('Y-m-d')) ?>" 
+                    />
+                </label>
             </p>
             <p>
-                <label>Show valid connections at: <input type="datetime-local" name="connecting_time" value="<?= html($this->getFormData()['connecting_time'] ?? null) ?>"/>
-                from TOC: <select name="connecting_toc">
-                    <option></option>
+                <label>Show valid connections at:
+                    <input
+                        type="datetime-local"
+                        name="connecting_time"
+                        value="<?= html($this->getFormData()['connecting_time'] ?? null) ?>"
+                        min="<?= html(substr((new DateTimeImmutable('today -7 days'))->format('c'), 0, 16)) ?>"
+                        max="<?= html(substr((new DateTimeImmutable('today +181 days'))->format('c'), 0, 16)) ?>"
+                    />
+                </label>
+                <label>from TOC: 
+                    <select name="connecting_toc">
+                        <option></option>
 <?php
 /** @var Location */
 foreach (get_all_tocs() as $code => $name) {
 ?>
-                    <option value="<?= html($code) ?>" <?= $code === ($this->getFormData()['connecting_toc'] ?? null) ? 'selected="selected"' : '' ?>><?= html($name) ?></option>
+                        <option 
+                            value="<?= html($code) ?>" 
+                            <?= $code === ($this->getFormData()['connecting_toc'] ?? null) ? 'selected="selected"' : '' ?>
+                        >
+                            <?= html($name) ?>
+                        </option>
 <?php
 }
 ?>
-                </select></label></br>
+                    </select>
+                </label></br>
             </p>
             <p>
                 <label>Show permanent timetable instead of actual timetable: <input type="checkbox" name="permanent_only" <?= !empty($this->getFormData()['permanent_only']) ? 'checked="checked"' : '' ?>/></label><br/>

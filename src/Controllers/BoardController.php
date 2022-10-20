@@ -24,6 +24,7 @@ use Miklcct\NationalRailTimetable\Views\BoardView;
 use Safe\DateTimeImmutable as SafeDateTimeImmutable;
 use Teapot\HttpException;
 use Teapot\StatusCode\Http;
+use Teapot\StatusCode\WebDAV;
 
 class BoardController extends Application {
     public function __construct(
@@ -49,7 +50,14 @@ class BoardController extends Application {
         $station = $this->locationRepository->getLocationByCrs($query['station'])
             ?? $this->locationRepository->getLocationByName($query['station']);
         if ($station?->crsCode === null) {
-            throw new HttpException('The station cannot be found.', Http::NOT_FOUND);
+            return ($this->viewResponseFactory)(
+                new BoardFormView(
+                    new StreamFactory()
+                    , $self
+                    , $this->locationRepository->getAllStations()
+                    , 'The station cannot be found.'
+                )
+            )->withStatus(WebDAV::UNPROCESSABLE_ENTITY);
         }
 
         $destination = null;
@@ -57,7 +65,14 @@ class BoardController extends Application {
             $destination = $this->locationRepository->getLocationByCrs($query['filter'])
                 ?? $this->locationRepository->getLocationByName($query['filter']);
             if ($destination?->crsCode === null) {
-                throw new HttpException('The destination cannot be found.', Http::NOT_FOUND);
+                return ($this->viewResponseFactory)(
+                    new BoardFormView(
+                        new StreamFactory()
+                        , $self
+                        , $this->locationRepository->getAllStations()
+                        , 'The destination cannot be found.'
+                    )
+                )->withStatus(WebDAV::UNPROCESSABLE_ENTITY);
             }
         }
 

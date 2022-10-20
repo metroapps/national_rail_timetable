@@ -5,12 +5,14 @@ namespace Miklcct\NationalRailTimetable\Views;
 
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
+use Teapot\HttpException;
 
 class BoardFormView extends PhpTemplate {
     public function __construct(
         StreamFactoryInterface $streamFactory
         , protected readonly string $boardUrl
         , protected readonly array $stations
+        , protected readonly ?string $errorMessage = null
     ) {
         parent::__construct($streamFactory);
     }
