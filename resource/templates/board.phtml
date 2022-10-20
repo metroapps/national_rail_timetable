@@ -10,7 +10,7 @@ use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 
 use function Miklcct\NationalRailTimetable\get_all_tocs;
-use function Miklcct\NationalRailTimetable\show_date_offset;
+use function Miklcct\NationalRailTimetable\show_time;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 /** @var BoardFormView $this */
@@ -24,6 +24,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
         <script defer="defer" src="/board.js"></script>
     </head>
     <body>
+        <button id="go_to_top">🔝</button>
     <form action="<?= html($this->boardUrl) ?>" method="GET">
             <datalist id="stations">
 <?php
@@ -162,7 +163,7 @@ if ($this instanceof BoardView) {
 <?php
                 if ($this->fixedLinkDepartureTime !== null) {
 ?>
-                    <td class="time"><?= html($arrival_time->format('H:i')) . show_date_offset($arrival_time, $this->boardDate) ?></td>
+                    <td class="time"><?= show_time($arrival_time, $this->boardDate) ?></td>
 <?php
                 }
 ?>
@@ -227,28 +228,30 @@ if ($this instanceof BoardView) {
                 , $portion_uids
             )
         );
+        $whole_train_overtaken = !in_array(false, $overtaken_portions, true);
         $day_offset = $timestamp->setTime(0, 0, 0)->diff($this->boardDate->toDateTimeImmutable())->days;
 ?>
                 <tr data-timestamp="<?= html($timestamp->getTimestamp()) ?>">
-                    <td class="time" rowspan="<?= html($portions_count) ?>">
-                        <a 
-                            href="<?= html($this->getServiceLink($service_call)) ?>" 
-                            class="<?= $this->connectingTime === null || !$this->station instanceof Station ? '' : ($service_call->isValidConnection($this->connectingTime, $this->connectingToc ?? null) ? 'valid_connection' : 'invalid_connection') 
-                        ?>"><?= html($timestamp->format('H:i')) ?></a><?=
-                            show_date_offset($timestamp, $this->boardDate)
-                            . (in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? '<abbr title="request stop">x</abbr>' : '') 
-                        ?>    
+                    <td class="time <?= 
+                        $this->connectingTime === null || !$this->station instanceof Station 
+                            ? '' 
+                            : ($service_call->isValidConnection($this->connectingTime, $this->connectingToc ?? null) ? 'valid_connection' : 'invalid_connection') 
+                    ?> <?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>">
+                        <?= 
+                            show_time($timestamp, $this->boardDate, $this->getServiceLink($service_call))
+                            . (in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? '<abbr title="request stop">x</abbr>' : '')
+                        ?>
                     </td>
-                    <td rowspan="<?= html($portions_count) ?>"><?= $this->showFacilities($service_call) ?></td>
-                    <td rowspan="<?= html($portions_count) ?>"><?= html($service_call->call->platform) ?></td>
-                    <td rowspan="<?= html($portions_count) ?>"><?= $this->showToc($service_call->toc) ?></td>
-                    <td rowspan="<?= html($portions_count) ?>"><a href="<?= html($this->getServiceLink($service_call)) ?>"><?= html(substr($service_call->serviceProperty->rsid, 0, 6)) ?></a></td>
+                    <td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><?= $this->showFacilities($service_call) ?></td>
+                    <td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><?= html($service_call->call->platform) ?></td>
+                    <td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><?= $this->showToc($service_call->toc) ?></td>
+                    <td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><a href="<?= html($this->getServiceLink($service_call)) ?>"><?= html(substr($service_call->serviceProperty->rsid, 0, 6)) ?></a></td>
 <?php
         foreach ($portion_uids as $i => $uid) {
             if ($i > 0) {
 ?>
                 </tr>
-                <tr class="<?= !in_array(false, $overtaken_portions, true) ? 'overtaken' : '' ?>">
+                <tr>
 <?php
             }
 ?>
@@ -261,12 +264,11 @@ if ($this instanceof BoardView) {
                                     $station = $service_call->call->location;
                                     $link = $this->getArrivalLink($service_call);
                                     return sprintf(
-                                        $link === null ? '<span class="%1$s">%3$s (%4$s%5$s%6$s)</span>' : '<span class="%s"><a href="%s">%s</a> (%s%s%s)'
+                                        $link === null ? '<span class="%1$s">%3$s (%4$s%5$s)</span>' : '<span class="%s"><a href="%s">%s</a> (%s%s)</span>'
                                         , $station->crsCode !== null && $station->crsCode === $this->destination?->crsCode ? 'destination' : ''
                                         , html($link)
                                         , html($station->getShortName())
-                                        , html($service_call->timestamp->format('H:i'))
-                                        , show_date_offset($service_call->timestamp, $this->boardDate)
+                                        , show_time($service_call->timestamp, $this->boardDate)
                                         , in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? '<abbr title="request stop">x</abbr>' : ''
                                     );
                                 }

@@ -18,3 +18,5 @@ $('tr[data-timestamp]').each(
     }
 );
 element?.scrollIntoView(true);
+
+$('#go_to_top').click(() => window.scrollTo(0, 0));

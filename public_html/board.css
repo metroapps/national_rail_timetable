@@ -36,16 +36,16 @@ h1 {
     white-space: nowrap;
 }
 
-.overtaken {
+.overtaken, .overtaken :link {
     color: lightgrey;
 }
 
 .valid_connection {
-    color: green;
+    background-color: lightgreen;
 }
 
 .invalid_connection {
-    color: red;
+    background-color: pink;
 }
 
 .train_info {
@@ -82,4 +82,10 @@ h1 {
 footer {
     font-size: small;
     font-style: italic;
+}
+
+#go_to_top {
+    position: fixed;
+    right: 0;
+    top: 0;
 }

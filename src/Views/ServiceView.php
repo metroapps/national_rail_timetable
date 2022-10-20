@@ -19,8 +19,10 @@ use Miklcct\NationalRailTimetable\Enums\AssociationCategory;
 use Miklcct\NationalRailTimetable\Models\Association;
 use Miklcct\NationalRailTimetable\Models\FullService;
 use Miklcct\NationalRailTimetable\Models\Date;
+use Miklcct\NationalRailTimetable\Models\DatedService;
 use Miklcct\NationalRailTimetable\Models\Points\DestinationPoint;
 
+use function Miklcct\NationalRailTimetable\show_time;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 class ServiceView extends PhpTemplate {
@@ -37,15 +39,20 @@ class ServiceView extends PhpTemplate {
         return __DIR__ . '/../../resource/templates/service.phtml';
     }
 
+    protected function getOriginPortion() : DatedService {
+        $origin_portion = $this->datedService;
+        while ($origin_portion->divideFrom !== null) {
+            $origin_portion = $origin_portion->divideFrom->primaryService;
+        }
+        return $origin_portion;
+    }
+
     protected function getTitle() : string {
         $service = $this->datedService->service;
         if (!$service instanceof Service) {
             throw new LogicException('The service does not run on the day.');
         }
-        $origin_portion = $this->datedService;
-        while ($origin_portion->divideFrom !== null) {
-            $origin_portion = $origin_portion->divideFrom->primaryService;
-        }
+        $origin_portion = $this->getOriginPortion();
         /** @var Service */
         $service = $origin_portion->service;
         return sprintf(
@@ -73,25 +80,24 @@ class ServiceView extends PhpTemplate {
         return '<span class="train_number">' . html($main) . '</span>' . ' (Portion ' . implode(' & ', $portions) . ')';
     }
 
-    protected function showTime(Date $date, TimingPoint $point, bool $departure_to_arrival_board) : string {
+    protected function showTime(Date $date, Date $board_date, TimingPoint $point, bool $departure_to_arrival_board) : string {
         $time = $departure_to_arrival_board 
             ? ($point instanceof HasDeparture ? $point->getPublicDeparture() : null) 
             : ($point instanceof HasArrival ? $point->getPublicArrival() : null);
         if ($time === null) {
             return '';
         }
-        if ($point->location->crsCode !== null) {
-            return sprintf(
-                '<a href="%s">%s</a>'
-                , $this->getBoardLink(
+        return show_time(
+            $date->toDateTimeImmutable($time)
+            , $board_date
+            , $point->location->crsCode !== null 
+                ? $this->getBoardLink(
                     $date->toDateTimeImmutable($time)
                     , $point->location->crsCode
                     , $departure_to_arrival_board ? 'arrivals' : 'departures'
-                )
-                , $time
-            );
-        }
-        return $time->__toString();
+                ) 
+                : null
+        );
     }
 
     protected function getBoardLink(DateTimeImmutable $timestamp, string $crs, string $mode) {
@@ -201,7 +207,7 @@ class ServiceView extends PhpTemplate {
             <tr>
                 <td><?= html($point->location->getShortName()) ?></td>
                 <td><?= html($point->platform) ?></td>
-                <td class="time"><?= $this->showTime($points['date'], $point, false) ?></td>
+                <td class="time"><?= $this->showTime($points['date'], $this->getOriginPortion()->date, $point, false) ?></td>
                 <td class="time"></td>
                 <td><?= implode('<br/>', array_filter(array_map(fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
             </tr>
@@ -215,7 +221,7 @@ class ServiceView extends PhpTemplate {
                 <td><?= html($point->location->getShortName()) ?></td>
                 <td><?= html($point->platform) ?></td>
                 <td class="time"></td>
-                <td class="time"><?= $this->showTime($points['date'], $point, true) ?></td>
+                <td class="time"><?= $this->showTime($points['date'], $this->getOriginPortion()->date, $point, true) ?></td>
                 <td><?= implode('<br/>', array_filter(array_map(fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
             </tr>
 <?php
@@ -226,8 +232,8 @@ class ServiceView extends PhpTemplate {
             <tr>
                 <td><?= html($point->location->getShortName()) ?></td>
                 <td><?= html($point->platform) ?></td>
-                <td class="time"><?= $show_arrival ? $this->showTime($points['date'], $point, false) : '' ?></td>
-                <td class="time"><?= $show_departure ? $this->showTime($points['date'], $point, true) : '' ?></td>
+                <td class="time"><?= $show_arrival ? $this->showTime($points['date'], $this->getOriginPortion()->date, $point, false) : '' ?></td>
+                <td class="time"><?= $show_departure ? $this->showTime($points['date'], $this->getOriginPortion()->date, $point, true) : '' ?></td>
                 <td><?= implode('<br/>', array_filter(array_map(fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
             </tr>
 <?php
