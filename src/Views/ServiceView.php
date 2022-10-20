@@ -125,7 +125,7 @@ class ServiceView extends PhpTemplate {
         }
         $result = [];
         $index = 0;
-        $result[0][0]['date'] = $dated_service->date;
+        $result[0][0]['dated_service'] = $dated_service;
         foreach ($dated_service->service->points as $point) {
             $result[$index][0][] = $point;
             $new_portion = false;
@@ -134,7 +134,7 @@ class ServiceView extends PhpTemplate {
                 if ($point->location->tiploc === $association_point->location->tiploc && $point->locationSuffix === $association_point->locationSuffix) {
                     if (!$new_portion) {
                         $result[++$index][0][0] = $point;
-                        $result[$index][0]['date'] = $dated_service->date;
+                        $result[$index][0]['dated_service'] = $dated_service;
                         $new_portion = true;
                     }
                     $other_portion = $this->splitIntoPortions($dated_association->secondaryService, true);
@@ -195,33 +195,33 @@ class ServiceView extends PhpTemplate {
 <?php
         $service_property = null;
         foreach ($points as $i => $point) {
-            if ($i !== 'date') {
+            if ($i !== 'dated_service') {
                 $show_arrival = $i !== 0 && $point instanceof HasArrival && $point->getPublicArrival() !== null;
                 $show_departure = $i !== count($points) - 2 && $point instanceof HasDeparture && $point->getPublicDeparture() !== null;
 
                 if ($i !== count($points) - 2 && isset($point->serviceProperty) && $point->serviceProperty != $service_property) {
                     $service_property = $point->serviceProperty;
-                    
+
                     if ($show_arrival && $point->isPublicCall()) {
 ?>
             <tr>
                 <td><?= html($point->location->getShortName()) ?></td>
                 <td><?= html($point->platform) ?></td>
-                <td class="time"><?= $this->showTime($points['date'], $this->getOriginPortion()->date, $point, false) ?></td>
+                <td class="time"><?= $this->showTime($points['dated_service']->date, $this->getOriginPortion()->date, $point, false) ?></td>
                 <td class="time"></td>
                 <td><?= implode('<br/>', array_filter(array_map(fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
             </tr>
 
 <?php
                     }
-                    $this->showServiceInformation($point->serviceProperty);
+                    $this->showServiceInformation($points['dated_service'], $point->serviceProperty);
                     if ($show_departure && $point->isPublicCall()) {
 ?>
             <tr>
                 <td><?= html($point->location->getShortName()) ?></td>
                 <td><?= html($point->platform) ?></td>
                 <td class="time"></td>
-                <td class="time"><?= $this->showTime($points['date'], $this->getOriginPortion()->date, $point, true) ?></td>
+                <td class="time"><?= $this->showTime($points['dated_service']->date, $this->getOriginPortion()->date, $point, true) ?></td>
                 <td><?= implode('<br/>', array_filter(array_map(fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
             </tr>
 <?php
@@ -232,8 +232,8 @@ class ServiceView extends PhpTemplate {
             <tr>
                 <td><?= html($point->location->getShortName()) ?></td>
                 <td><?= html($point->platform) ?></td>
-                <td class="time"><?= $show_arrival ? $this->showTime($points['date'], $this->getOriginPortion()->date, $point, false) : '' ?></td>
-                <td class="time"><?= $show_departure ? $this->showTime($points['date'], $this->getOriginPortion()->date, $point, true) : '' ?></td>
+                <td class="time"><?= $show_arrival ? $this->showTime($points['dated_service']->date, $this->getOriginPortion()->date, $point, false) : '' ?></td>
+                <td class="time"><?= $show_departure ? $this->showTime($points['dated_service']->date, $this->getOriginPortion()->date, $point, true) : '' ?></td>
                 <td><?= implode('<br/>', array_filter(array_map(fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
             </tr>
 <?php
@@ -245,7 +245,7 @@ class ServiceView extends PhpTemplate {
 <?php
     }
 
-    protected function showServiceInformation(ServiceProperty $service_property) {
+    protected function showServiceInformation(DatedService $dated_service, ServiceProperty $service_property) {
 ?>
             <tr>
                 <td colspan="5" class="train_info">
@@ -278,6 +278,16 @@ class ServiceView extends PhpTemplate {
                                                     $service_property->speedMph ? html($service_property->speedMph . ' mph max') : '',
                                                 ]
                                             )
+                                        )
+                                    ),
+                                    html(
+                                        implode(
+                                            ', '
+                                            , [
+                                                $dated_service->service->shortTermPlanning->getDescription(),
+                                                $dated_service->service->period->from->__toString() . ' to ' . $dated_service->service->period->to->__toString(),
+                                                implode(array_intersect_key(['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'], array_filter($dated_service->service->period->weekdays))),
+                                            ]
                                         )
                                     ),
                                     $service_property->showIcons(),

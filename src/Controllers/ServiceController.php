@@ -15,6 +15,7 @@ use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface
 use Miklcct\NationalRailTimetable\Views\ServiceView;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\Service;
+use Miklcct\NationalRailTimetable\Models\ServiceCancellation;
 use Teapot\HttpException;
 use Teapot\StatusCode\Http;
 
@@ -42,8 +43,11 @@ class ServiceController extends Application {
             $service = $service_repository->getServiceByRsid($query['rsid'], new Date($year, $month, $day))[0] ?? null;
         }
 
-        if (!$service?->service instanceof Service) {
+        if ($service === null) {
             throw new HttpException('The service cannot be found.', Http::NOT_FOUND);
+        }
+        if ($service->service instanceof ServiceCancellation) {
+            throw new HttpException('The service has been STP cancelled.', Http::NOT_FOUND);
         }
         $service = $service_repository->getFullService($service);
 
