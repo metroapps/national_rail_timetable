@@ -11,7 +11,9 @@ use Miklcct\NationalRailTimetable\Repositories\MongodbFixedLinkRepository;
 use Miklcct\NationalRailTimetable\Repositories\MongodbLocationRepository;
 use Miklcct\NationalRailTimetable\Repositories\MongodbServiceRepository;
 use MongoDB\Database;
+use Psr\SimpleCache\CacheInterface;
 
+use function Miklcct\NationalRailTimetable\get_container;
 use function Miklcct\NationalRailTimetable\get_databases;
 
 require __DIR__ . '/../initialise.php';
@@ -69,5 +71,8 @@ foreach (['MCA', 'ZTR'] as $suffix) {
 $timetable->addIndexes();
 fprintf(STDERR, "Time used: %.3f s\n", microtime(true) - $time);
 
+/** @var CacheInterface */
+$cache = get_container()->get(CacheInterface::class);
+$cache->clear();
 $timetable->setGeneratedDate($date);
 fputs(STDERR, "Done!\n");
