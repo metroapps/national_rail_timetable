@@ -58,6 +58,6 @@ class ServiceController extends Application {
                 , $permanent_only
                 , $service_repository->getGeneratedDate()
             )
-        );
+        )->withAddedHeader('Cache-Control', ['public', 'max-age=21600']);
     }
 }

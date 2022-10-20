@@ -38,13 +38,14 @@ class BoardView extends BoardFormView {
 
     protected function getTitle() : string {
         return sprintf(
-            '%s at %s %s %s'
+            '%s at %s %s %s%s'
             , $this->arrivalMode ? 'Arrivals' : 'Departures'
             , $this->station->name 
             , $this->destination !== null 
-                ? ' to ' . $this->destination->name
+                ? ($this->arrivalMode ? ' from ' : ' to ') . $this->destination->name
                 : ''
             , $this->now ? 'today' : 'on ' . $this->boardDate
+            , $this->permanentOnly ? ' (permanent timetable)' : ''
         );
     }
 

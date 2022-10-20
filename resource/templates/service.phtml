@@ -19,7 +19,7 @@ $date = $this->datedService->date;
     <head>
         <link rel="stylesheet" href="board.css" />
         <title>
-            <?= html($this->getTitle()) ?>
+            <?= html($this->getTitle() . ($this->permanentOnly ? ' (permanent timetable)' : '')) ?>
         </title>
     </head>
     <body>
