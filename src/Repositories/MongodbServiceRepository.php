@@ -16,6 +16,7 @@ use Miklcct\NationalRailTimetable\Models\ServiceEntry;
 use MongoDB\BSON\Regex;
 use MongoDB\Collection;
 use MongoDB\Database;
+use Psr\SimpleCache\CacheInterface;
 use stdClass;
 use function array_chunk;
 use function array_filter;
@@ -26,7 +27,7 @@ use function preg_quote;
 class MongodbServiceRepository extends AbstractServiceRepository {
     public function __construct(
         private readonly Database $database
-        , private readonly ?DepartureBoardsCacheInterface $departureBoardsCache = null
+        , private readonly ?CacheInterface $cache
         , bool $permanentOnly = false
     ) {
         parent::__construct($permanentOnly);
@@ -129,7 +130,8 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         DateTimeImmutable $to,
         TimeType $time_type
     ) : DepartureBoard {
-        $cache_entry = $this->departureBoardsCache?->getDepartureBoard($crs, $from, $to, $time_type);
+        $cache_key = sprintf('board_%s_%012d_%012d_%s', $crs, $from->getTimestamp(), $to->getTimestamp(), $time_type->value);
+        $cache_entry = $this->cache?->get($cache_key);
         if ($cache_entry !== null) {
             return $cache_entry;
         }
@@ -254,7 +256,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         }
         unset($result);
         $board = new DepartureBoard($crs, $from, $to, $time_type, $results);
-        $this->departureBoardsCache?->putDepartureBoard($board);
+        $this->cache?->set($cache_key, $board);
         return $board;
     }
 

@@ -3,10 +3,12 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable;
 
+use Cache\Adapter\MongoDB\MongoDBCachePool;
 use DateTimeImmutable;
 use Psr\Container\ContainerInterface;
 use DI\ContainerBuilder;
 use Http\Factory\Guzzle\ResponseFactory;
+use Laminas\Cache\Service\StorageCacheFactory;
 use Miklcct\NationalRailTimetable\Config\Config;
 use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
@@ -20,6 +22,13 @@ use MongoDB\Client;
 use MongoDB\Database;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Miklcct\NationalRailTimetable\Models\Date;
+use Psr\SimpleCache\CacheInterface;
+use Sokil\Mongo\Cache;
+use SubjectivePHP\Psr\SimpleCache\MongoCache;
+use SubjectivePHP\Psr\SimpleCache\Serializer\SerializerInterface;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Component\Cache\Adapter\PhpFilesAdapter;
+use Symfony\Component\Cache\Psr16Cache;
 
 use function DI\autowire;
 use function array_slice;
@@ -96,13 +105,12 @@ function get_container() : ContainerInterface {
                 Database::class => static function() {
                     return get_databases()[0];
                 },
-                LocationRepositoryInterface::class => 
-                    static fn(ContainerInterface $container) => new MongodbLocationRepository($container->get(Database::class)),
-                ServiceRepositoryFactoryInterface::class =>
-                    static fn(ContainerInterface $container) =>
-                        new MongodbServiceRepositoryFactory($container->get(Database::class)),
-                FixedLinkRepositoryInterface::class =>
-                    static fn(ContainerInterface $container) => new MongodbFixedLinkRepository($container->get(Database::class)),
+                CacheInterface::class => 
+                    static fn() => new Psr16Cache(new PhpFilesAdapter('', 0, __DIR__ . '/../var/cache', true)),
+                LocationRepositoryInterface::class => autowire(MongodbLocationRepository::class),
+                ServiceRepositoryFactoryInterface::class => 
+                    static fn(ContainerInterface $container) => new MongodbServiceRepositoryFactory($container->get(Database::class), $container->get(CacheInterface::class)),
+                FixedLinkRepositoryInterface::class => autowire(MongodbFixedLinkRepository::class),
                 ViewResponseFactoryInterface::class => autowire(ViewResponseFactory::class),
                 ResponseFactoryInterface::class => autowire(ResponseFactory::class),
             ]
