@@ -18,12 +18,32 @@ require __DIR__ . '/../initialise.php';
 ini_set('memory_limit', '16G');
 set_time_limit(0);
 
-[$path, $prefix] = [$argv[1], $argv[2]];
+$path = $argv[1];
+$file_names = glob("$path/*.DAT");
+if ($file_names === []) {
+    throw new RuntimeException('No data exist!');
+}
 
+rsort($file_names);
+$prefix = basename($file_names[0], '.DAT');
+
+$dat_contents = file("$path/$prefix.DAT");
+foreach ($dat_contents as $line) {
+    if (str_contains($line, 'Generated')) {
+        $date = preg_match('/[0-9]{2}\/[0-9]{2}\/[0-9]{4}/', $line, $matches);
+        sscanf($matches[0], '%d/%d/%d', $day, $month, $year);
+        $date = new Date($year, $month, $day);
+    }
+}
+
+fprintf(STDERR, "Loading dataset %s generated at %s.\n", $prefix, $date);
+fputs(STDERR, "Dropping old database.\n");
 /** @var Database */
 $database = get_databases()[1];
 $database->drop();
 
+fputs(STDERR, "Loading station data.\n");
+$time = microtime(true);
 $stations = new MongodbLocationRepository($database->selectCollection('locations'));
 $fixed_links = new MongodbFixedLinkRepository($database->selectCollection('fixed_links'));
 (new StationParser(new Helper(), $stations))
@@ -35,6 +55,10 @@ $fixed_links = new MongodbFixedLinkRepository($database->selectCollection('fixed
     ->parseFile(fopen("$path/$prefix.ALF", 'rb'));
 $stations->addIndexes();
 $fixed_links->addIndexes();
+fprintf(STDERR, "Time used: %.3f s\n", microtime(true) - $time);
+
+fputs(STDERR, "Loading timetable data.\n");
+$time = microtime(true);
 $timetable = new MongodbServiceRepository(
     $database->selectCollection('services'),
     $database->selectCollection('associations')
@@ -48,13 +72,7 @@ foreach (['MCA', 'ZTR'] as $suffix) {
         );
 }
 $timetable->addIndexes();
+fprintf(STDERR, "Time used: %.3f s\n", microtime(true) - $time);
 
-$dat_contents = file("$path/$prefix.DAT");
-$metadata = $database->selectCollection('metadata');
-foreach ($dat_contents as $line) {
-    if (str_contains($line, 'Generated')) {
-        $date = preg_match('/[0-9]{2}\/[0-9]{2}\/[0-9]{4}/', $line, $matches);
-        sscanf($matches[0], '%d/%d/%d', $day, $month, $year);
-        $timetable->setGeneratedDate(new Date($year, $month, $day));
-    }
-}
+$timetable->setGeneratedDate($date);
+fputs(STDERR, "Done!\n");
