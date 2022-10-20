@@ -24,6 +24,7 @@
             "Miklcct\\NationalRailTimetable\\" : "src/"
         },
         "files" : [
+            "src/Views/functions.php",
             "src/functions.php"
         ]
     },

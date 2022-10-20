@@ -3,12 +3,10 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable;
 
-use Cache\Adapter\MongoDB\MongoDBCachePool;
 use DateTimeImmutable;
 use Psr\Container\ContainerInterface;
 use DI\ContainerBuilder;
 use Http\Factory\Guzzle\ResponseFactory;
-use Laminas\Cache\Service\StorageCacheFactory;
 use Miklcct\NationalRailTimetable\Config\Config;
 use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
@@ -23,10 +21,6 @@ use MongoDB\Database;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Psr\SimpleCache\CacheInterface;
-use Sokil\Mongo\Cache;
-use SubjectivePHP\Psr\SimpleCache\MongoCache;
-use SubjectivePHP\Psr\SimpleCache\Serializer\SerializerInterface;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Cache\Adapter\PhpFilesAdapter;
 use Symfony\Component\Cache\Psr16Cache;
 
@@ -118,25 +112,4 @@ function get_container() : ContainerInterface {
         ->build();
     }
     return $container;
-}
-
-function show_time(DateTimeImmutable $timestamp, Date $base, string $link = null) : string {
-    $interval = $base->toDateTimeImmutable()->diff($timestamp->setTime(0, 0, 0));
-    $day_offset = $interval->days * ($interval->invert ? -1 : 1);
-    $time_string = $timestamp->format('H:i') 
-        . ((int)$timestamp->format('s') > 30 ? '½' : '');
-    return ($link !== null 
-        ? sprintf('<a href="%s">%s</a>', html($link), html($time_string))
-        : html($time_string)
-    )
-        . ($day_offset 
-            ? sprintf(
-                '<sup class="day_offset"><abbr title="%s">%+d</abbr></sup>'
-                , match ($day_offset) {
-                    1 => 'next day',
-                    -1 => 'previous day',
-                    default => sprintf('%+d days', $day_offset)
-                }, $day_offset) 
-            : ''
-        );
 }

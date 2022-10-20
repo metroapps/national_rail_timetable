@@ -5,7 +5,6 @@ namespace Miklcct\NationalRailTimetable\Views;
 
 use DateInterval;
 use DateTimeImmutable;
-use DateTimeZone;
 use LogicException;
 use Miklcct\NationalRailTimetable\Models\Points\HasArrival;
 use Miklcct\NationalRailTimetable\Models\Points\HasDeparture;
@@ -22,7 +21,7 @@ use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\DatedService;
 use Miklcct\NationalRailTimetable\Models\Points\DestinationPoint;
 
-use function Miklcct\NationalRailTimetable\show_time;
+use function Miklcct\NationalRailTimetable\Views\show_time;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 class ServiceView extends PhpTemplate {
@@ -53,6 +52,7 @@ class ServiceView extends PhpTemplate {
             throw new LogicException('The service does not run on the day.');
         }
         $origin_portion = $this->getOriginPortion();
+        assert($origin_portion instanceof FullService);
         /** @var Service */
         $service = $origin_portion->service;
         return sprintf(
