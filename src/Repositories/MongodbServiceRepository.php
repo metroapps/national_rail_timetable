@@ -73,10 +73,6 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         );
     }
 
-    public function addGeneratedIndex() {
-        $this->servicesCollection->createIndex(['generated' => 1]);
-    }
-
     public function getService(string $uid, Date $date) : ?DatedService {
         $query_results = $this->servicesCollection->find(
             [
@@ -261,10 +257,14 @@ class MongodbServiceRepository extends AbstractServiceRepository {
     }
 
     public function getGeneratedDate(): ?Date {
-        return $this->servicesCollection->findOne(['generated' => ['$exists' => true]])?->generated;
+        return $this->getMetaCollection()->findOne(['generated' => ['$exists' => true]])?->generated;
     }
 
     public function setGeneratedDate(?Date $date) {
-        $this->servicesCollection->insertOne(['generated' => $date]);
+        $this->getMetaCollection()->insertOne(['generated' => $date]);
+    }
+
+    private function getMetaCollection() : Collection {
+        return new Collection($this->servicesCollection->getManager(), $this->servicesCollection->getDatabaseName(), 'metadata');
     }
 }

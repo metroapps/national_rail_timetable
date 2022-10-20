@@ -74,7 +74,7 @@ function get_databases() : array {
     );
     /** @var (Date|null)[] */
     $generated_dates = array_map(
-        fn (Database $database) => $database->selectCollection('services')->findOne(['generated' => ['$exists' => true]])?->generated
+        fn (Database $database) => $database->selectCollection('metadata')->findOne(['generated' => ['$exists' => true]])?->generated
         , $databases
     );
     if ($generated_dates[0]?->toDateTimeImmutable() < $generated_dates[1]?->toDateTimeImmutable()) {

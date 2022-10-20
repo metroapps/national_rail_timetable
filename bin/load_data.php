@@ -64,7 +64,6 @@ $timetable = new MongodbServiceRepository(
     $database->selectCollection('associations')
     , null
 );
-$timetable->addGeneratedIndex();
 foreach (['MCA', 'ZTR'] as $suffix) {
     (new TimetableParser(new Helper(), $timetable, $stations))
         ->parseFile(
