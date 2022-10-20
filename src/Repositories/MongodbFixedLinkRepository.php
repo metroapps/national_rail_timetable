@@ -5,9 +5,11 @@ namespace Miklcct\NationalRailTimetable\Repositories;
 
 use MongoDB\Collection;
 use Miklcct\NationalRailTimetable\Models\FixedLink;
+use MongoDB\Database;
 
 class MongodbFixedLinkRepository implements FixedLinkRepositoryInterface {
-    public function __construct(private readonly Collection $collection) {
+    public function __construct(Database $database) {
+        $this->collection = $database->selectCollection('fixed_links');
     }
 
     /**
@@ -41,4 +43,6 @@ class MongodbFixedLinkRepository implements FixedLinkRepositoryInterface {
             ]
         );
     }
+
+    private readonly Collection $collection;
 }

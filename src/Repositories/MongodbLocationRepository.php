@@ -6,13 +6,15 @@ namespace Miklcct\NationalRailTimetable\Repositories;
 use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\Station;
 use MongoDB\Collection;
+use MongoDB\Database;
 use MongoDB\Driver\Cursor;
 use function array_keys;
 use function array_values;
 use stdClass;
 
 class MongodbLocationRepository implements LocationRepositoryInterface {
-    public function __construct(private readonly Collection $collection) {
+    public function __construct(Database $database) {
+        $this->collection = $database->selectCollection('locations');
     }
 
     public function getLocationByCrs(string $crs) : ?Location {
@@ -97,6 +99,7 @@ class MongodbLocationRepository implements LocationRepositoryInterface {
         return $result;
     }
 
+    private readonly Collection $collection;
     private array $crsCache = [];
     private array $nameCache = [];
     private array $tiplocCache = [];

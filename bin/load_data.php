@@ -44,8 +44,8 @@ $database->drop();
 
 fputs(STDERR, "Loading station data.\n");
 $time = microtime(true);
-$stations = new MongodbLocationRepository($database->selectCollection('locations'));
-$fixed_links = new MongodbFixedLinkRepository($database->selectCollection('fixed_links'));
+$stations = new MongodbLocationRepository($database);
+$fixed_links = new MongodbFixedLinkRepository($database);
 (new StationParser(new Helper(), $stations))
     ->parseFile(
         fopen("$path/$prefix.MSN", 'rb')
@@ -59,11 +59,7 @@ fprintf(STDERR, "Time used: %.3f s\n", microtime(true) - $time);
 
 fputs(STDERR, "Loading timetable data.\n");
 $time = microtime(true);
-$timetable = new MongodbServiceRepository(
-    $database->selectCollection('services'),
-    $database->selectCollection('associations')
-    , null
-);
+$timetable = new MongodbServiceRepository($database, null);
 foreach (['MCA', 'ZTR'] as $suffix) {
     (new TimetableParser(new Helper(), $timetable, $stations))
         ->parseFile(

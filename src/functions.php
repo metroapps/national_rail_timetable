@@ -88,7 +88,6 @@ function get_container() : ContainerInterface {
     if ($container === null) {
         $container = (new ContainerBuilder())->addDefinitions(
             [
-                'new_database' => static fn() => get_databases()[1],
                 Client::class => static function(ContainerInterface $container) : Client {
                     $config = $container->get(Config::class);
                     return new Client(uri: $config->mongodbUri ?? 'mongodb://127.0.0.1/', uriOptions: $config->mongodbUriOptions ?? [], driverOptions: ['typeMap' => ['array' => 'array']]);
@@ -98,15 +97,12 @@ function get_container() : ContainerInterface {
                     return get_databases()[0];
                 },
                 LocationRepositoryInterface::class => 
-                    static fn(ContainerInterface $container) => new MongodbLocationRepository($container->get(Database::class)->selectCollection('locations')),
+                    static fn(ContainerInterface $container) => new MongodbLocationRepository($container->get(Database::class)),
                 ServiceRepositoryFactoryInterface::class =>
-                    static function(ContainerInterface $container) {
-                        /** @var Database */
-                        $database = $container->get(Database::class);
-                        return new MongodbServiceRepositoryFactory($database->selectCollection('services'), $database->selectCollection('associations'));
-                    },
+                    static fn(ContainerInterface $container) =>
+                        new MongodbServiceRepositoryFactory($container->get(Database::class)),
                 FixedLinkRepositoryInterface::class =>
-                    static fn(ContainerInterface $container) => new MongodbFixedLinkRepository($container->get(Database::class)->selectCollection('fixed_links')),
+                    static fn(ContainerInterface $container) => new MongodbFixedLinkRepository($container->get(Database::class)),
                 ViewResponseFactoryInterface::class => autowire(ViewResponseFactory::class),
                 ResponseFactoryInterface::class => autowire(ResponseFactory::class),
             ]

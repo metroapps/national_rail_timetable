@@ -15,6 +15,7 @@ use Miklcct\NationalRailTimetable\Models\ServiceCall;
 use Miklcct\NationalRailTimetable\Models\ServiceEntry;
 use MongoDB\BSON\Regex;
 use MongoDB\Collection;
+use MongoDB\Database;
 use stdClass;
 use function array_chunk;
 use function array_filter;
@@ -24,12 +25,13 @@ use function preg_quote;
 
 class MongodbServiceRepository extends AbstractServiceRepository {
     public function __construct(
-        private readonly Collection $servicesCollection
-        , private readonly Collection $associationsCollection
+        private readonly Database $database
         , private readonly ?DepartureBoardsCacheInterface $departureBoardsCache = null
         , bool $permanentOnly = false
     ) {
         parent::__construct($permanentOnly);
+        $this->servicesCollection = $database->selectCollection('services');
+        $this->associationsCollection = $database->selectCollection('associations');
     }
 
     protected function getAssociationEntries(string $uid, Date $date) : array {
@@ -265,6 +267,9 @@ class MongodbServiceRepository extends AbstractServiceRepository {
     }
 
     private function getMetaCollection() : Collection {
-        return new Collection($this->servicesCollection->getManager(), $this->servicesCollection->getDatabaseName(), 'metadata');
+        return $this->database->selectCollection('metadata');
     }
+
+    private readonly Collection $servicesCollection;
+    private readonly Collection $associationsCollection;
 }
