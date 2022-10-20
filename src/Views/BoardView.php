@@ -36,7 +36,7 @@ class BoardView extends BoardFormView {
         parent::__construct($streamFactory, $boardUrl, $stations);
     }
 
-    public function getTitle() : string {
+    protected function getTitle() : string {
         return sprintf(
             '%s at %s %s %s'
             , $this->arrivalMode ? 'Arrivals' : 'Departures'
@@ -48,7 +48,7 @@ class BoardView extends BoardFormView {
         );
     }
 
-    public function getHeading() : string {
+    protected function getHeading() : string {
         $result = ($this->arrivalMode ? 'Arrivals at ' : 'Departures at ') . $this->getNameAndCrs($this->station);
 
         if ($this->destination !== null) {
@@ -59,14 +59,14 @@ class BoardView extends BoardFormView {
         return $result;
     }
 
-    public function getNameAndCrs(Location $location) : string {
+    protected function getNameAndCrs(Location $location) : string {
         if ($location->crsCode === null) {
             return $location->name;
         }
         return sprintf('%s (%s)', $location->name, $location->crsCode);
     }
 
-    public function getFixedLinkUrl(FixedLink $fixed_link, ?DateTimeImmutable $departure_time) {
+    protected function getFixedLinkUrl(FixedLink $fixed_link, ?DateTimeImmutable $departure_time) {
         return $this->boardUrl . '?' . http_build_query(
             [
                 'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
@@ -79,7 +79,7 @@ class BoardView extends BoardFormView {
         );
     }
 
-    public function getFormData(): array {
+    protected function getFormData(): array {
         return [
             'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
             'station' => $this->station->crsCode,
@@ -90,7 +90,7 @@ class BoardView extends BoardFormView {
         ] + ($this->permanentOnly ? ['permanent_only' => '1'] : []);
     }
 
-    public function getArrivalLink(ServiceCall $service_call) : ?string {
+    protected function getArrivalLink(ServiceCall $service_call) : ?string {
         if ($service_call->call->location->crsCode === null) {
             return null;
         }
@@ -106,7 +106,7 @@ class BoardView extends BoardFormView {
         );
     }
 
-    public function getDayOffsetLink(int $days) : string {
+    protected function getDayOffsetLink(int $days) : string {
         return $this->boardUrl . '?' . http_build_query(
             [
                 'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
@@ -119,7 +119,7 @@ class BoardView extends BoardFormView {
         );
     }
 
-    public function getServiceLink(ServiceCall $service_call) {
+    protected function getServiceLink(ServiceCall $service_call) {
          return '/service.php?' . http_build_query(
             [
                 'uid' => $service_call->uid,
@@ -129,11 +129,24 @@ class BoardView extends BoardFormView {
         );
     }
 
-    public function showToc(string $toc) : string {
+    protected function showToc(string $toc) : string {
         return sprintf('<abbr title="%s">%s</abbr>', html(get_all_tocs()[$toc] ?? ''), html($toc));
     }
 
-    public function showFacilities(ServiceCall $service_call) : string {
+    protected function showFacilities(ServiceCall $service_call) : string {
         return $service_call->mode->showIcon() . $service_call->serviceProperty->showIcons();
+    }
+
+    protected function getReverseDirectionLink() : string {
+        return $this->boardUrl . '?' . http_build_query(
+            [
+                'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
+                'station' => $this->destination->crsCode,
+                'filter' => $this->station->crsCode,
+                'date' => $this->now ? '' : $this->boardDate->__toString(), 
+                'connecting_time' => '',
+                'connecting_toc' => '',
+            ] + ($this->permanentOnly ? ['permanent_only' => '1'] : [])
+        );
     }
 }

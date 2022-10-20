@@ -15,15 +15,15 @@ class BoardFormView extends PhpTemplate {
         parent::__construct($streamFactory);
     }
 
-    public function getPathToTemplate() : string {
+    protected function getPathToTemplate() : string {
         return __DIR__ . '/../../resource/templates/board.phtml';
     }
 
-    public function getTitle() : string {
+    protected function getTitle() : string {
         return 'Departure board';
     }
 
-    public function getFormData() : array {
+    protected function getFormData() : array {
         return [];
     }
 }

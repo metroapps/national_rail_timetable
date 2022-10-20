@@ -78,6 +78,11 @@ if ($this instanceof BoardView) {
 ?>  
         <h1><?= html($this->getHeading()) ?></h1>
 <?php
+    if ($this->destination !== null) {
+?>
+        <p><a href="<?= $this->getReverseDirectionLink() ?>">Show return timetable</a></p>
+<?php
+    }
     if ($this->permanentOnly) {
 ?>
         <p id="permanent_warning">Warning: Permanent timetable instead of actual timetable shown</p>
