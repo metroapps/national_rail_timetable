@@ -130,7 +130,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         DateTimeImmutable $to,
         TimeType $time_type
     ) : DepartureBoard {
-        $cache_key = sprintf('board_%s_%s_%012d_%012d_%s', $this->getGeneratedDate(), $crs, $from->getTimestamp(), $to->getTimestamp(), $time_type->value);
+        $cache_key = sprintf('board_%s_%s_%012d_%012d_%s_%d', $this->getGeneratedDate(), $crs, $from->getTimestamp(), $to->getTimestamp(), $time_type->value, $this->permanentOnly);
         $cache_entry = $this->cache?->get($cache_key);
         if ($cache_entry !== null) {
             return $cache_entry;
