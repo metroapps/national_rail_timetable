@@ -73,6 +73,6 @@ fprintf(STDERR, "Time used: %.3f s\n", microtime(true) - $time);
 
 /** @var CacheInterface */
 $cache = get_container()->get(CacheInterface::class);
-$cache->clear();
 $timetable->setGeneratedDate($date);
+$cache->clear();
 fputs(STDERR, "Done!\n");
