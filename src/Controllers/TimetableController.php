@@ -25,10 +25,10 @@ class TimetableController extends Application {
         , private readonly StreamFactoryInterface $streamFactory
         , private readonly ServiceRepositoryFactoryInterface $serviceRepositoryFactory
     ) {}
-    
+
     public function run(ServerRequestInterface $request) : ResponseInterface {
         $query = $request->getQueryParams();
-        
+
         $date = new DateTimeImmutable($query['date'] ?: 'now');
         $board = ($this->serviceRepositoryFactory)(false)->getDepartureBoard(
             $query['station']
@@ -47,8 +47,9 @@ class TimetableController extends Application {
         foreach ($board->calls as $call) {
             $group_id = $station_group === [] ? 0 : max($station_group) + 1;
             foreach ($call->subsequentCalls as $subsequent_call) {
-                if (isset($station_group[$subsequent_call->call->location->crsCode])) {
-                    $group_to_be_joined = $station_group[$subsequent_call->call->location->crsCode];
+                $subsequent_crs = $subsequent_call->call->location->crsCode;
+                if (isset($station_group[$subsequent_crs])) {
+                    $group_to_be_joined = $station_group[$subsequent_crs];
                     if ($group_to_be_joined !== $group_id) {
                         foreach ([&$station_group, &$call_group] as &$array) {
                             foreach ($array as &$g) {
@@ -62,7 +63,7 @@ class TimetableController extends Application {
                         unset($array);
                     }
                 } else {
-                    $station_group[$subsequent_call->call->location->crsCode] = $group_id;
+                    $station_group[$subsequent_crs] = $group_id;
                 }
             }
             $call_group[$call->uid . '_' . $call->date] = $group_id;
@@ -70,7 +71,7 @@ class TimetableController extends Application {
 
         $timetables = [];
 
-        foreach (array_unique($station_group) as $group_id) {
+        foreach (array_unique($call_group) as $group_id) {
             // try to order the stations
             $stations = [];
             $calls = $board->calls;
@@ -95,7 +96,7 @@ class TimetableController extends Application {
                                     $old_i = $i;
                                     while (isset($stations[$i])) {
                                         if ($stations[$i]->crsCode === $current_station->crsCode) {
-                                            $found = $i;
+                                            $found = $i++;
                                             break;
                                         }
                                         ++$i;
@@ -120,6 +121,8 @@ class TimetableController extends Application {
                                 $item[1] = $max++ * self::MULTIPLIER;
                             }
                         }
+                        unset($item);
+
                         $new_stations = array_reduce(
                             $order
                             , static fn(array $carry, array $item) : array
