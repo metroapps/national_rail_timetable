@@ -21,14 +21,14 @@ use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
 use Miklcct\NationalRailTimetable\Views\BoardView;
+use Psr\Http\Message\StreamFactoryInterface;
 use Safe\DateTimeImmutable as SafeDateTimeImmutable;
-use Teapot\HttpException;
-use Teapot\StatusCode\Http;
 use Teapot\StatusCode\WebDAV;
 
 class BoardController extends Application {
     public function __construct(
         private readonly ViewResponseFactoryInterface $viewResponseFactory
+        , private readonly StreamFactoryInterface $streamFactory
         , private readonly LocationRepositoryInterface $locationRepository
         , private readonly ServiceRepositoryFactoryInterface $serviceRepositoryFactory
         , private readonly FixedLinkRepositoryInterface $fixedLinkRepository
@@ -52,7 +52,7 @@ class BoardController extends Application {
         if ($station?->crsCode === null) {
             return ($this->viewResponseFactory)(
                 new BoardFormView(
-                    new StreamFactory()
+                    $this->streamFactory
                     , $self
                     , $this->locationRepository->getAllStations()
                     , 'The station cannot be found.'

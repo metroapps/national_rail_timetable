@@ -3,26 +3,24 @@ declare(strict_types = 1);
 
 namespace Miklcct\NationalRailTimetable\Controllers;
 
+use LogicException;
+use Miklcct\NationalRailTimetable\Models\Date;
+use Miklcct\NationalRailTimetable\Models\ServiceCancellation;
+use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
+use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
+use Miklcct\NationalRailTimetable\Views\ServiceView;
 use Miklcct\ThinPhpApp\Controller\Application;
 use Miklcct\ThinPhpApp\Response\ViewResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Http\Factory\Guzzle\StreamFactory;
-use LogicException;
-use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
-use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
-use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
-use Miklcct\NationalRailTimetable\Views\ServiceView;
-use Miklcct\NationalRailTimetable\Models\Date;
-use Miklcct\NationalRailTimetable\Models\Service;
-use Miklcct\NationalRailTimetable\Models\ServiceCancellation;
+use Psr\Http\Message\StreamFactoryInterface;
 use Teapot\HttpException;
 use Teapot\StatusCode\Http;
 
 class ServiceController extends Application {
     public function __construct(
         private readonly ViewResponseFactoryInterface $viewResponseFactory
-        , private readonly LocationRepositoryInterface $locationRepository
+        , private readonly StreamFactoryInterface $streamFactory
         , private readonly ServiceRepositoryFactoryInterface $serviceRepositoryFactory
         , private readonly FixedLinkRepositoryInterface $fixedLinkRepository
     ) {}
@@ -53,7 +51,7 @@ class ServiceController extends Application {
 
         return ($this->viewResponseFactory)(
             new ServiceView(
-                new StreamFactory()
+                $this->streamFactory
                 , $service
                 , $permanent_only
                 , $service_repository->getGeneratedDate()

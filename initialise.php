@@ -4,6 +4,7 @@ declare(strict_types = 1);
 use DI\ContainerBuilder;
 use function DI\autowire;
 use Http\Factory\Guzzle\ResponseFactory;
+use Http\Factory\Guzzle\StreamFactory;
 use Miklcct\NationalRailTimetable\Config\Config;
 use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
@@ -17,6 +18,7 @@ use MongoDB\Client;
 use MongoDB\Database;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use Psr\SimpleCache\CacheInterface;
 use Symfony\Component\Cache\Adapter\PhpFilesAdapter;
 use Symfony\Component\Cache\Psr16Cache;
@@ -72,6 +74,7 @@ function get_container() : ContainerInterface {
                 FixedLinkRepositoryInterface::class => autowire(MongodbFixedLinkRepository::class),
                 ViewResponseFactoryInterface::class => autowire(ViewResponseFactory::class),
                 ResponseFactoryInterface::class => autowire(ResponseFactory::class),
+                StreamFactoryInterface::class => autowire(StreamFactory::class),
             ]
         )
         ->build();
