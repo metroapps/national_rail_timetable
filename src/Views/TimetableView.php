@@ -13,6 +13,7 @@ class TimetableView extends PhpTemplate {
     public function __construct(
         StreamFactoryInterface $streamFactory
         , protected readonly array $timetables
+        , protected readonly array $filterCrs
     ) {
         parent::__construct($streamFactory);
     }

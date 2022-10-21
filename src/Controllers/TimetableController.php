@@ -170,7 +170,7 @@ class TimetableController extends Application {
 
         }
 
-        return ($this->viewResponseFactory)(new TimetableView($this->streamFactory, $timetables));
+        return ($this->viewResponseFactory)(new TimetableView($this->streamFactory, $timetables, $filter));
 
     }
 }

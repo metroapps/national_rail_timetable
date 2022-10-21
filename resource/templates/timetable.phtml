@@ -47,7 +47,7 @@ foreach ($this->timetables as $timetable) {
 <?php
     foreach ($stations as $i => $station) {
 ?>
-                <tr class="<?= $i === 0 ? 'origin' : '' ?>">
+                <tr class="<?= $i === 0 ? 'origin' : '' ?> <?= $i !== 0 && in_array($station->crsCode, $this->filterCrs, true) ? 'destination' : '' ?>">
                     <td><?= html($station->getShortName()) ?></td>
 <?php
         $j = 0;

@@ -5,6 +5,6 @@ table {
     border: 1px black solid;
 }
 
-.origin {
+.origin, .destination {
     font-weight: bold;
 }
