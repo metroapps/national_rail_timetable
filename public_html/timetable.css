@@ -4,3 +4,7 @@ table {
     text-align: center;
     border: 1px black solid;
 }
+
+.origin {
+    font-weight: bold;
+}

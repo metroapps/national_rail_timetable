@@ -50,26 +50,29 @@ class TimetableController extends Application {
                 if (isset($station_group[$subsequent_call->call->location->crsCode])) {
                     $group_to_be_joined = $station_group[$subsequent_call->call->location->crsCode];
                     if ($group_to_be_joined !== $group_id) {
-                        foreach ($station_group as &$g) {
-                            if ($g === $group_id) {
-                                $g = $group_to_be_joined;
+                        foreach ([&$station_group, &$call_group] as &$array) {
+                            foreach ($array as &$g) {
+                                if ($g === $group_id) {
+                                    $g = $group_to_be_joined;
+                                }
                             }
+                            unset($g);
                         }
-                        unset($g);
                         $group_id = $group_to_be_joined;
+                        unset($array);
                     }
                 } else {
                     $station_group[$subsequent_call->call->location->crsCode] = $group_id;
                 }
             }
-            $call_group[$call->uid] = $group_id;
+            $call_group[$call->uid . '_' . $call->date] = $group_id;
         }
 
         $timetables = [];
 
         foreach (array_unique($station_group) as $group_id) {
             // try to order the stations
-            $stations = [$board->calls[0]->call->location];
+            $stations = [];
             $calls = $board->calls;
             // I hope this is good enough - I don't know how to sort the stations properly
             usort(
@@ -80,7 +83,7 @@ class TimetableController extends Application {
                 ) => -(count($a->subsequentCalls) <=> count($b->subsequentCalls))
             );
             foreach ($calls as $call) {
-                if ($call_group[$call->uid] === $group_id) {
+                if ($call_group[$call->uid . '_' . $call->date] === $group_id) {
                     foreach (array_keys($call->destinations) as $portion) {
                         $order = [];
                         $i = 0;
@@ -134,13 +137,14 @@ class TimetableController extends Application {
                     }
                 }
             }
+            $stations = array_merge([$calls[0]->call->location], $stations);
 
             $calls = [];
 
             // fill the calls matrix
             $i = 0;
             foreach ($board->calls as $call) {
-                if ($call_group[$call->uid] === $group_id) {
+                if ($call_group[$call->uid . '_' . $call->date] === $group_id) {
                     foreach (array_keys($call->destinations) as $portion) {
                         // origin station
                         $calls[0][$i] = $call;
@@ -153,6 +157,7 @@ class TimetableController extends Application {
                                         throw new LogicException('Should not happen');
                                     }
                                 }
+                                if ($j === 0) throw new LogicException('Should not happen');
                                 $calls[$j][$i] = $subsequent_call;
                             }
                         }
