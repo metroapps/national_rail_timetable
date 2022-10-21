@@ -1,0 +1,84 @@
+<?php
+declare(strict_types = 1);
+
+use Miklcct\NationalRailTimetable\Models\Location;
+use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
+use Miklcct\NationalRailTimetable\Views\TimetableView;
+
+use function Miklcct\ThinPhpApp\Escaper\html;
+
+/** @var TimetableView $this */
+?>
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="timetable.css" />
+        <title>Timetable</title>
+    </head>
+    <body>
+<?php
+foreach ($this->timetables as $timetable) {
+    ['stations' => $stations, 'calls' => $calls] = $timetable;
+    /** @var Location[] $stations */
+    /** @var ServiceCallWithDestination[][] $calls */
+?>
+        <h1>Trains toward <?= html(implode(', ', $this->getGroupDestinations($timetable))) ?></h1>
+        <table>
+            <thead>
+                <tr>
+                    <th></th>
+<?php
+    $i = 0;
+    while (isset($calls[0][$i])) {
+        $call = $calls[0][$i];
+        $colspan = 0;
+        while (isset($calls[0][$i]) && $calls[0][$i]->uid === $call->uid) {
+            ++$colspan;
+            ++$i;
+        }
+?>
+                    <th class="service" colspan=<?= $colspan ?>><?= html(substr($call->serviceProperty->rsid, 0, 6) ?? $call->toc) ?></th>
+<?php
+    }
+?>
+                </tr>
+            </thead>
+            <tbody>
+<?php
+    foreach ($stations as $i => $station) {
+?>
+                <tr class="<?= $i === 0 ? 'destination' : '' ?>">
+                    <td><?= html($station->getShortName()) ?></td>
+<?php
+        $j = 0;
+        while (isset($calls[0][$j])) {
+            if (!isset($calls[$i][$j])) {
+                ++$j;
+?>
+                    <td></td>
+<?php
+            } else {
+                $call = $calls[$i][$j];
+                $colspan = 0;
+                while (isset($calls[$i][$j]) && $calls[$i][$j]->uid === $call->uid) {
+                    ++$colspan;
+                    ++$j;
+                }
+?>
+
+                    <td colspan=<?= $colspan ?>><?= html($call->timestamp->format('H:i'))?></td>
+<?php
+            }
+        }
+?>
+                </tr>
+<?php
+    }
+?>
+            </tbody>
+        </table>
+<?php
+}
+?>
+    </body>
+</html>
