@@ -8,3 +8,7 @@ table {
 .origin, .destination {
     font-weight: bold;
 }
+
+th, td {
+    padding: 0.2em;
+}

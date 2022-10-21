@@ -123,6 +123,13 @@ class TimetableController extends Application {
                         }
                         unset($item);
 
+                        for ($l = 1; $l < count($order); ++$l) {
+                            if ($order[$l][1] <= $order[$l - 1][1]) {
+                                xdebug_break();
+                                assert(false);
+                            }
+                        }
+
                         $new_stations = array_reduce(
                             $order
                             , static fn(array $carry, array $item) : array
@@ -153,8 +160,9 @@ class TimetableController extends Application {
                         $calls[0][$i] = $call;
                         $j = 0;
                         foreach ($call->subsequentCalls as $subsequent_call) {
-                            if (in_array($portion, array_keys($subsequent_call->destinations), true)) {
-                                while ($stations[$j]->crsCode !== $subsequent_call->call->location->crsCode) {
+                            $subsequent_crs = $subsequent_call->call->location->crsCode;
+                            if ($subsequent_crs !== null && in_array($portion, array_keys($subsequent_call->destinations), true)) {
+                                while ($stations[$j]->crsCode !== $subsequent_crs) {
                                     ++$j;
                                     if (!isset($stations[$j])) {
                                         throw new LogicException('Should not happen');

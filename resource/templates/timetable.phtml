@@ -1,10 +1,10 @@
 <?php
 declare(strict_types = 1);
 
-use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 use Miklcct\NationalRailTimetable\Views\TimetableView;
 
+use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 /** @var TimetableView $this */
@@ -12,6 +12,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
 <!DOCTYPE html>
 <html>
     <head>
+        <link rel="stylesheet" href="common.css" />
         <link rel="stylesheet" href="timetable.css" />
         <title>Timetable</title>
     </head>
@@ -19,6 +20,16 @@ use function Miklcct\ThinPhpApp\Escaper\html;
 <?php
 foreach ($this->timetables as $timetable) {
     ['stations' => $stations, 'calls' => $calls] = $timetable;
+
+    $get_colspan = function(array $array, int $i) use ($calls) {
+        $call = $array[$i];
+        $colspan = 0;
+        while (isset($array[$i]) && $array[$i]->uid === $call->uid) {
+            ++$colspan;
+            ++$i;
+        }
+        return $colspan;
+    }
     /** @var Location[] $stations */
     /** @var ServiceCallWithDestination[][] $calls */
 ?>
@@ -26,18 +37,64 @@ foreach ($this->timetables as $timetable) {
         <table>
             <thead>
                 <tr>
-                    <th></th>
+                    <th>TOC</th>
 <?php
     $i = 0;
     while (isset($calls[0][$i])) {
+        /** @var ServiceCallWithDestination $call */
         $call = $calls[0][$i];
-        $colspan = 0;
-        while (isset($calls[0][$i]) && $calls[0][$i]->uid === $call->uid) {
-            ++$colspan;
+        $colspan = $get_colspan($calls[0], $i);
+        $i += $colspan;
+?>
+                    <th class="service" colspan=<?= $colspan ?>>
+                        <abbr title="<?= html(get_all_tocs()[$call->toc]) ?>"><?= html($call->toc) ?></abbr>
+                    </th>
+<?php
+    }
+?>
+                </tr>
+                <tr>
+                    <td>Headcode</td>
+<?php
+    $i = 0;
+    while (isset($calls[0][$i])) {
+        /** @var ServiceCallWithDestination $call */
+        $call = $calls[0][$i];
+        $colspan = $get_colspan($calls[0], $i);
+        $i += $colspan;
+?>
+                    <td colspan=<?= $colspan ?>><?= html($call->serviceProperty->headcode) ?></td>
+<?php
+    }
+?>
+                </tr>
+                <tr>
+                    <td>Destination</td>
+<?php
+    $i = 0;
+    while (isset($calls[0][$i])) {
+        /** @var ServiceCallWithDestination $call */
+        $call = $calls[0][$i];
+        foreach ($call->destinations as $destination) {
+?>
+                    <td><abbr title="<?= html($destination->location->getShortName()) ?>"><?= html($destination->location->crsCode) ?></abbr></td>
+<?php
             ++$i;
         }
+    }
 ?>
-                    <th class="service" colspan=<?= $colspan ?>><?= html(substr($call->serviceProperty->rsid, 0, 6) ?: $call->toc) ?></th>
+                </tr>
+                <tr>
+                    <td>Facilities</td>
+<?php
+    $i = 0;
+    while (isset($calls[0][$i])) {
+        /** @var ServiceCallWithDestination $call */
+        $call = $calls[0][$i];
+        $colspan = $get_colspan($calls[0], $i);
+        $i += $colspan;
+?>
+                    <td colspan=<?= $colspan ?>><?= $call->mode->showIcon() . $call->serviceProperty->showIcons() ?></td>
 <?php
     }
 ?>
@@ -59,11 +116,8 @@ foreach ($this->timetables as $timetable) {
 <?php
             } else {
                 $call = $calls[$i][$j];
-                $colspan = 0;
-                while (isset($calls[$i][$j]) && $calls[$i][$j]->uid === $call->uid) {
-                    ++$colspan;
-                    ++$j;
-                }
+                $colspan = $get_colspan($calls[$i], $j);
+                $j += $colspan;
 ?>
 
                     <td colspan=<?= $colspan ?>><?= html($call->timestamp->format('H:i'))?></td>
