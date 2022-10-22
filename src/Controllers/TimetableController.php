@@ -50,7 +50,8 @@ class TimetableController extends Application {
             );
         }
         $date = $query->date ?? Date::today();
-        $board = ($this->serviceRepositoryFactory)($query->permanentOnly)->getDepartureBoard(
+        $service_repository = ($this->serviceRepositoryFactory)($query->permanentOnly);
+        $board = $service_repository->getDepartureBoard(
             $station->getCrsCode()
             , $date->toDateTimeImmutable()
             , $date->toDateTimeImmutable(new Time(28, 30))
@@ -73,6 +74,7 @@ class TimetableController extends Application {
                 , $query
                 , $this->locationRepository->getAllStations()
                 , $this->getFixedLinks($query)
+                , $service_repository->getGeneratedDate()
             )
         );
     }
@@ -87,6 +89,7 @@ class TimetableController extends Application {
                 , new BoardQuery()
                 , $this->locationRepository->getAllStations()
                 , []
+                , null
                 , $e->getMessage()
             )
         )->withStatus(WebDAV::UNPROCESSABLE_ENTITY);

@@ -35,6 +35,7 @@ class TimetableView extends PhpTemplate {
         , protected readonly BoardQuery $query
         , protected readonly array $stations
         , protected readonly ?array $fixedLinks
+        , protected readonly ?Date $generated
         , protected readonly ?string $errorMessage = null
     ) {
         parent::__construct($streamFactory);

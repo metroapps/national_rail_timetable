@@ -62,14 +62,14 @@ class BoardView extends BoardFormView {
     protected function getHeading() : string {
         $location = $this->query->station;
         assert($location instanceof Location);
-        $result = ($this->query->arrivalMode ? 'Arrivals at ' : 'Departures at ') . $this->getNameAndCrs($location);
+        $result = ($this->query->arrivalMode ? 'Arrivals at ' : 'Departures at ') . $location->name;
 
         $filter = $this->query->filter;
         if ($filter !== []) {
             $result .= ' calling at ' . implode(
                 ', '
                 , array_map(
-                    fn(Location $location) => $this->getNameAndCrs($location)
+                    fn(Location $location) => $location->name
                     , $filter
                 )
             );
@@ -77,13 +77,6 @@ class BoardView extends BoardFormView {
         $result .= ' ';
         $result .= $this->query->date === null ? 'today' : 'on ' . $this->date;
         return $result;
-    }
-
-    protected function getNameAndCrs(Location $location) : string {
-        if (!$location instanceof LocationWithCrs) {
-            return $location->name;
-        }
-        return sprintf('%s (%s)', $location->name, $location->getCrsCode());
     }
 
     protected function getFormData(): array {
