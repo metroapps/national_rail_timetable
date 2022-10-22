@@ -23,7 +23,7 @@ section {
 
 .station_column {
     position: sticky;
-    left: 0px;
+    left: 0;
     z-index: 1;
 }
 
@@ -32,6 +32,7 @@ table {
     text-align: center;
     border: 0;
     border-spacing: 0;
+    font-size: small;
 }
 
 table, td, th {
