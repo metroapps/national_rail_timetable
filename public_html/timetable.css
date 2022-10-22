@@ -1,8 +1,51 @@
 @charset "UTF-8";
 
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0.5cm;
+}
+
+section {
+    max-height: 95vh;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.container {
+    overflow: auto;
+    max-width: 100%;
+}
+
+.station_column {
+    position: sticky;
+    left: 0px;
+    z-index: 1;
+}
+
 table {
+    color: black;
     text-align: center;
-    border: 1px black solid;
+    border: 0;
+    border-spacing: 0;
+}
+
+table, td, th {
+    background-color: white;
+}
+
+thead {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+tbody tr:nth-child(odd) td {
+    background-color: lightgrey;
 }
 
 .origin, .destination {
@@ -11,4 +54,8 @@ table {
 
 th, td {
     padding: 0.2em;
+}
+
+h1 {
+    font-size: 1.25rem;
 }

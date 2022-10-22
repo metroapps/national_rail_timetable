@@ -33,11 +33,13 @@ foreach ($this->timetables as $timetable) {
     /** @var Location[] $stations */
     /** @var ServiceCallWithDestination[][] $calls */
 ?>
-        <h1>Trains toward <?= html(implode(', ', $this->getGroupDestinations($timetable))) ?></h1>
-        <table>
-            <thead>
-                <tr>
-                    <th>TOC</th>
+        <section>
+            <h1>Trains toward <?= html(implode(', ', $this->getGroupDestinations($timetable))) ?></h1>
+            <div class="container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="station_column">TOC</th>
 <?php
     $i = 0;
     while (isset($calls[0][$i])) {
@@ -46,15 +48,15 @@ foreach ($this->timetables as $timetable) {
         $colspan = $get_colspan($calls[0], $i);
         $i += $colspan;
 ?>
-                    <th class="service" colspan=<?= $colspan ?>>
-                        <abbr title="<?= html(get_all_tocs()[$call->toc]) ?>"><?= html($call->toc) ?></abbr>
-                    </th>
+                            <th class="service" colspan=<?= $colspan ?>>
+                                <abbr title="<?= html(get_all_tocs()[$call->toc]) ?>"><?= html($call->toc) ?></abbr>
+                            </th>
 <?php
     }
 ?>
-                </tr>
-                <tr>
-                    <td>Headcode</td>
+                        </tr>
+                        <tr>
+                            <td class="station_column">Headcode</td>
 <?php
     $i = 0;
     while (isset($calls[0][$i])) {
@@ -63,13 +65,13 @@ foreach ($this->timetables as $timetable) {
         $colspan = $get_colspan($calls[0], $i);
         $i += $colspan;
 ?>
-                    <td colspan=<?= $colspan ?>><?= html($call->serviceProperty->headcode) ?></td>
+                            <td colspan=<?= $colspan ?>><?= html($call->serviceProperty->headcode) ?></td>
 <?php
     }
 ?>
-                </tr>
-                <tr>
-                    <td>Destination</td>
+                        </tr>
+                        <tr>
+                            <td class="station_column">Destination</td>
 <?php
     $i = 0;
     while (isset($calls[0][$i])) {
@@ -77,15 +79,15 @@ foreach ($this->timetables as $timetable) {
         $call = $calls[0][$i];
         foreach ($call->destinations as $destination) {
 ?>
-                    <td><abbr title="<?= html($destination->location->getShortName()) ?>"><?= html($destination->location->crsCode) ?></abbr></td>
+                            <td><abbr title="<?= html($destination->location->getShortName()) ?>"><?= html($destination->location->crsCode) ?></abbr></td>
 <?php
             ++$i;
         }
     }
 ?>
-                </tr>
-                <tr>
-                    <td>Facilities</td>
+                        </tr>
+                        <tr>
+                            <td class="station_column">Facilities</td>
 <?php
     $i = 0;
     while (isset($calls[0][$i])) {
@@ -94,43 +96,48 @@ foreach ($this->timetables as $timetable) {
         $colspan = $get_colspan($calls[0], $i);
         $i += $colspan;
 ?>
-                    <td colspan=<?= $colspan ?>><?= $call->mode->showIcon() . $call->serviceProperty->showIcons() ?></td>
+                            <td colspan=<?= $colspan ?>><?= $call->mode->showIcon() . $call->serviceProperty->showIcons() ?></td>
 <?php
     }
 ?>
-                </tr>
-            </thead>
-            <tbody>
+                        </tr>
 <?php
     foreach ($stations as $i => $station) {
+        if ($i === 1) {
 ?>
-                <tr class="<?= $i === 0 ? 'origin' : '' ?> <?= $i !== 0 && in_array($station->crsCode, $this->filterCrs, true) ? 'destination' : '' ?>">
-                    <td><?= html($station->getShortName()) ?></td>
+                    </thead>
+                    <tbody>
+<?php
+        }
+?>
+                        <tr class="<?= $i === 0 ? 'origin' : '' ?> <?= $i !== 0 && in_array($station->crsCode, $this->filterCrs, true) ? 'destination' : '' ?>">
+                            <td class="station_column"><?= html($station->getShortName()) ?></td>
 <?php
         $j = 0;
         while (isset($calls[0][$j])) {
             if (!isset($calls[$i][$j])) {
                 ++$j;
 ?>
-                    <td></td>
+                            <td></td>
 <?php
             } else {
                 $call = $calls[$i][$j];
                 $colspan = $get_colspan($calls[$i], $j);
                 $j += $colspan;
 ?>
-
-                    <td colspan=<?= $colspan ?>><?= html($call->timestamp->format('H:i'))?></td>
+                           <td colspan=<?= $colspan ?>><?= html($call->timestamp->format('H:i'))?></td>
 <?php
             }
         }
 ?>
-                </tr>
+                        </tr>
 <?php
     }
 ?>
-            </tbody>
-        </table>
+                    </tbody>
+                </table>
+            </div>
+        </section>
 <?php
 }
 ?>
