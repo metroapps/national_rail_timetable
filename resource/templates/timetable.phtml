@@ -2,7 +2,6 @@
 declare(strict_types = 1);
 
 use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
-use Miklcct\NationalRailTimetable\Controllers\TimetableQuery;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\DepartureBoard;
 use Miklcct\NationalRailTimetable\Models\Location;
@@ -25,52 +24,9 @@ use function Miklcct\ThinPhpApp\Escaper\html;
         <title><?= html($this->getTitle()) . ($this->query->permanentOnly ? ' (permanent timetable)' : '') ?></title>
     </head>
     <body>
-        <?php
-        if ($this->errorMessage !== null) {
-            ?>
-            <p class="error"><?= html($this->errorMessage) ?></p>
-            <?php
-        }
-        ?>
-        <form action="timetable.php" method="GET">
-            <datalist id="stations">
-                <?php
-                foreach ($this->stations as $station) {
-                    ?>
-                    <option value="<?= html($station->getCrsCode()) ?>"><?= html($station->name) ?></option>
-                    <?php
-                }
-                ?>
-            </datalist>
-            <p>
-                Show
-                <?php
-                foreach (['departures', 'arrivals'] as $mode) {
-                    ?>
-                    <label>
-                        <input type="radio" name="mode" value="<?= html($mode) ?>" <?= ($this->query->toArray()['mode'] ?? 'departures') === $mode ? 'checked = "checked"' : ''?>/>
-                        <?= html($mode) ?>
-                    </label>
-                    <?php
-                }
-                ?>
-                <label>at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($this->query->toArray()['station'] ?? null)?>"/></label><br/>
-                <label>on (leave empty for today)
-                    <input type="date"
-                           name="date"
-                           value="<?= html($this->query->toArray()['date']) ?>"
-                           min="<?= html((new DateTimeImmutable('-7 days'))->format('Y-m-d')) ?>"
-                           max="<?= html((new DateTimeImmutable('+180 days'))->format('Y-m-d')) ?>"
-                    />
-                </label>
-            </p>
-            <p>
-                <label>Show permanent timetable instead of actual timetable: <input type="checkbox" name="permanent_only" value="1" <?= !empty($this->query->toArray()['permanent_only']) ? 'checked="checked"' : '' ?>/></label><br/>
-            </p>
-            <p>
-                <input type="submit" />
-            </p>
-        </form>
+<?php
+require __DIR__ . '/form.phtml';
+?>
         <h1><?= html($this->getTitle()) ?></h1>
 <?php
 if ($this->query->permanentOnly) {
@@ -219,7 +175,7 @@ foreach ($this->boards as $board) {
 <?php
         if ($i !== 0) {
 ?>
-                                <a href="<?= html((new TimetableQuery($this->query->arrivalMode, $station, [], $this->query->date, $this->query->permanentOnly))->getUrl()) ?>">
+                                <a href="<?= html((new BoardQuery($this->query->arrivalMode, $station, [], $this->query->date, null, null, $this->query->permanentOnly))->getUrl(BoardQuery::TIMETABLE_URL)) ?>">
 <?php
         }
 ?>
@@ -249,12 +205,12 @@ foreach ($this->boards as $board) {
                     : (new BoardQuery(
                         $this->query->arrivalMode
                         , $stations[$i]
-                        , null
+                        , []
                         , Date::fromDateTimeInterface($call->timestamp->sub(new DateInterval($this->query->arrivalMode ? 'PT4H30M' : 'P0D')))
                         , $call->timestamp
                         , $call->toc
                         , $this->query->permanentOnly
-                    ))->getUrl();
+                    ))->getUrl(BoardQuery::BOARD_URL);
 ?>
                            <td colspan=<?= $colspan ?>><?= show_time($call->timestamp, $this->date, $link)?></td>
 <?php

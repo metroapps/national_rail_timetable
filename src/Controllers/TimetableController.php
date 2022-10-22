@@ -32,7 +32,7 @@ class TimetableController extends Application {
     ) {}
 
     public function run(ServerRequestInterface $request) : ResponseInterface {
-        $query = TimetableQuery::fromArray($request->getQueryParams(), $this->locationRepository);
+        $query = BoardQuery::fromArray($request->getQueryParams(), $this->locationRepository);
 
         $station = $query->station;
         if ($station === null) {

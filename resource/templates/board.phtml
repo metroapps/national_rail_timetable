@@ -8,8 +8,6 @@ use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\NationalRailTimetable\Views\BoardFormView;
 use Miklcct\NationalRailTimetable\Views\BoardView;
 use Miklcct\NationalRailTimetable\Views\ServiceView;
-use Safe\DateTimeImmutable;
-use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\NationalRailTimetable\Views\show_time;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
@@ -27,86 +25,17 @@ use function Miklcct\ThinPhpApp\Escaper\html;
     <body>
         <button id="go_to_top">🔝</button>
 <?php
-if ($this->errorMessage !== null) {
-?>
-        <p class="error"><?= html($this->errorMessage) ?></p>
-<?php
-}
-?>
-        <form action="index.php" method="GET">
-            <datalist id="stations">
-<?php
-foreach ($this->stations as $station) {
-?>
-                <option value="<?= html($station->getCrsCode()) ?>"><?= html($station->name) ?></option>
-<?php
-}
-?>
-            </datalist>
-            <p>
-                Show 
-<?php
-foreach (['departures', 'arrivals'] as $mode) {
-?>
-                <label>
-                    <input type="radio" name="mode" value="<?= html($mode) ?>" <?= ($this->getFormData()['mode'] ?? 'departures') === $mode ? 'checked = "checked"' : ''?>/>
-                    <?= html($mode) ?>
-                </label>
-<?php
-}
-?>
-                <label>at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($this->getFormData()['station'] ?? null)?>"/></label><br/>
-                <label>only trains calling at (optional): <input autocomplete="off" list="stations" type="text" name="filter" size="32" value="<?= html($this->getFormData()['filter'] ?? null) ?>"/></label><br/>
-                <label>on (leave empty for today)
-                    <input type="date"
-                        name="date"
-                        value="<?= html($this->getFormData()['date'] ?? null) ?>"
-                        min="<?= html((new DateTimeImmutable('-7 days'))->format('Y-m-d')) ?>"
-                        max="<?= html((new DateTimeImmutable('+180 days'))->format('Y-m-d')) ?>" 
-                    />
-                </label>
-            </p>
-            <p>
-                <label>Show valid connections at:
-                    <input
-                        type="datetime-local"
-                        name="connecting_time"
-                        value="<?= html($this->getFormData()['connecting_time'] ?? null) ?>"
-                        min="<?= html(substr((new DateTimeImmutable('today -7 days'))->format('c'), 0, 16)) ?>"
-                        max="<?= html(substr((new DateTimeImmutable('today +181 days'))->format('c'), 0, 16)) ?>"
-                    />
-                </label>
-                <label>from TOC:
-                    <select name="connecting_toc">
-                        <option></option>
-<?php
-foreach (get_all_tocs() as $code => $name) {
-?>
-                        <option value="<?= html($code) ?>" <?=
-                            $code === ($this->getFormData()['connecting_toc'] ?? null) ? 'selected="selected"' : ''
-                        ?>><?= html($name) ?></option>
-<?php
-}
-?>
-                    </select>
-                </label>
-            </p>
-            <p>
-                <label>Show permanent timetable instead of actual timetable: <input type="checkbox" name="permanent_only" value="1" <?= !empty($this->getFormData()['permanent_only']) ? 'checked="checked"' : '' ?>/></label><br/>
-            </p>
-            <p>
-                <input type="submit" />
-            </p>
-        </form>
-<?php
+require __DIR__ . '/form.phtml';
+
 if ($this instanceof BoardView) {
     $view = $this;
 ?>  
         <h1><?= html($this->getHeading()) ?></h1>
 <?php
     $query = $this->query;
-    if ($query->filter !== null) {
+    if (count($query->filter) === 1) {
 ?>
+
         <p><a href="<?= $this->getReverseDirectionLink() ?>">Show return departure board</a></p>
 <?php
     }
@@ -257,7 +186,7 @@ if ($this instanceof BoardView) {
         $overtaken_portions = array_combine(
             $portion_uids
             , array_map(
-                fn(string $uid) : bool => $query->filter !== null ? $view->board->isOvertaken($service_call, $query->filter->getCrsCode(), $uid) : false
+                fn(string $uid) : bool => count($query->filter) === 1 ? $view->board->isOvertaken($service_call, $query->filter[0]->getCrsCode(), $uid) : false
                 , $portion_uids
             )
         );
@@ -298,7 +227,7 @@ if ($this instanceof BoardView) {
                                     $link = $view->getArrivalLink($service_call);
                                     return sprintf(
                                         $link === null ? '<span class="%1$s">%3$s (%4$s%5$s)</span>' : '<span class="%s"><a href="%s">%s</a> (%s%s)</span>'
-                                        , $station instanceof LocationWithCrs && $station->getCrsCode() === $view->query->filter?->getCrsCode() ? 'destination' : ''
+                                        , $station instanceof LocationWithCrs && in_array($station->getCrsCode(), array_map(static fn(LocationWithCrs $destination) => $destination->getCrsCode(), $view->query->filter), true) ? 'destination' : ''
                                         , html($link)
                                         , html($station->getShortName())
                                         , show_time($service_call->timestamp, $view->boardDate)

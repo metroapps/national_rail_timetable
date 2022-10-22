@@ -10,6 +10,7 @@ use Miklcct\NationalRailTimetable\Enums\TimeType;
 use Miklcct\NationalRailTimetable\Exceptions\StationNotFound;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\FixedLink;
+use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\NationalRailTimetable\Models\Time;
 use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
@@ -40,11 +41,12 @@ class BoardController extends Application {
         try {
             $query = BoardQuery::fromArray($request->getQueryParams(), $this->locationRepository);
             $station = $query->station;
-            $destination = $query->filter;
+            $destinations = $query->filter;
         } catch (StationNotFound $e) {
             return ($this->viewResponseFactory)(
                 new BoardFormView(
                     $this->streamFactory
+                    , new BoardQuery()
                     , $this->locationRepository->getAllStations()
                     , $e->getMessage()
                 )
@@ -55,6 +57,7 @@ class BoardController extends Application {
             return ($this->viewResponseFactory)(
                 new BoardFormView(
                     new StreamFactory()
+                    , $query
                     , $this->locationRepository->getAllStations()
                 )
             )->withAddedHeader('Cache-Control', ['public', 'max-age=604800']);
@@ -73,8 +76,13 @@ class BoardController extends Application {
             , $to
             , $arrival_mode ? TimeType::PUBLIC_ARRIVAL : TimeType::PUBLIC_DEPARTURE
         );
-        if ($destination !== null) {
-            $board = $board->filterByDestination($destination->getCrsCode());
+        if ($destinations !== []) {
+            $board = $board->filterByDestination(
+                array_map(
+                    static fn(LocationWithCrs $destination) => $destination->getCrsCode()
+                    , $destinations
+                )
+            );
         }
 
         /** @var FixedLink[] $fixed_links */
@@ -90,7 +98,7 @@ class BoardController extends Application {
                 $arrival_time = $fixed_link->getArrivalTime($fixed_link_departure_time, $arrival_mode);
                 $existing = $fixed_links[$fixed_link->destination->crsCode] ?? null;
                 if (
-                    ($destination === null || $destination->getCrsCode() === $fixed_link->destination->crsCode)
+                    ($destinations === null || $destinations->getCrsCode() === $fixed_link->destination->crsCode)
                     && $arrival_time !== null
                     && (
                         !$existing 

@@ -101,14 +101,11 @@ class DepartureBoard implements Persistable {
     /**
      * Filter the departure board by preceding / subsequent calls
      *
-     * @param string|string[] $filter_crs
+     * @param string[] $filter_crs
      * @param bool $truncate
      * @return static
      */
-    public function filterByDestination(array|string $filter_crs, bool $truncate = false) : static {
-        if (!is_array($filter_crs)) {
-            $filter_crs = (array)$filter_crs;
-        }
+    public function filterByDestination(array $filter_crs, bool $truncate = false) : static {
         $filter = static function (ServiceCallWithDestination $filter_call) use ($filter_crs) : bool {
             $location = $filter_call->call->location;
             return $location instanceof LocationWithCrs && in_array($location->getCrsCode(), $filter_crs, true);

@@ -5,6 +5,7 @@ namespace Miklcct\NationalRailTimetable\Views;
 
 use DateInterval;
 use DateTimeImmutable;
+use LogicException;
 use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\DepartureBoard;
@@ -13,6 +14,8 @@ use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\ServiceCall;
 use Psr\Http\Message\StreamFactoryInterface;
+use function array_map;
+use function implode;
 use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
@@ -32,12 +35,12 @@ class BoardView extends BoardFormView {
         , array $stations
         , protected readonly DepartureBoard $board
         , protected readonly Date $boardDate
-        , protected readonly BoardQuery $query
+        , BoardQuery $query
         , protected readonly ?array $fixedLinks
         , protected readonly ?DateTimeImmutable $fixedLinkDepartureTime
         , protected readonly ?Date $generated
     ) {
-        parent::__construct($streamFactory, $stations);
+        parent::__construct($streamFactory, $query, $stations);
     }
 
     protected function getTitle() : string {
@@ -45,8 +48,11 @@ class BoardView extends BoardFormView {
             '%s at %s %s %s%s'
             , $this->query->arrivalMode ? 'Arrivals' : 'Departures'
             , $this->query->station->name
-            , $this->query->filter !== null
-                ? ($this->query->arrivalMode ? ' from ' : ' to ') . $this->query->filter->name
+            , $this->query->filter !== []
+                ? ($this->query->arrivalMode ? ' from ' : ' to ') . implode(
+                    ', '
+                    , array_map(static fn(Location $location) => $location->name, $this->query->filter)
+                )
                 : ''
             , $this->query->date === null ? 'today' : 'on ' . $this->boardDate
             , $this->query->permanentOnly ? ' (permanent timetable)' : ''
@@ -59,8 +65,14 @@ class BoardView extends BoardFormView {
         $result = ($this->query->arrivalMode ? 'Arrivals at ' : 'Departures at ') . $this->getNameAndCrs($location);
 
         $filter = $this->query->filter;
-        if ($filter instanceof Location) {
-            $result .= ' calling at ' . $this->getNameAndCrs($filter);
+        if ($filter !== []) {
+            $result .= ' calling at ' . implode(
+                ', '
+                , array_map(
+                    fn(Location $location) => $this->getNameAndCrs($location)
+                    , $filter
+                )
+            );
         }
         $result .= ' ';
         $result .= $this->query->date === null ? 'today' : 'on ' . $this->boardDate;
@@ -79,7 +91,7 @@ class BoardView extends BoardFormView {
             new BoardQuery(
                 $this->query->arrivalMode
                 , $fixed_link->destination
-                , null
+                , []
                 , $this->query->connectingTime !== null
                     ? Date::fromDateTimeInterface($this->query->connectingTime->sub(new DateInterval($this->query->arrivalMode ? 'PT4H30M' : 'P0D')))
                     : $this->boardDate
@@ -89,7 +101,7 @@ class BoardView extends BoardFormView {
                 , null
                 , $this->query->permanentOnly
             )
-        )->getUrl();
+        )->getUrl(BoardQuery::BOARD_URL);
     }
 
     protected function getFormData(): array {
@@ -105,13 +117,13 @@ class BoardView extends BoardFormView {
             new BoardQuery(
                 $this->query->arrivalMode
                 , $location
-                , null
+                , []
                 , Date::fromDateTimeInterface($service_call->timestamp->sub(new DateInterval($this->query->arrivalMode ? 'PT4H30M' : 'P0D')))
                 , $service_call->timestamp
                 , $service_call->toc
                 , $this->query->permanentOnly
             )
-        )->getUrl();
+        )->getUrl(BoardQuery::BOARD_URL);
     }
 
     protected function getDayOffsetLink(int $days) : string {
@@ -123,7 +135,7 @@ class BoardView extends BoardFormView {
             , $this->query->connectingTime
             , $this->query->connectingToc
             , $this->query->permanentOnly
-        ))->getUrl();
+        ))->getUrl(BoardQuery::BOARD_URL);
     }
 
     protected function showToc(string $toc) : string {
@@ -135,14 +147,17 @@ class BoardView extends BoardFormView {
     }
 
     protected function getReverseDirectionLink() : string {
+        if (count($this->query->filter) !== 1) {
+            throw new LogicException('Reversing is only allowed when filter count is exactly 1.');
+        }
         return (new BoardQuery(
             $this->query->arrivalMode
-            , $this->query->filter
-            , $this->query->station
+            , $this->query->filter[0]
+            , [$this->query->station]
             , $this->query->date
             , null
             , null
             , $this->query->permanentOnly
-        ))->getUrl();
+        ))->getUrl(BoardQuery::BOARD_URL);
     }
 }

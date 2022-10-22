@@ -1,0 +1,89 @@
+<?php
+declare(strict_types = 1);
+
+use Miklcct\NationalRailTimetable\Views\BoardFormView;
+use Miklcct\NationalRailTimetable\Views\TimetableView;
+use function Miklcct\NationalRailTimetable\get_all_tocs;
+use function Miklcct\ThinPhpApp\Escaper\html;
+
+/** @var BoardFormView|TimetableView $this */
+if ($this->errorMessage !== null) {
+?>
+<p class="error"><?= html($this->errorMessage) ?></p>
+<?php
+}
+?>
+<form action="index.php" method="GET">
+    <datalist id="stations">
+<?php
+foreach ($this->stations as $station) {
+?>
+        <option value="<?= html($station->getCrsCode()) ?>"><?= html($station->name) ?></option>
+<?php
+}
+?>
+    </datalist>
+    <p>
+        Show
+<?php
+foreach (['departures', 'arrivals'] as $mode) {
+?>
+        <label>
+            <input type="radio" name="mode" value="<?= html($mode) ?>" <?= ($this->query->toArray()['mode'] ?? 'departures') === $mode ? 'checked = "checked"' : ''?>/>
+            <?= html($mode) ?>
+        </label>
+<?php
+}
+?>
+        <label>at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="26" value="<?= html($this->query->toArray()['station'] ?? null)?>"/></label><br/>
+        <label>only trains calling at (optional):
+<?php
+for ($i = 0; $i < 5; ++$i) {
+?>
+            <input autocomplete="off" list="stations" type="text" name="filter[]" size="3" value="<?= html($this->query->toArray()['filter'][$i] ?? null) ?>"/>
+<?php
+}
+?>
+        </label><br/>
+        <label>on (leave empty for today)
+            <input type="date"
+                   name="date"
+                   value="<?= html($this->query->toArray()['date'] ?? null) ?>"
+                   min="<?= html((new DateTimeImmutable('-7 days'))->format('Y-m-d')) ?>"
+                   max="<?= html((new DateTimeImmutable('+180 days'))->format('Y-m-d')) ?>"
+            />
+        </label>
+    </p>
+    <p>
+        <label>Show valid connections at:
+            <input
+                type="datetime-local"
+                name="connecting_time"
+                value="<?= html($this->query->toArray()['connecting_time'] ?? null) ?>"
+                min="<?= html(substr((new DateTimeImmutable('today -7 days'))->format('c'), 0, 16)) ?>"
+                max="<?= html(substr((new DateTimeImmutable('today +181 days'))->format('c'), 0, 16)) ?>"
+            />
+        </label>
+        <label>from TOC:
+            <select name="connecting_toc">
+                <option></option>
+<?php
+foreach (get_all_tocs() as $code => $name) {
+?>
+                <option value="<?= html($code) ?>" <?=
+                $code === ($this->query->toArray()['connecting_toc'] ?? null) ? 'selected="selected"' : ''
+                ?>><?= html($name) ?></option>
+<?php
+}
+?>
+            </select>
+        </label>
+    </p>
+    <p>
+        <label>Show permanent timetable instead of actual timetable: <input type="checkbox" name="permanent_only" value="1" <?= !empty($this->query->toArray()['permanent_only']) ? 'checked="checked"' : '' ?>/></label><br/>
+    </p>
+    <p>
+        <button type="submit">Show board</button>
+        <button type="submit" formaction="timetable.php">Show timetable</button>
+    </p>
+</form>
