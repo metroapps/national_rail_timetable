@@ -4,18 +4,25 @@ declare(strict_types = 1);
 namespace Miklcct\NationalRailTimetable\Views;
 
 use Miklcct\NationalRailTimetable\Models\Date;
+use Miklcct\NationalRailTimetable\Models\DepartureBoard;
 use Miklcct\NationalRailTimetable\Models\Location;
-use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
-use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestinationAndCalls;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 
 class TimetableView extends PhpTemplate {
+
+    /**
+     * @param StreamFactoryInterface $streamFactory
+     * @param Location $station
+     * @param Date $date
+     * @param DepartureBoard $boards
+     * @param array $filterCrs
+     */
     public function __construct(
         StreamFactoryInterface $streamFactory
         , protected readonly Location $station
         , protected readonly Date $date
-        , protected readonly array $timetables
+        , protected readonly array $boards
         , protected readonly array $filterCrs
     ) {
         parent::__construct($streamFactory);
@@ -23,73 +30,5 @@ class TimetableView extends PhpTemplate {
 
     protected function getPathToTemplate(): string {
         return __DIR__ . '/../../resource/templates/timetable.phtml';
-    }
-
-    protected function getGroupFirstCalls(array $timetable) : array {
-        ['stations' => $stations, 'calls' => $calls] = $timetable;
-        return array_values(
-            array_unique(
-                array_map(
-                    static fn(Location $location) => $location->getShortName()
-                    // filter the stations
-                    , array_filter(
-                        array_slice($stations, 1)
-                        , static fn(Location $location) 
-                            // which have a service
-                            => array_filter(
-                                $calls[0]
-                                , static fn(ServiceCallWithDestinationAndCalls $call) =>
-                                    // calling at the location specified
-                                    array_filter(
-                                        $call->subsequentCalls
-                                        , static fn(ServiceCallWithDestination $subsequent_call) =>
-                                            $subsequent_call->call->location->crsCode === $location->crsCode
-                                            // which is the first call
-                                            && array_filter(
-                                                $call->subsequentCalls
-                                                , static fn(ServiceCallWithDestination $further_call) =>
-                                                    array_intersect_key($subsequent_call->destinations, $further_call->destinations)
-                                                    && $further_call->timestamp < $subsequent_call->timestamp
-                                            ) === []
-                                    ) !== []
-                            ) !== []
-                    )
-                )
-            )
-        );
-    }
-
-    protected function getGroupDestinations(array $timetable) : array {
-        ['stations' => $stations, 'calls' => $calls] = $timetable;
-        return array_values(
-            array_unique(
-                array_map(
-                    static fn(Location $location) => $location->getShortName()
-                    // filter the stations
-                    , array_filter(
-                        array_slice($stations, 1)
-                        , static fn(Location $location) 
-                            // which doesn't have a service
-                            => array_filter(
-                                $calls[0]
-                                , static fn(ServiceCallWithDestinationAndCalls $call) =>
-                                    // calling at the location specified
-                                    array_filter(
-                                        $call->subsequentCalls
-                                        , static fn(ServiceCallWithDestination $subsequent_call) =>
-                                            $subsequent_call->call->location->crsCode === $location->crsCode
-                                            // and have further calls beyond it
-                                            && array_filter(
-                                                $call->subsequentCalls
-                                                , static fn(ServiceCallWithDestination $further_call) =>
-                                                    array_intersect_key($subsequent_call->destinations, $further_call->destinations)
-                                                    && $further_call->timestamp > $subsequent_call->timestamp
-                                            ) !== []
-                                    ) !== []
-                            ) === []
-                    )
-                )
-            )
-        );
     }
 }

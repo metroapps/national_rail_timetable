@@ -1,15 +1,14 @@
 <?php
 declare(strict_types=1);
 
-use Miklcct\NationalRailTimetable\Views\BoardFormView;
-use Miklcct\NationalRailTimetable\Views\BoardView;
-use Miklcct\NationalRailTimetable\Models\FixedLink;
 use Miklcct\NationalRailTimetable\Enums\Activity;
-use Miklcct\NationalRailTimetable\Models\Station;
+use Miklcct\NationalRailTimetable\Models\FixedLink;
 use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
+use Miklcct\NationalRailTimetable\Models\Station;
+use Miklcct\NationalRailTimetable\Views\BoardFormView;
+use Miklcct\NationalRailTimetable\Views\BoardView;
 use Safe\DateTimeImmutable;
-
 use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\NationalRailTimetable\Views\show_time;
 use function Miklcct\ThinPhpApp\Escaper\html;
@@ -17,7 +16,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
 /** @var BoardFormView $this */
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <link rel="stylesheet" href="common.css" />
         <link rel="stylesheet" href="board.css" />
@@ -272,7 +271,7 @@ if ($this instanceof BoardView) {
                     ?> <?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>">
                         <?= 
                             show_time($timestamp, $this->boardDate, $this->getServiceLink($service_call))
-                            . (in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? '<abbr title="request stop">x</abbr>' : '')
+                            . (in_array(Activity::REQUEST_STOP, $service_call->call->activities, true) ? '<abbr title="request stop">x</abbr>' : '')
                         ?>
                     </td>
                     <td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><?= $this->showFacilities($service_call) ?></td>
@@ -302,13 +301,15 @@ if ($this instanceof BoardView) {
                                         , html($link)
                                         , html($station->getShortName())
                                         , show_time($service_call->timestamp, $this->boardDate)
-                                        , in_array(Activity::REQUEST_STOP, $service_call->call->activities) ? '<abbr title="request stop">x</abbr>' : ''
+                                        , in_array(Activity::REQUEST_STOP, $service_call->call->activities, true) ? '<abbr title="request stop">x</abbr>' : ''
                                     );
                                 }
                                 , array_filter(
                                     $this->arrivalMode ? $service_call->precedingCalls : $service_call->subsequentCalls
-                                    , fn(ServiceCallWithDestination $service_call) : bool =>
-                                        in_array($uid, array_keys($this->arrivalMode ? $service_call->origins : $service_call->destinations), true)
+                                    , fn(ServiceCallWithDestination $service_call) : bool => array_key_exists(
+                                    $uid,
+                                    $this->arrivalMode ? $service_call->origins : $service_call->destinations
+                                )
                                 )
                             )
                         )

@@ -10,23 +10,23 @@ use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 use Safe\DateTimeImmutable;
 
 trait QueryTrait {
-    private function getStationFromInput(string $station_input) : ?Location {
-        if ($station_input === '') {
+    private function getQueryStation(string $name_or_crs) : ?Location {
+        if ($name_or_crs === '') {
             return null;
         }
-        $station = $this->locationRepository->getLocationByCrs($station_input)
-            ?? $this->locationRepository->getLocationByName($station_input);
+        $station = $this->locationRepository->getLocationByCrs($name_or_crs)
+            ?? $this->locationRepository->getLocationByName($name_or_crs);
         if ($station?->crsCode === null) {
-            throw new StationNotFound($station_input);
+            throw new StationNotFound($name_or_crs);
         }
         return $station;
     }
 
-    private function getArrivalMode(array $query) : bool {
+    private function getQueryArrivalMode(array $query) : bool {
         return ($query['mode'] ?? '') === 'arrivals';
     }
 
-    private function getDate(array $query) : Date {
+    private function getQueryDate(array $query) : Date {
         return Date::fromDateTimeInterface(new DateTimeImmutable(empty($query['date']) ? 'now' : $query['date']));
     }
 

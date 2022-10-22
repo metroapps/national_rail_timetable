@@ -32,6 +32,11 @@ class ServiceCallWithDestination extends ServiceCall {
         $this->destinations = $destinations;
     }
 
+    public function isInSamePortion(self $other) : bool {
+        return array_intersect_key($this->origins, $other->origins) !== []
+            && array_intersect_key($this->destinations, $other->destinations) !== [];
+    }
+
     /** @var OriginPoint[] */
     #[ElementType(OriginPoint::class)]
     public readonly array $origins;

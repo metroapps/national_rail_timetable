@@ -40,7 +40,7 @@ class BoardController extends Application {
         $query = $request->getQueryParams();
         $self = $request->getServerParams()['PHP_SELF'];
         try {
-            $station = $this->getStationFromInput($query['station'] ?? '');
+            $station = $this->getQueryStation($query['station'] ?? '');
             if ($station === null) {
                 return ($this->viewResponseFactory)(
                     new BoardFormView(
@@ -50,7 +50,7 @@ class BoardController extends Application {
                     )
                 )->withAddedHeader('Cache-Control', ['public', 'max-age=604800']);
             }
-            $destination = $this->getStationFromInput($query['filter'] ?? '');
+            $destination = $this->getQueryStation($query['filter'] ?? '');
         } catch (StationNotFound $e) {
             return ($this->viewResponseFactory)(
                 new BoardFormView(
@@ -62,8 +62,8 @@ class BoardController extends Application {
             )->withStatus(WebDAV::UNPROCESSABLE_ENTITY);
         }
 
-        $arrival_mode = $this->getArrivalMode($query);
-        $date = $this->getDate($query);
+        $arrival_mode = $this->getQueryArrivalMode($query);
+        $date = $this->getQueryDate($query);
         $from = $date->toDateTimeImmutable(new Time(0, 0));
         $to = $date->toDateTimeImmutable(new Time(28, 30));
         $connecting_time = !empty($_GET['connecting_time']) ? new DateTimeImmutable($_GET['connecting_time']) : null;

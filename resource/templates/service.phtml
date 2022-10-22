@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 use Miklcct\NationalRailTimetable\Models\Service;
 use Miklcct\NationalRailTimetable\Views\ServiceView;
-
 use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
@@ -15,7 +14,7 @@ $date = $this->datedService->date;
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <link rel="stylesheet" href="common.css" />
         <link rel="stylesheet" href="board.css" />

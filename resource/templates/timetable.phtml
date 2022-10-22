@@ -1,9 +1,11 @@
 <?php
 declare(strict_types = 1);
 
+use Miklcct\NationalRailTimetable\Models\DepartureBoard;
+use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
+use Miklcct\NationalRailTimetable\Models\Timetable;
 use Miklcct\NationalRailTimetable\Views\TimetableView;
-
 use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\NationalRailTimetable\Views\show_time;
 use function Miklcct\ThinPhpApp\Escaper\html;
@@ -11,7 +13,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
 /** @var TimetableView $this */
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <link rel="stylesheet" href="common.css" />
         <link rel="stylesheet" href="timetable.css" />
@@ -20,10 +22,13 @@ use function Miklcct\ThinPhpApp\Escaper\html;
     <body>
         <h1>Timetable for <?= $this->station->name ?> on <?= $this->date ?></h1>
 <?php
-foreach ($this->timetables as $timetable) {
-    ['stations' => $stations, 'calls' => $calls] = $timetable;
+/** @var DepartureBoard $board */
+foreach ($this->boards as $board) {
+    $timetable = Timetable::generateFromBoard($board);
+    $stations = $timetable->stations;
+    $calls = $timetable->calls;
 
-    $get_colspan = function(array $array, int $i) use ($calls) {
+    $get_colspan = function(array $array, int $i) {
         $call = $array[$i];
         $colspan = 0;
         while (
@@ -36,13 +41,12 @@ foreach ($this->timetables as $timetable) {
         }
         return $colspan;
     }
-    /** @var Location[] $stations */
-    /** @var ServiceCallWithDestination[][] $calls */
 ?>
         <section>
             <h2>Trains 
-                via <?= html(implode(', ', $this->getGroupFirstCalls($timetable))) ?>
-                towards <?= html(implode(', ', $this->getGroupDestinations($timetable))) ?>
+                via <?= html(implode(', ', array_map(static fn(Location $location) => $location->getShortName(), $board->getLocationsOfFirstCall()))) ?>
+                towards <?= html(implode(', ', array_map(static fn(Location $location) => $location->getShortName(), $board->getDestinations())))
+                ?>
             </h2>
             <div class="container">
                 <table>
