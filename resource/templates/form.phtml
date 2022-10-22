@@ -17,7 +17,7 @@ if ($this instanceof ScheduleFormView && $this->errorMessage !== null) {
 
 $query = $this instanceof ScheduleView ? $this->query->toArray() : [];
 ?>
-<form action="index.php" method="GET">
+<form action="board.php" method="GET">
     <datalist id="stations">
 <?php
 foreach ($this->stations as $station) {

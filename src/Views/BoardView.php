@@ -9,7 +9,7 @@ use Miklcct\NationalRailTimetable\Models\DepartureBoard;
 use Psr\Http\Message\StreamFactoryInterface;
 
 class BoardView extends ScheduleView {
-    public const URL = '/index.php';
+    public const URL = '/board.php';
 
     public function __construct(
         StreamFactoryInterface $streamFactory
