@@ -30,12 +30,8 @@ h1 {
     font-size: 1.5rem;
 }
 
-.time, .destination {
+.destination {
     font-weight: bold;
-}
-
-.time {
-    white-space: nowrap;
 }
 
 .overtaken, .overtaken :link {

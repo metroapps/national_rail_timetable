@@ -16,7 +16,7 @@ trait ScheduleTrait {
         return (
         new BoardQuery(
             $this->query->arrivalMode
-            , $fixed_link->destination
+            , $this->query->arrivalMode ? $fixed_link->origin : $fixed_link->destination
             , []
             , $this->query->connectingTime !== null
             ? Date::fromDateTimeInterface(

@@ -14,6 +14,8 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Safe\DateTimeImmutable as SafeDateTimeImmutable;
 use Teapot\StatusCode\Http;
+use function array_map;
+use function in_array;
 use function str_replace;
 
 trait ScheduleTrait {
@@ -31,31 +33,33 @@ trait ScheduleTrait {
         $arrival_mode = $query->arrivalMode;
         $destinations = $query->filter;
         $date = $query->date ?? Date::today();
-        foreach ($this->fixedLinkRepository->get($station->crsCode, null) as $fixed_link) {
-            if ($fixed_link_departure_time !== null) {
-                $arrival_time = $fixed_link->getArrivalTime($fixed_link_departure_time, $arrival_mode);
-                $existing = $fixed_links[$fixed_link->destination->crsCode] ?? null;
-                if (
-                    ($destinations === []
-                        || in_array(
-                            $fixed_link->destination->crsCode,
-                            array_map(static fn(LocationWithCrs $destination) => $destination->getCrsCode(),
-                                $destinations),
-                            true
-                        ))
-                    && $arrival_time !== null
-                    && (
-                        !$existing
-                        || ($arrival_mode ? $arrival_time > $existing->getArrivalTime($fixed_link_departure_time)
-                            : $arrival_time < $existing->getArrivalTime($fixed_link_departure_time))
-                        || $arrival_time == $existing->getArrivalTime($fixed_link_departure_time)
-                        && $fixed_link->priority > $existing->priority
-                    )
-                ) {
-                    $fixed_links[$fixed_link->destination->crsCode] = $fixed_link;
+        foreach ($this->fixedLinkRepository->get($arrival_mode ? null : $station->crsCode, $arrival_mode ? $station->crsCode : null) as $fixed_link) {
+            if ($destinations === [] || in_array(
+                $arrival_mode ? $fixed_link->origin->crsCode : $fixed_link->destination->crsCode
+                , array_map(
+                    static fn(LocationWithCrs $destination) => $destination->getCrsCode()
+                    , $destinations
+                )
+                , true
+            )) {
+                if ($fixed_link_departure_time !== null) {
+                    $arrival_time = $fixed_link->getArrivalTime($fixed_link_departure_time, $arrival_mode);
+                    $existing = $fixed_links[$arrival_mode ? $fixed_link->origin->crsCode : $fixed_link->destination->crsCode] ?? null;
+                    if (
+                        $arrival_time !== null
+                        && (
+                            !$existing
+                            || ($arrival_mode ? $arrival_time > $existing->getArrivalTime($fixed_link_departure_time, true)
+                                : $arrival_time < $existing->getArrivalTime($fixed_link_departure_time))
+                            || $arrival_time == $existing->getArrivalTime($fixed_link_departure_time, $arrival_mode)
+                            && $fixed_link->priority > $existing->priority
+                        )
+                    ) {
+                        $fixed_links[$arrival_mode ? $fixed_link->origin->crsCode : $fixed_link->destination->crsCode] = $fixed_link;
+                    }
+                } elseif ($fixed_link->isActiveOnDate($date)) {
+                    $fixed_links[] = $fixed_link;
                 }
-            } elseif ($fixed_link->isActiveOnDate($date)) {
-                $fixed_links[] = $fixed_link;
             }
         }
 

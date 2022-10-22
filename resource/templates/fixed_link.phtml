@@ -24,7 +24,7 @@ if (!empty($this->fixedLinks)) {
                     ?>
                 </th></tr>
             <tr>
-                <th>Transfer to</th>
+                <th><?= html($query->arrivalMode ? 'Transfer from' : 'Transfer to') ?></th>
                 <th>Mode</th>
                 <th>From</th>
                 <th>To</th>
@@ -53,7 +53,7 @@ if (!empty($this->fixedLinks)) {
                 <tr>
                     <td class="destination">
                         <a href="<?= html($this->getFixedLinkUrl($link, $departure_time ?? null)) ?>">
-                            <?= html($link->destination->getShortName()) ?>
+                            <?= html(($query->arrivalMode ? $link->origin : $link->destination)->getShortName()) ?>
                         </a>
                     </td>
                     <td><?= html($link->mode) ?></td>

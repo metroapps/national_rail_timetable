@@ -50,3 +50,9 @@ footer {
 #nre_logo {
     width: 256px;
 }
+
+.time {
+    font-weight: bold;
+    white-space: nowrap;
+}
+
