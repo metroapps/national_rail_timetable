@@ -27,7 +27,7 @@ class TimetableView extends PhpTemplate {
      */
     public function __construct(
         StreamFactoryInterface $streamFactory
-        , protected readonly LocationWithCrs $station
+        , protected readonly ?LocationWithCrs $station
         , protected readonly Date $date
         , protected readonly array $boards
         , protected readonly BoardQuery $query
@@ -42,6 +42,9 @@ class TimetableView extends PhpTemplate {
     }
 
     protected function getTitle() : string {
+        if ($this->station === null) {
+            return 'Timetable';
+        }
         return sprintf(
             '%s at %s %s %s'
             , $this->query->arrivalMode ? 'Arrivals' : 'Departures'

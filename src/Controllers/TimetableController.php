@@ -4,6 +4,7 @@ declare(strict_types = 1);
 namespace Miklcct\NationalRailTimetable\Controllers;
 
 use Miklcct\NationalRailTimetable\Enums\TimeType;
+use Miklcct\NationalRailTimetable\Exceptions\StationNotFound;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\Time;
@@ -15,7 +16,6 @@ use Miklcct\ThinPhpApp\Response\ViewResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
-use Teapot\HttpException;
 use Teapot\StatusCode\WebDAV;
 
 class TimetableController extends Application {
@@ -32,11 +32,34 @@ class TimetableController extends Application {
     ) {}
 
     public function run(ServerRequestInterface $request) : ResponseInterface {
-        $query = BoardQuery::fromArray($request->getQueryParams(), $this->locationRepository);
+        try {
+            $query = BoardQuery::fromArray($request->getQueryParams(), $this->locationRepository);
+        } catch (StationNotFound $e) {
+            return ($this->viewResponseFactory)(
+                new TimetableView(
+                    $this->streamFactory
+                    , null
+                    , Date::today()
+                    , []
+                    , new BoardQuery()
+                    , $this->locationRepository->getAllStations()
+                    , $e->getMessage()
+                )
+            )->withStatus(WebDAV::UNPROCESSABLE_ENTITY);
+        }
 
         $station = $query->station;
         if ($station === null) {
-            throw new HttpException('A station must be specified.', WebDAV::UNPROCESSABLE_ENTITY);
+            return ($this->viewResponseFactory)(
+                new TimetableView(
+                    $this->streamFactory
+                    , null
+                    , Date::today()
+                    , []
+                    , new $query
+                    , $this->locationRepository->getAllStations()
+                )
+            );
         }
         $date = $query->date ?? Date::today();
         $board = ($this->serviceRepositoryFactory)($query->permanentOnly)->getDepartureBoard(

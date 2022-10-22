@@ -83,7 +83,20 @@ foreach (get_all_tocs() as $code => $name) {
         <label>Show permanent timetable instead of actual timetable: <input type="checkbox" name="permanent_only" value="1" <?= !empty($this->query->toArray()['permanent_only']) ? 'checked="checked"' : '' ?>/></label><br/>
     </p>
     <p>
-        <button type="submit">Show board</button>
+<?php
+if ($this instanceof TimetableView) {
+?>
         <button type="submit" formaction="timetable.php">Show timetable</button>
+<?php
+}
+?>
+        <button type="submit">Show board</button>
+<?php
+if (!$this instanceof TimetableView) {
+?>
+        <button type="submit" formaction="timetable.php">Show timetable</button>
+<?php
+}
+?>
     </p>
 </form>
