@@ -3,9 +3,11 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable\Controllers;
 
+use DateInterval;
 use DateTimeImmutable;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
+use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 use function array_filter;
 use function array_map;
@@ -67,5 +69,17 @@ class BoardQuery {
 
     public function getUrl(string $base_url) : string {
         return $base_url . '?' . http_build_query($this->toArray());
+    }
+
+    public function getFixedLinkDepartureTime() : ?DateTimeImmutable {
+        return isset($this->connectingTime) && $this->station instanceof Station
+            ? $this->arrivalMode
+                ? $this->connectingTime->sub(
+                    new DateInterval(sprintf('PT%dM', $this->station->minimumConnectionTime))
+                )
+                : $this->connectingTime->add(
+                    new DateInterval(sprintf('PT%dM', $this->station->minimumConnectionTime))
+                )
+            : null;
     }
 }

@@ -3,15 +3,12 @@ declare(strict_types = 1);
 
 namespace Miklcct\NationalRailTimetable\Controllers;
 
-use DateInterval;
 use DateTimeZone;
 use Http\Factory\Guzzle\StreamFactory;
 use Miklcct\NationalRailTimetable\Enums\TimeType;
 use Miklcct\NationalRailTimetable\Exceptions\StationNotFound;
 use Miklcct\NationalRailTimetable\Models\Date;
-use Miklcct\NationalRailTimetable\Models\FixedLink;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
-use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\NationalRailTimetable\Models\Time;
 use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
@@ -27,7 +24,7 @@ use Safe\DateTimeImmutable as SafeDateTimeImmutable;
 use Teapot\StatusCode\WebDAV;
 
 class BoardController extends Application {
-    use QueryTrait;
+    use ScheduleTrait;
 
     public function __construct(
         private readonly ViewResponseFactoryInterface $viewResponseFactory
@@ -67,7 +64,6 @@ class BoardController extends Application {
         $date = $query->date ?? Date::today();
         $from = $date->toDateTimeImmutable(new Time(0, 0));
         $to = $date->toDateTimeImmutable(new Time(28, 30));
-        $connecting_time = $query->connectingTime;
         $permanent_only = $query->permanentOnly;
         $service_repository = ($this->serviceRepositoryFactory)($permanent_only);
         $board = $service_repository->getDepartureBoard(
@@ -85,44 +81,6 @@ class BoardController extends Application {
             );
         }
 
-        /** @var FixedLink[] $fixed_links */
-        $fixed_links = [];
-        $fixed_link_departure_time 
-            = isset($connecting_time) && $station instanceof Station 
-                ? $arrival_mode 
-                    ? $connecting_time->sub(new DateInterval(sprintf('PT%dM', $station->minimumConnectionTime))) 
-                    : $connecting_time->add(new DateInterval(sprintf('PT%dM', $station->minimumConnectionTime))) 
-                : null;
-        foreach ($this->fixedLinkRepository->get($station->crsCode, null) as $fixed_link) {
-            if ($fixed_link_departure_time !== null) {
-                $arrival_time = $fixed_link->getArrivalTime($fixed_link_departure_time, $arrival_mode);
-                $existing = $fixed_links[$fixed_link->destination->crsCode] ?? null;
-                if (
-                    ($destinations === [] || in_array($fixed_link->destination->crsCode, array_map(static fn(LocationWithCrs $destination) => $destination->getCrsCode(), $destinations), true))
-                    && $arrival_time !== null
-                    && (
-                        !$existing 
-                        || ($arrival_mode ? $arrival_time > $existing->getArrivalTime($fixed_link_departure_time) : $arrival_time < $existing->getArrivalTime($fixed_link_departure_time)) 
-                        || $arrival_time == $existing->getArrivalTime($fixed_link_departure_time) && $fixed_link->priority > $existing->priority
-                    )
-                ) {
-                    $fixed_links[$fixed_link->destination->crsCode] = $fixed_link;
-                }
-            } elseif ($fixed_link->isActiveOnDate($date)) {
-                $fixed_links[] = $fixed_link;
-            }
-        }
-
-        usort(
-            $fixed_links
-            , static fn(FixedLink $a, FixedLink $b) =>
-                $a->origin->crsCode === $b->origin->crsCode 
-                    ? $a->destination->crsCode === $b->destination->crsCode 
-                        ? $a->startTime->toHalfMinutes() <=> $b->startTime->toHalfMinutes() 
-                        : $a->destination->crsCode <=> $b->destination->crsCode 
-                    : $a->origin->crsCode <=> $b->origin->crsCode
-        );
-
         $response = ($this->viewResponseFactory)(
             new BoardView(
                 new StreamFactory()
@@ -130,8 +88,7 @@ class BoardController extends Application {
                 , $board
                 , $date
                 , $query
-                , $fixed_links
-                , $fixed_link_departure_time
+                , $this->getFixedLinks($query)
                 , $service_repository->getGeneratedDate()
             )
         )->withAddedHeader('Cache-Control', ['public']);

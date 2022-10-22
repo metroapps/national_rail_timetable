@@ -72,71 +72,7 @@ if ($this instanceof BoardView) {
         </table>
 <?php
         }
-
-        if (!empty($this->fixedLinks)) {
-?>
-        <table>
-            <thead>
-                <tr><th colspan="6">
-                    Fixed links 
-                    <?= html(
-                        $this->fixedLinkDepartureTime !== null 
-                        ? 'as of ' . $this->fixedLinkDepartureTime->format('Y-m-d H:i') 
-                        : 'on ' . $this->boardDate) 
-                    ?>
-                </th></tr>
-                <tr>
-                    <th>Transfer to</th>
-                    <th>Mode</th>
-                    <th>From</th>
-                    <th>To</th>
-                    <th>Minutes</th>
-<?php
-            if ($this->fixedLinkDepartureTime !== null) {
-?>
-                    <th><?= $query->arrivalMode ? 'Departure' : 'Arrival' ?></th>
-<?php
-            }
-?>
-                </tr>
-            </thead>
-            <tbody>
-<?php
-            foreach ($this->fixedLinks as $link) {
-                if ($this->fixedLinkDepartureTime) {
-                    $kgx_hack = $station->crsCode === 'KGX' && $link->destination->crsCode === 'STP'
-                        || $station->crsCode === 'STP' && $link->destination->crsCode === 'KGX';
-                    $departure_time = $kgx_hack && $query->connectingTime !== null
-                        ? $query->arrivalMode ? $query->connectingTime->sub(new DateInterval('PT5M')) : $query->connectingTime->add(new DateInterval('PT5M'))
-                        : $this->fixedLinkDepartureTime;
-                    $arrival_time = $link->getArrivalTime($departure_time, $query->arrivalMode);
-                }
-?>
-                <tr>
-                    <td class="destination">
-                        <a href="<?= html($this->getFixedLinkUrl($link, $departure_time ?? null)) ?>">
-                            <?= html($link->destination->getShortName()) ?>
-                        </a>
-                    </td>
-                    <td><?= html($link->mode) ?></td>
-                    <td><?= html($link->startTime) ?></td>
-                    <td><?= html($link->endTime) ?></td>
-                    <td><?= html($link->transferTime) ?></td>
-<?php
-                if ($this->fixedLinkDepartureTime !== null) {
-?>
-                    <td class="time"><?= show_time($arrival_time, $this->boardDate) ?></td>
-<?php
-                }
-?>
-                </tr>
-<?php
-            }
-?>
-            </tbody>
-        </table>
-<?php
-        }
+        require __DIR__ . '/fixed_link.phtml';
     }
 ?>
         <table>
@@ -191,7 +127,7 @@ if ($this instanceof BoardView) {
             )
         );
         $whole_train_overtaken = !in_array(false, $overtaken_portions, true);
-        $day_offset = $timestamp->setTime(0, 0)->diff($this->boardDate->toDateTimeImmutable())->days;
+        $day_offset = $timestamp->setTime(0, 0)->diff($this->date->toDateTimeImmutable())->days;
 ?>
                 <tr data-timestamp="<?= html($timestamp->getTimestamp()) ?>">
                     <td class="time <?= 
@@ -200,7 +136,7 @@ if ($this instanceof BoardView) {
                             : ($service_call->isValidConnection($query->connectingTime, $this->connectingToc ?? null) ? 'valid_connection' : 'invalid_connection')
                     ?> <?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>">
                         <?= 
-                            show_time($timestamp, $this->boardDate, ServiceView::getServiceUrl($service_call->uid, $service_call->date, $query->permanentOnly))
+                            show_time($timestamp, $this->date, ServiceView::getServiceUrl($service_call->uid, $service_call->date, $query->permanentOnly))
                             . (in_array(Activity::REQUEST_STOP, $service_call->call->activities, true) ? '<abbr title="request stop">x</abbr>' : '')
                         ?>
                     </td>
@@ -230,7 +166,7 @@ if ($this instanceof BoardView) {
                                         , $station instanceof LocationWithCrs && in_array($station->getCrsCode(), array_map(static fn(LocationWithCrs $destination) => $destination->getCrsCode(), $view->query->filter), true) ? 'destination' : ''
                                         , html($link)
                                         , html($station->getShortName())
-                                        , show_time($service_call->timestamp, $view->boardDate)
+                                        , show_time($service_call->timestamp, $view->date)
                                         , in_array(Activity::REQUEST_STOP, $service_call->call->activities, true) ? '<abbr title="request stop">x</abbr>' : ''
                                     );
                                 }

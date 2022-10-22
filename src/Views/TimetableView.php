@@ -15,7 +15,9 @@ use function implode;
 use function sprintf;
 
 class TimetableView extends PhpTemplate {
+    use ScheduleTrait;
 
+    public const URL = '/timetable.php';
     /**
      * @param StreamFactoryInterface $streamFactory
      * @param LocationWithCrs $station
@@ -32,6 +34,7 @@ class TimetableView extends PhpTemplate {
         , protected readonly array $boards
         , protected readonly BoardQuery $query
         , protected readonly array $stations
+        , protected readonly ?array $fixedLinks
         , protected readonly ?string $errorMessage = null
     ) {
         parent::__construct($streamFactory);

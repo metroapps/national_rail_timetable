@@ -4,7 +4,6 @@ declare(strict_types = 1);
 namespace Miklcct\NationalRailTimetable\Views;
 
 use DateInterval;
-use DateTimeImmutable;
 use LogicException;
 use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
 use Miklcct\NationalRailTimetable\Models\Date;
@@ -20,24 +19,25 @@ use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 class BoardView extends BoardFormView {
+    use ScheduleTrait;
+
+    public const URL = '/index.php';
     /**
      * @param StreamFactoryInterface $streamFactory
      * @param array $stations
      * @param DepartureBoard $board
-     * @param Date $boardDate
+     * @param Date $date
      * @param BoardQuery $query
      * @param FixedLink[]|null $fixedLinks
-     * @param DateTimeImmutable|null $fixedLinkDepartureTime
      * @param Date|null $generated
      */
     public function __construct(
         StreamFactoryInterface $streamFactory
         , array $stations
         , protected readonly DepartureBoard $board
-        , protected readonly Date $boardDate
+        , protected readonly Date $date
         , BoardQuery $query
         , protected readonly ?array $fixedLinks
-        , protected readonly ?DateTimeImmutable $fixedLinkDepartureTime
         , protected readonly ?Date $generated
     ) {
         parent::__construct($streamFactory, $query, $stations);
@@ -54,7 +54,7 @@ class BoardView extends BoardFormView {
                     , array_map(static fn(Location $location) => $location->name, $this->query->filter)
                 )
                 : ''
-            , $this->query->date === null ? 'today' : 'on ' . $this->boardDate
+            , $this->query->date === null ? 'today' : 'on ' . $this->date
             , $this->query->permanentOnly ? ' (permanent timetable)' : ''
         );
     }
@@ -75,7 +75,7 @@ class BoardView extends BoardFormView {
             );
         }
         $result .= ' ';
-        $result .= $this->query->date === null ? 'today' : 'on ' . $this->boardDate;
+        $result .= $this->query->date === null ? 'today' : 'on ' . $this->date;
         return $result;
     }
 
@@ -84,24 +84,6 @@ class BoardView extends BoardFormView {
             return $location->name;
         }
         return sprintf('%s (%s)', $location->name, $location->getCrsCode());
-    }
-
-    protected function getFixedLinkUrl(FixedLink $fixed_link, ?DateTimeImmutable $departure_time) : string {
-        return (
-            new BoardQuery(
-                $this->query->arrivalMode
-                , $fixed_link->destination
-                , []
-                , $this->query->connectingTime !== null
-                    ? Date::fromDateTimeInterface($this->query->connectingTime->sub(new DateInterval($this->query->arrivalMode ? 'PT4H30M' : 'P0D')))
-                    : $this->boardDate
-                , $departure_time === null
-                    ? null
-                    : $fixed_link->getArrivalTime($departure_time, $this->query->arrivalMode)
-                , null
-                , $this->query->permanentOnly
-            )
-        )->getUrl(BoardQuery::BOARD_URL);
     }
 
     protected function getFormData(): array {
@@ -131,7 +113,7 @@ class BoardView extends BoardFormView {
             $this->query->arrivalMode
             , $this->query->station
             , $this->query->filter
-            , $this->boardDate->addDays($days)
+            , $this->date->addDays($days)
             , $this->query->connectingTime
             , $this->query->connectingToc
             , $this->query->permanentOnly

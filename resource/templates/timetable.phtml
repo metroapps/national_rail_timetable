@@ -37,6 +37,11 @@ if ($this->station !== null) {
         <p id="permanent_warning">Warning: Permanent timetable instead of actual timetable shown</p>
 <?php
     }
+
+    if ($this->fixedLinks !== []) {
+        require __DIR__ . '/fixed_link.phtml';
+    }
+
     /** @var DepartureBoard $board */
     foreach ($this->boards as $board) {
         $timetable = Timetable::generateFromBoard($board);

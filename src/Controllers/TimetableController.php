@@ -8,6 +8,7 @@ use Miklcct\NationalRailTimetable\Exceptions\StationNotFound;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\Time;
+use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
 use Miklcct\NationalRailTimetable\Views\TimetableView;
@@ -19,7 +20,7 @@ use Psr\Http\Message\StreamFactoryInterface;
 use Teapot\StatusCode\WebDAV;
 
 class TimetableController extends Application {
-    use QueryTrait;
+    use ScheduleTrait;
 
     // this number must be greater than the maximum number of calls for a train
     private const MULTIPLIER = 1000;
@@ -29,6 +30,7 @@ class TimetableController extends Application {
         , private readonly StreamFactoryInterface $streamFactory
         , private readonly ServiceRepositoryFactoryInterface $serviceRepositoryFactory
         , private readonly LocationRepositoryInterface $locationRepository
+        , private readonly FixedLinkRepositoryInterface $fixedLinkRepository
     ) {}
 
     public function run(ServerRequestInterface $request) : ResponseInterface {
@@ -43,6 +45,8 @@ class TimetableController extends Application {
                     , []
                     , new BoardQuery()
                     , $this->locationRepository->getAllStations()
+                    , []
+                    , null
                     , $e->getMessage()
                 )
             )->withStatus(WebDAV::UNPROCESSABLE_ENTITY);
@@ -58,6 +62,8 @@ class TimetableController extends Application {
                     , []
                     , new $query
                     , $this->locationRepository->getAllStations()
+                    , []
+                    , null
                 )
             );
         }
@@ -84,6 +90,7 @@ class TimetableController extends Application {
                 , $board->groupServices()
                 , $query
                 , $this->locationRepository->getAllStations()
+                , $this->getFixedLinks($query)
             )
         );
     }
