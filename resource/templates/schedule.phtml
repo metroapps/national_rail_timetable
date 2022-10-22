@@ -1,0 +1,78 @@
+<?php
+declare(strict_types=1);
+
+use Miklcct\NationalRailTimetable\Models\Station;
+use Miklcct\NationalRailTimetable\Views\ScheduleView;
+use Miklcct\NationalRailTimetable\Views\ViewMode;
+use function Miklcct\ThinPhpApp\Escaper\html;
+
+/** @var ScheduleView $this */
+?>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link rel="stylesheet" href="common.css" />
+        <link rel="stylesheet" href="<?= html($this->getViewMode() === ViewMode::TIMETABLE ? 'timetable.css' : 'board.css')?>" />
+        <title><?= html($this->getTitle()) ?></title>
+        <script defer="defer" src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
+        <script defer="defer" src="board.js"></script>
+    </head>
+    <body>
+        <button id="go_to_top">🔝</button>
+<?php
+require __DIR__ . '/form.phtml';
+
+if ($this instanceof ScheduleView) {
+    $view = $this;
+?>  
+        <h1><?= html($this->getHeading()) ?></h1>
+<?php
+    $query = $this->query;
+    if (count($query->filter) === 1) {
+?>
+
+        <p><a href="<?= $this->getReverseDirectionLink() ?>">Show return departure board</a></p>
+<?php
+    }
+    if ($query->permanentOnly) {
+?>
+        <p id="permanent_warning">Warning: Permanent timetable instead of actual timetable shown</p>
+<?php
+    }
+    $station = $query->station;
+    if ($station instanceof Station) {
+?>
+        <p>Minimum connection time is <span class="time"><?= html(
+                    $station->minimumConnectionTime . ($station->minimumConnectionTime === 1 ? ' minute' : ' minutes')) ?></span><?= $station->tocConnectionTimes === [] ? '.' : ', with the exception of the following:' ?></p>
+<?php
+        if ($station->tocConnectionTimes !== []) {
+?>
+        <table>
+            <thead>
+                <tr><th>From</th><th>To</th><th>Minutes</th></tr>
+            </thead>
+            <tbody>
+<?php
+            foreach ($station->tocConnectionTimes as $entry) {
+?>
+                <tr>
+                    <td><?= $this->showToc($entry->arrivingToc) ?></td>
+                    <td><?= $this->showToc($entry->departingToc) ?></td>
+                    <td><?= html($entry->connectionTime) ?></td>
+                </tr>
+<?php
+            }
+?>
+            </tbody>
+        </table>
+<?php
+        }
+        (function () {require __DIR__ . '/fixed_link.phtml';})();
+    }
+    $include_path = $this->getIncludePath();
+    (function () use ($include_path) {require $include_path;})();
+    (function () {require __DIR__ . '/footer.phtml';})();
+}
+?>
+    </body>
+</html>

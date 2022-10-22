@@ -1,17 +1,21 @@
 <?php
 declare(strict_types = 1);
 
-use Miklcct\NationalRailTimetable\Views\BoardFormView;
-use Miklcct\NationalRailTimetable\Views\TimetableView;
+use Miklcct\NationalRailTimetable\Views\ScheduleBaseView;
+use Miklcct\NationalRailTimetable\Views\ScheduleFormView;
+use Miklcct\NationalRailTimetable\Views\ScheduleView;
+use Miklcct\NationalRailTimetable\Views\ViewMode;
 use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
-/** @var BoardFormView|TimetableView $this */
-if ($this->errorMessage !== null) {
+/** @var ScheduleBaseView $this */
+if ($this instanceof ScheduleFormView && $this->errorMessage !== null) {
 ?>
 <p class="error"><?= html($this->errorMessage) ?></p>
 <?php
 }
+
+$query = $this instanceof ScheduleView ? $this->query->toArray() : [];
 ?>
 <form action="index.php" method="GET">
     <datalist id="stations">
@@ -29,18 +33,18 @@ foreach ($this->stations as $station) {
 foreach (['departures', 'arrivals'] as $mode) {
 ?>
         <label>
-            <input type="radio" name="mode" value="<?= html($mode) ?>" <?= ($this->query->toArray()['mode'] ?? 'departures') === $mode ? 'checked = "checked"' : ''?>/>
+            <input type="radio" name="mode" value="<?= html($mode) ?>" <?= ($query['mode'] ?? 'departures') === $mode ? 'checked = "checked"' : ''?>/>
             <?= html($mode) ?>
         </label>
 <?php
 }
 ?>
-        <label>at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="26" value="<?= html($this->query->toArray()['station'] ?? null)?>"/></label><br/>
+        <label>at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="26" value="<?= html($query['station'] ?? null)?>"/></label><br/>
         <label>only trains calling at (optional):
 <?php
 for ($i = 0; $i < 5; ++$i) {
 ?>
-            <input autocomplete="off" list="stations" type="text" name="filter[]" size="3" value="<?= html($this->query->toArray()['filter'][$i] ?? null) ?>"/>
+            <input autocomplete="off" list="stations" type="text" name="filter[]" size="3" value="<?= html($query['filter'][$i] ?? null) ?>"/>
 <?php
 }
 ?>
@@ -48,7 +52,7 @@ for ($i = 0; $i < 5; ++$i) {
         <label>on (leave empty for today)
             <input type="date"
                    name="date"
-                   value="<?= html($this->query->toArray()['date'] ?? null) ?>"
+                   value="<?= html($query['date'] ?? null) ?>"
                    min="<?= html((new DateTimeImmutable('-7 days'))->format('Y-m-d')) ?>"
                    max="<?= html((new DateTimeImmutable('+180 days'))->format('Y-m-d')) ?>"
             />
@@ -59,7 +63,7 @@ for ($i = 0; $i < 5; ++$i) {
             <input
                 type="datetime-local"
                 name="connecting_time"
-                value="<?= html($this->query->toArray()['connecting_time'] ?? null) ?>"
+                value="<?= html($query['connecting_time'] ?? null) ?>"
                 min="<?= html(substr((new DateTimeImmutable('today -7 days'))->format('c'), 0, 16)) ?>"
                 max="<?= html(substr((new DateTimeImmutable('today +181 days'))->format('c'), 0, 16)) ?>"
             />
@@ -71,7 +75,7 @@ for ($i = 0; $i < 5; ++$i) {
 foreach (get_all_tocs() as $code => $name) {
 ?>
                 <option value="<?= html($code) ?>" <?=
-                $code === ($this->query->toArray()['connecting_toc'] ?? null) ? 'selected="selected"' : ''
+                $code === ($query['connecting_toc'] ?? null) ? 'selected="selected"' : ''
                 ?>><?= html($name) ?></option>
 <?php
 }
@@ -80,11 +84,11 @@ foreach (get_all_tocs() as $code => $name) {
         </label>
     </p>
     <p>
-        <label>Show permanent timetable instead of actual timetable: <input type="checkbox" name="permanent_only" value="1" <?= !empty($this->query->toArray()['permanent_only']) ? 'checked="checked"' : '' ?>/></label><br/>
+        <label>Show permanent timetable instead of actual timetable: <input type="checkbox" name="permanent_only" value="1" <?= !empty($query['permanent_only']) ? 'checked="checked"' : '' ?>/></label><br/>
     </p>
     <p>
 <?php
-if ($this instanceof TimetableView) {
+if ($this->getViewMode() === ViewMode::TIMETABLE) {
 ?>
         <button type="submit" formaction="timetable.php">Show timetable</button>
 <?php
@@ -92,7 +96,7 @@ if ($this instanceof TimetableView) {
 ?>
         <button type="submit">Show board</button>
 <?php
-if (!$this instanceof TimetableView) {
+if ($this->getViewMode() !== ViewMode::TIMETABLE) {
 ?>
         <button type="submit" formaction="timetable.php">Show timetable</button>
 <?php

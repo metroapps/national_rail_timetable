@@ -11,7 +11,9 @@ use Miklcct\NationalRailTimetable\Models\Time;
 use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
+use Miklcct\NationalRailTimetable\Views\ScheduleFormView;
 use Miklcct\NationalRailTimetable\Views\TimetableView;
+use Miklcct\NationalRailTimetable\Views\ViewMode;
 use Miklcct\ThinPhpApp\Controller\Application;
 use Miklcct\ThinPhpApp\Response\ViewResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -37,15 +39,10 @@ class TimetableController extends Application {
         $station = $query->station;
         if ($station === null) {
             return ($this->viewResponseFactory)(
-                new TimetableView(
+                new ScheduleFormView(
                     $this->streamFactory
-                    , null
-                    , Date::today()
-                    , []
-                    , new $query
                     , $this->locationRepository->getAllStations()
-                    , []
-                    , null
+                    , ViewMode::TIMETABLE
                 )
             );
         }
@@ -68,7 +65,6 @@ class TimetableController extends Application {
         return ($this->viewResponseFactory)(
             new TimetableView(
                 $this->streamFactory
-                , $station
                 , $date
                 , $board->groupServices()
                 , $query
@@ -81,15 +77,10 @@ class TimetableController extends Application {
 
     private function createStationNotFoundResponse(StationNotFound $e) : ResponseInterface {
         return ($this->viewResponseFactory)(
-            new TimetableView(
+            new ScheduleFormView(
                 $this->streamFactory
-                , null
-                , Date::today()
-                , []
-                , new BoardQuery()
                 , $this->locationRepository->getAllStations()
-                , []
-                , null
+                , ViewMode::TIMETABLE
                 , $e->getMessage()
             )
         )->withStatus(WebDAV::UNPROCESSABLE_ENTITY);

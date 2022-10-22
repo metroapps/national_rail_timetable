@@ -3,13 +3,10 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable\Views;
 
-use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
-use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 
-class BoardFormView extends PhpTemplate {
-
+class ScheduleFormView extends ScheduleBaseView {
     /**
      * @param StreamFactoryInterface $streamFactory
      * @param LocationWithCrs[] $stations
@@ -17,18 +14,26 @@ class BoardFormView extends PhpTemplate {
      */
     public function __construct(
         StreamFactoryInterface $streamFactory
-        , protected readonly BoardQuery $query
-        , protected readonly array $stations
+        , array $stations
+        , protected readonly ViewMode $viewMode
         , protected readonly ?string $errorMessage = null
     ) {
-        parent::__construct($streamFactory);
+        parent::__construct($streamFactory, $stations);
     }
 
     protected function getPathToTemplate() : string {
-        return __DIR__ . '/../../resource/templates/board.phtml';
+        return __DIR__ . '/../../resource/templates/schedule.phtml';
     }
 
     protected function getTitle() : string {
-        return 'Departure board';
+        return $this->viewMode === ViewMode::TIMETABLE ? 'Timetable' : 'Departure board';
+    }
+
+    protected function getStylesheets() : array {
+        return [$this->viewMode === ViewMode::TIMETABLE ? '/timetable.css' : '/board.css'];
+    }
+
+    public function getViewMode() : ViewMode {
+        return $this->viewMode;
     }
 }

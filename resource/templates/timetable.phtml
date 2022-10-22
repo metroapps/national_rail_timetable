@@ -2,7 +2,6 @@
 declare(strict_types = 1);
 
 use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
-use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\DepartureBoard;
 use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
@@ -10,38 +9,12 @@ use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 use Miklcct\NationalRailTimetable\Models\Timetable;
 use Miklcct\NationalRailTimetable\Views\ServiceView;
 use Miklcct\NationalRailTimetable\Views\TimetableView;
-use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\NationalRailTimetable\Views\show_time;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 /** @var TimetableView $this */
 ?>
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <link rel="stylesheet" href="common.css" />
-        <link rel="stylesheet" href="timetable.css" />
-        <title><?= html($this->getTitle()) . ($this->query->permanentOnly ? ' (permanent timetable)' : '') ?></title>
-        <script defer="defer" src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
-        <script defer="defer" src="board.js"></script>
-    </head>
-    <body>
 <?php
-require __DIR__ . '/form.phtml';
-if ($this->station !== null) {
-?>
-        <h1><?= html($this->getTitle()) ?></h1>
-<?php
-    if ($this->query->permanentOnly) {
-?>
-        <p id="permanent_warning">Warning: Permanent timetable instead of actual timetable shown</p>
-<?php
-    }
-
-    if ($this->fixedLinks !== []) {
-        require __DIR__ . '/fixed_link.phtml';
-    }
-
     /** @var DepartureBoard $board */
     foreach ($this->boards as $board) {
         $timetable = Timetable::generateFromBoard($board);
@@ -84,7 +57,7 @@ if ($this->station !== null) {
             $colspan = $get_colspan($calls[0], $i);
 ?>
                             <th class="service" colspan=<?= $colspan ?> data-timestamp="<?= html($calls[0][$i]->timestamp->getTimestamp()) ?>">
-                                <abbr title="<?= html(get_all_tocs()[$call->toc]) ?>"><?= html($call->toc) ?></abbr>
+                                <?= $this->showToc($call->toc) ?>
                             </th>
 <?php
             $i += $colspan;
@@ -137,7 +110,7 @@ if ($this->station !== null) {
             $colspan = $get_colspan($calls[0], $i);
             $i += $colspan;
 ?>
-                            <td colspan=<?= $colspan ?>><?= $call->mode->showIcon() . $call->serviceProperty->showIcons() ?></td>
+                            <td colspan=<?= $colspan ?>><?= $this->showFacilities($call) ?></td>
 <?php
         }
 ?>
@@ -225,7 +198,7 @@ if ($this->station !== null) {
                         , array_keys($this->query->arrivalMode ? $calls[$i][$j]->origins : $calls[$i][$j]->destinations)[0]
                     )
                 ) {
-                    $connection_class .= 'overtaken';
+                    $connection_class .= ' overtaken';
                 }
                 if (!isset($calls[$i][$j])) {
 ?>
@@ -237,15 +210,7 @@ if ($this->station !== null) {
                     $colspan = $get_colspan($calls[$i], $j);
                     $link = $i === 0
                         ? ServiceView::getServiceUrl($call->uid, $call->date, $this->query->permanentOnly)
-                        : (new BoardQuery(
-                            $this->query->arrivalMode
-                            , $stations[$i]
-                            , []
-                            , Date::fromDateTimeInterface($call->timestamp->sub(new DateInterval($this->query->arrivalMode ? 'PT4H30M' : 'P0D')))
-                            , $call->timestamp
-                            , $call->toc
-                            , $this->query->permanentOnly
-                        ))->getUrl(TimetableView::URL);
+                        : $this->getArrivalLink($calls[$i][$j]);
 ?>
                            <td class="<?= $connection_class ?>" colspan=<?= $colspan ?>><?= show_time($call->timestamp, $this->date, $link)?></td>
 <?php
@@ -263,8 +228,4 @@ if ($this->station !== null) {
         </section>
 <?php
     }
-    require __DIR__ . '/footer.phtml';
-}
 ?>
-    </body>
-</html>

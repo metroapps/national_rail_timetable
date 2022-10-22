@@ -8,16 +8,14 @@ use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\DepartureBoard;
 use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
-use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 use function array_map;
 use function implode;
 use function sprintf;
 
-class TimetableView extends PhpTemplate {
-    use ScheduleTrait;
-
+class TimetableView extends ScheduleView {
     public const URL = '/timetable.php';
+
     /**
      * @param StreamFactoryInterface $streamFactory
      * @param LocationWithCrs $station
@@ -29,24 +27,18 @@ class TimetableView extends PhpTemplate {
      */
     public function __construct(
         StreamFactoryInterface $streamFactory
-        , protected readonly ?LocationWithCrs $station
-        , protected readonly Date $date
+        , Date $date
         , protected readonly array $boards
-        , protected readonly BoardQuery $query
-        , protected readonly array $stations
-        , protected readonly ?array $fixedLinks
-        , protected readonly ?Date $generated
-        , protected readonly ?string $errorMessage = null
+        , BoardQuery $query
+        , array $stations
+        , ?array $fixedLinks
+        , ?Date $generated
     ) {
-        parent::__construct($streamFactory);
-    }
-
-    protected function getPathToTemplate(): string {
-        return __DIR__ . '/../../resource/templates/timetable.phtml';
+        parent::__construct($streamFactory, $stations, $date, $query, $fixedLinks, $generated);
     }
 
     protected function getTitle() : string {
-        if ($this->station === null) {
+        if ($this->query->station === null) {
             return 'Timetable';
         }
         return sprintf(
@@ -61,5 +53,13 @@ class TimetableView extends PhpTemplate {
             : ''
             , $this->query->date === null ? 'today' : 'on ' . $this->date
         );
+    }
+
+    protected function getIncludePath() {
+        return __DIR__ . '/../../resource/templates/timetable.phtml';
+    }
+
+    public function getViewMode() : ViewMode {
+        return ViewMode::TIMETABLE;
     }
 }
