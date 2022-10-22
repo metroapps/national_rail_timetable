@@ -15,10 +15,6 @@ use function array_map;
 class BoardQuery {
     use QueryTrait;
 
-    public const BOARD_URL = '/index.php';
-    public const TIMETABLE_URL = '/timetable.php';
-
-
     /**
      * @param bool $arrivalMode
      * @param LocationWithCrs|null $station

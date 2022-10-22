@@ -105,7 +105,7 @@ class BoardView extends BoardFormView {
                 , $service_call->toc
                 , $this->query->permanentOnly
             )
-        )->getUrl(BoardQuery::BOARD_URL);
+        )->getUrl(BoardView::URL);
     }
 
     protected function getDayOffsetLink(int $days) : string {
@@ -117,7 +117,7 @@ class BoardView extends BoardFormView {
             , $this->query->connectingTime
             , $this->query->connectingToc
             , $this->query->permanentOnly
-        ))->getUrl(BoardQuery::BOARD_URL);
+        ))->getUrl(BoardView::URL);
     }
 
     protected function showToc(string $toc) : string {
@@ -140,6 +140,6 @@ class BoardView extends BoardFormView {
             , null
             , null
             , $this->query->permanentOnly
-        ))->getUrl(BoardQuery::BOARD_URL);
+        ))->getUrl(BoardView::URL);
     }
 }

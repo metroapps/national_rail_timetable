@@ -115,13 +115,13 @@ class ServiceView extends PhpTemplate {
             new BoardQuery(
                 $arrival_mode
                 , $location
-                , null
+                , []
                 , Date::fromDateTimeInterface($timestamp->sub(new DateInterval($arrival_mode ? 'PT4H30M' : 'P0D')))
                 , $timestamp
                 , $this->datedService->service->toc
                 , $this->permanentOnly
             )
-        )->getUrl();
+        )->getUrl(BoardView::URL);
     }
 
     protected function splitIntoPortions(FullService $dated_service, bool $recursed = false) : array {

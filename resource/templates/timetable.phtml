@@ -183,7 +183,9 @@ if ($this->station !== null) {
 <?php
             if ($i !== 0) {
 ?>
-                                <a href="<?= html((new BoardQuery($this->query->arrivalMode, $station, [], $this->query->date, null, null, $this->query->permanentOnly))->getUrl(BoardQuery::TIMETABLE_URL)) ?>">
+                                <a href="<?= html((new BoardQuery($this->query->arrivalMode, $station, [], $this->query->date, null, null, $this->query->permanentOnly))->getUrl(
+                                    TimetableView::URL
+                                )) ?>">
 <?php
             }
 ?>
@@ -221,7 +223,7 @@ if ($this->station !== null) {
                             , $call->timestamp
                             , $call->toc
                             , $this->query->permanentOnly
-                        ))->getUrl(BoardQuery::TIMETABLE_URL);
+                        ))->getUrl(TimetableView::URL);
 ?>
                            <td class="<?= $connection_class ?>" colspan=<?= $colspan ?>><?= show_time($call->timestamp, $this->date, $link)?></td>
 <?php
