@@ -3,13 +3,22 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable\Controllers;
 
+use DateTimeZone;
+use Miklcct\NationalRailTimetable\Exceptions\StationNotFound;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\FixedLink;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Safe\DateTimeImmutable as SafeDateTimeImmutable;
+use Teapot\StatusCode\Http;
+use function str_replace;
 
 trait ScheduleTrait {
+    abstract private function runWithoutCache(ServerRequestInterface $request, BoardQuery $query) : ResponseInterface;
+    abstract private function createStationNotFoundResponse(StationNotFound $e) : ResponseInterface;
     private readonly FixedLinkRepositoryInterface $fixedLinkRepository;
     private function getFixedLinks(BoardQuery $query) : array {
         $station = $query->station;
@@ -59,5 +68,34 @@ trait ScheduleTrait {
             : $a->origin->crsCode <=> $b->origin->crsCode
         );
         return $fixed_links;
+    }
+
+    protected function run(ServerRequestInterface $request) : ResponseInterface {
+        try {
+            $query = BoardQuery::fromArray($request->getQueryParams(), $this->locationRepository);
+        } catch (StationNotFound $e) {
+            return $this->createStationNotFoundResponse($e);
+        }
+
+        return $this->addCacheHeader($this->runWithoutCache($request, $query), $query);
+    }
+
+    public function addCacheHeader(ResponseInterface $response, BoardQuery $query) : ResponseInterface {
+        if ($response->getStatusCode() !== Http::OK) {
+            return $response;
+        }
+        return $query->station === null
+            ? $response->withAddedHeader('Cache-Control', 'public')->withAddedHeader('Cache-Control', 'max-age=604800')
+            : ($query->date === null
+                ? $response->withAddedHeader('Cache-Control', 'public')->withAddedHeader(
+                    'Expires',
+                    str_replace(
+                        '+0000',
+                        'GMT',
+                        (new SafeDateTimeImmutable('tomorrow'))->setTimezone(new DateTimeZone('UTC'))->format('r')
+                    )
+                )
+                : $response->withAddedHeader('Cache-Control', 'public')
+                    ->withAddedHeader('Cache-Control', 'max-age=21600'));
     }
 }

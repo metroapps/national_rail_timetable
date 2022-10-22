@@ -3,7 +3,6 @@ declare(strict_types = 1);
 
 namespace Miklcct\NationalRailTimetable\Controllers;
 
-use DateTimeZone;
 use Http\Factory\Guzzle\StreamFactory;
 use Miklcct\NationalRailTimetable\Enums\TimeType;
 use Miklcct\NationalRailTimetable\Exceptions\StationNotFound;
@@ -20,7 +19,6 @@ use Miklcct\ThinPhpApp\Response\ViewResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
-use Safe\DateTimeImmutable as SafeDateTimeImmutable;
 use Teapot\StatusCode\WebDAV;
 
 class BoardController extends Application {
@@ -34,22 +32,9 @@ class BoardController extends Application {
         , private readonly FixedLinkRepositoryInterface $fixedLinkRepository
     ) {}
     
-    public function run(ServerRequestInterface $request) : ResponseInterface {
-        try {
-            $query = BoardQuery::fromArray($request->getQueryParams(), $this->locationRepository);
-            $station = $query->station;
-            $destinations = $query->filter;
-        } catch (StationNotFound $e) {
-            return ($this->viewResponseFactory)(
-                new BoardFormView(
-                    $this->streamFactory
-                    , new BoardQuery()
-                    , $this->locationRepository->getAllStations()
-                    , $e->getMessage()
-                )
-            )->withStatus(WebDAV::UNPROCESSABLE_ENTITY);
-        }
-
+    private function runWithoutCache(ServerRequestInterface $request, BoardQuery $query) : ResponseInterface {
+        $station = $query->station;
+        $destinations = $query->filter;
         if ($station === null) {
             return ($this->viewResponseFactory)(
                 new BoardFormView(
@@ -57,7 +42,7 @@ class BoardController extends Application {
                     , $query
                     , $this->locationRepository->getAllStations()
                 )
-            )->withAddedHeader('Cache-Control', ['public', 'max-age=604800']);
+            );
         }
 
         $arrival_mode = $query->arrivalMode;
@@ -81,7 +66,7 @@ class BoardController extends Application {
             );
         }
 
-        $response = ($this->viewResponseFactory)(
+        return ($this->viewResponseFactory)(
             new BoardView(
                 new StreamFactory()
                 , $this->locationRepository->getAllStations()
@@ -91,17 +76,17 @@ class BoardController extends Application {
                 , $this->getFixedLinks($query)
                 , $service_repository->getGeneratedDate()
             )
-        )->withAddedHeader('Cache-Control', ['public']);
-        return $query->date === null
-            ? $response->withAddedHeader(
-                'Expires',
-                str_replace(
-                    '+0000',
-                    'GMT',
-                    (new SafeDateTimeImmutable('tomorrow'))->setTimezone(new DateTimeZone('UTC'))->format('r')
-                )
-            )
-            : $response->withAddedHeader('Cache-Control', 'max-age=21600');
+        );
     }
 
+    private function createStationNotFoundResponse(StationNotFound $e) : ResponseInterface {
+        return ($this->viewResponseFactory)(
+            new BoardFormView(
+                $this->streamFactory
+                , new BoardQuery()
+                , $this->locationRepository->getAllStations()
+                , $e->getMessage()
+            )
+        )->withStatus(WebDAV::UNPROCESSABLE_ENTITY);
+    }
 }

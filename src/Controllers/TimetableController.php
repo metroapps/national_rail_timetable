@@ -33,25 +33,7 @@ class TimetableController extends Application {
         , private readonly FixedLinkRepositoryInterface $fixedLinkRepository
     ) {}
 
-    public function run(ServerRequestInterface $request) : ResponseInterface {
-        try {
-            $query = BoardQuery::fromArray($request->getQueryParams(), $this->locationRepository);
-        } catch (StationNotFound $e) {
-            return ($this->viewResponseFactory)(
-                new TimetableView(
-                    $this->streamFactory
-                    , null
-                    , Date::today()
-                    , []
-                    , new BoardQuery()
-                    , $this->locationRepository->getAllStations()
-                    , []
-                    , null
-                    , $e->getMessage()
-                )
-            )->withStatus(WebDAV::UNPROCESSABLE_ENTITY);
-        }
-
+    public function runWithoutCache(ServerRequestInterface $request, BoardQuery $query) : ResponseInterface {
         $station = $query->station;
         if ($station === null) {
             return ($this->viewResponseFactory)(
@@ -93,5 +75,20 @@ class TimetableController extends Application {
                 , $this->getFixedLinks($query)
             )
         );
+    }
+
+    private function createStationNotFoundResponse(StationNotFound $e) : ResponseInterface {
+        return ($this->viewResponseFactory)(
+            new TimetableView(
+                $this->streamFactory
+                , null
+                , Date::today()
+                , []
+                , new BoardQuery()
+                , $this->locationRepository->getAllStations()
+                , []
+                , $e->getMessage()
+            )
+        )->withStatus(WebDAV::UNPROCESSABLE_ENTITY);
     }
 }
