@@ -126,15 +126,6 @@ class BoardView extends BoardFormView {
         ))->getUrl();
     }
 
-    protected function getServiceLink(ServiceCall $service_call) : string {
-         return '/service.php?' . http_build_query(
-            [
-                'uid' => $service_call->uid,
-                'date' => $service_call->date->__toString(),
-            ] + ($this->query->permanentOnly ? ['permanent_only' => '1'] : [])
-        );
-    }
-
     protected function showToc(string $toc) : string {
         return sprintf('<abbr title="%s">%s</abbr>', html(get_all_tocs()[$toc] ?? ''), html($toc));
     }

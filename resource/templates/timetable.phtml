@@ -1,11 +1,14 @@
 <?php
 declare(strict_types = 1);
 
+use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
+use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\DepartureBoard;
 use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 use Miklcct\NationalRailTimetable\Models\Timetable;
+use Miklcct\NationalRailTimetable\Views\ServiceView;
 use Miklcct\NationalRailTimetable\Views\TimetableView;
 use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\NationalRailTimetable\Views\show_time;
@@ -159,8 +162,19 @@ foreach ($this->boards as $board) {
                 $call = $calls[$i][$j];
                 $colspan = $get_colspan($calls[$i], $j);
                 $j += $colspan;
+                $link = $i === 0
+                    ? ServiceView::getServiceUrl($call->uid, $call->date, false)
+                    : (new BoardQuery(
+                        false
+                        , $stations[$i]
+                        , null
+                        , Date::fromDateTimeInterface($call->timestamp)
+                        , $call->timestamp
+                        , $call->toc
+                        , false
+                    ))->getUrl();
 ?>
-                           <td colspan=<?= $colspan ?>><?= show_time($call->timestamp, $this->date)?></td>
+                           <td colspan=<?= $colspan ?>><?= show_time($call->timestamp, $this->date, $link)?></td>
 <?php
             }
         }

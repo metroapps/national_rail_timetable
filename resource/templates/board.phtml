@@ -7,6 +7,7 @@ use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\NationalRailTimetable\Views\BoardFormView;
 use Miklcct\NationalRailTimetable\Views\BoardView;
+use Miklcct\NationalRailTimetable\Views\ServiceView;
 use Safe\DateTimeImmutable;
 use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\NationalRailTimetable\Views\show_time;
@@ -270,14 +271,14 @@ if ($this instanceof BoardView) {
                             : ($service_call->isValidConnection($query->connectingTime, $this->connectingToc ?? null) ? 'valid_connection' : 'invalid_connection')
                     ?> <?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>">
                         <?= 
-                            show_time($timestamp, $this->boardDate, $this->getServiceLink($service_call))
+                            show_time($timestamp, $this->boardDate, ServiceView::getServiceUrl($service_call->uid, $service_call->date, $query->permanentOnly))
                             . (in_array(Activity::REQUEST_STOP, $service_call->call->activities, true) ? '<abbr title="request stop">x</abbr>' : '')
                         ?>
                     </td>
                     <td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><?= $this->showFacilities($service_call) ?></td>
                     <td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><?= html($service_call->call->platform) ?></td>
                     <td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><?= $this->showToc($service_call->toc) ?></td>
-                    <td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><a href="<?= html($this->getServiceLink($service_call)) ?>"><?= html(substr($service_call->serviceProperty->rsid, 0, 6)) ?></a></td>
+                    <td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><a href="<?= html(ServiceView::getServiceUrl($service_call->uid, $service_call->date, $query->permanentOnly)) ?>"><?= html(substr($service_call->serviceProperty->rsid, 0, 6)) ?></a></td>
 <?php
         foreach ($portion_uids as $i => $uid) {
             if ($i > 0) {

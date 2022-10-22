@@ -23,6 +23,7 @@ use Miklcct\NationalRailTimetable\Models\Service;
 use Miklcct\NationalRailTimetable\Models\ServiceProperty;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
+use function http_build_query;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 class ServiceView extends PhpTemplate {
@@ -33,6 +34,15 @@ class ServiceView extends PhpTemplate {
         , protected readonly ?Date $generated
     ) {
         parent::__construct($streamFactory);
+    }
+
+    public static function getServiceUrl(string $uid, Date $date, bool $permanent_only = false) {
+        return '/service.php?' . http_build_query(
+            [
+                'uid' => $uid,
+                'date' => $date->__toString(),
+            ] + ($permanent_only ? ['permanent_only' => '1'] : [])
+        );
     }
 
     protected function getPathToTemplate() : string {
