@@ -7,6 +7,8 @@ const reference_timestamp = (
         ? new Date(query.get('connecting_time'))
         : new Date()
 ).getTime() / 1000;
+
+// departure board
 let element = null;
 $('tr[data-timestamp]').each(
     function () {
@@ -18,5 +20,24 @@ $('tr[data-timestamp]').each(
     }
 );
 element?.scrollIntoView(true);
+
+// timetable
+$('.container').each(
+    function () {
+        let element = null;
+        $(this).find('th[data-timestamp]').each(
+            function () {
+                element = this;
+                const timestamp = Number($(this).attr('data-timestamp'));
+                if (mode === 'arrivals' ? timestamp > reference_timestamp : timestamp >= reference_timestamp) {
+                    return false;
+                }
+            }
+        );
+        this.scrollLeft = element.offsetLeft - (
+            mode === 'arrivals' ? this.offsetWidth : $(this).find('th:first-child')[0].offsetWidth
+        );
+    }
+)
 
 $('#go_to_top').click(() => window.scrollTo(0, 0));

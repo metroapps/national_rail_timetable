@@ -24,3 +24,11 @@
     font-weight: bold;
 }
 
+.valid_connection {
+    background-color: #c0ffc0;
+}
+
+.invalid_connection {
+    background-color: #ffc0c0;
+}
+

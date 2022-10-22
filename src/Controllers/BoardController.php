@@ -98,7 +98,7 @@ class BoardController extends Application {
                 $arrival_time = $fixed_link->getArrivalTime($fixed_link_departure_time, $arrival_mode);
                 $existing = $fixed_links[$fixed_link->destination->crsCode] ?? null;
                 if (
-                    ($destinations === null || $destinations->getCrsCode() === $fixed_link->destination->crsCode)
+                    ($destinations === [] || in_array($fixed_link->destination->crsCode, array_map(static fn(LocationWithCrs $destination) => $destination->getCrsCode(), $destinations), true))
                     && $arrival_time !== null
                     && (
                         !$existing 

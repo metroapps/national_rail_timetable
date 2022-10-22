@@ -266,7 +266,7 @@ class DepartureBoard implements Persistable {
         $all_locations = [];
         $arrival_mode = $this->timeType->isArrival();
         foreach ($this->calls as $service_call) {
-            foreach ($arrival_mode ? $service_call->precedingCalls : $service_call->subsequentCalls as $subsequent_call) {
+            foreach ($arrival_mode ? array_reverse($service_call->precedingCalls) : $service_call->subsequentCalls as $subsequent_call) {
                 $call_location = $subsequent_call->call->location;
                 if (
                     $call_location instanceof LocationWithCrs

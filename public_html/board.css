@@ -42,14 +42,6 @@ h1 {
     color: lightgrey;
 }
 
-.valid_connection {
-    background-color: lightgreen;
-}
-
-.invalid_connection {
-    background-color: pink;
-}
-
 .train_info {
     text-align: center;
 }

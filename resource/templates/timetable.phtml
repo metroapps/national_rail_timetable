@@ -22,6 +22,8 @@ use function Miklcct\ThinPhpApp\Escaper\html;
         <link rel="stylesheet" href="common.css" />
         <link rel="stylesheet" href="timetable.css" />
         <title><?= html($this->getTitle()) . ($this->query->permanentOnly ? ' (permanent timetable)' : '') ?></title>
+        <script defer="defer" src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
+        <script defer="defer" src="board.js"></script>
     </head>
     <body>
 <?php
@@ -73,12 +75,12 @@ foreach ($this->boards as $board) {
         /** @var ServiceCallWithDestination $call */
         $call = $calls[0][$i];
         $colspan = $get_colspan($calls[0], $i);
-        $i += $colspan;
 ?>
-                            <th class="service" colspan=<?= $colspan ?>>
+                            <th class="service" colspan=<?= $colspan ?> data-timestamp="<?= html($calls[0][$i]->timestamp->getTimestamp()) ?>">
                                 <abbr title="<?= html(get_all_tocs()[$call->toc]) ?>"><?= html($call->toc) ?></abbr>
                             </th>
 <?php
+        $i += $colspan;
     }
 ?>
                         </tr>
@@ -191,15 +193,18 @@ foreach ($this->boards as $board) {
 <?php
         $j = 0;
         while (isset($calls[0][$j])) {
+            $connection_class = $this->query->connectingTime !== null
+                ? $calls[0][$j]->isValidConnection($this->query->connectingTime, $this->query->connectingToc)
+                ? 'valid_connection' : 'invalid_connection'
+                : '';
             if (!isset($calls[$i][$j])) {
-                ++$j;
 ?>
-                            <td></td>
+                            <td class="<?= $connection_class ?>"></td>
 <?php
+                ++$j;
             } else {
                 $call = $calls[$i][$j];
                 $colspan = $get_colspan($calls[$i], $j);
-                $j += $colspan;
                 $link = $i === 0
                     ? ServiceView::getServiceUrl($call->uid, $call->date, $this->query->permanentOnly)
                     : (new BoardQuery(
@@ -212,8 +217,9 @@ foreach ($this->boards as $board) {
                         , $this->query->permanentOnly
                     ))->getUrl(BoardQuery::BOARD_URL);
 ?>
-                           <td colspan=<?= $colspan ?>><?= show_time($call->timestamp, $this->date, $link)?></td>
+                           <td class="<?= $connection_class ?>" colspan=<?= $colspan ?>><?= show_time($call->timestamp, $this->date, $link)?></td>
 <?php
+                $j += $colspan;
             }
         }
 ?>
