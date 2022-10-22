@@ -5,7 +5,6 @@ namespace Miklcct\NationalRailTimetable\Controllers;
 
 use Miklcct\NationalRailTimetable\Enums\TimeType;
 use Miklcct\NationalRailTimetable\Models\Date;
-use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\Time;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
@@ -16,7 +15,6 @@ use Miklcct\ThinPhpApp\Response\ViewResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
-use Safe\DateTimeImmutable;
 use Teapot\HttpException;
 use Teapot\StatusCode\WebDAV;
 
@@ -34,26 +32,20 @@ class TimetableController extends Application {
     ) {}
 
     public function run(ServerRequestInterface $request) : ResponseInterface {
-        $query = $request->getQueryParams();
+        $query = TimetableQuery::fromArray($request->getQueryParams(), $this->locationRepository);
 
-        $station = $this->getQueryStation($query['station']);
+        $station = $query->station;
         if ($station === null) {
             throw new HttpException('A station must be specified.', WebDAV::UNPROCESSABLE_ENTITY);
         }
-        $date = Date::fromDateTimeInterface(new DateTimeImmutable($query['date'] ?: 'now'));
-        $board = ($this->serviceRepositoryFactory)(false)->getDepartureBoard(
+        $date = $query->date ?? Date::today();
+        $board = ($this->serviceRepositoryFactory)($query->permanentOnly)->getDepartureBoard(
             $station->getCrsCode()
             , $date->toDateTimeImmutable()
             , $date->toDateTimeImmutable(new Time(28, 30))
-            , TimeType::PUBLIC_DEPARTURE
+            , $query->arrivalMode ? TimeType::PUBLIC_ARRIVAL : TimeType::PUBLIC_DEPARTURE
         );
-        /** @var Location[] $filter */
-        $filter = array_filter(
-            array_map(
-                $this->getQueryStation(...)
-                , (array)($query['filter'] ?? [])
-            )
-        );
+        $filter = $query->filter;
         if ($filter !== []) {
             $board = $board->filterByDestination(
                 array_map(static fn(LocationWithCrs $location) => $location->getCrsCode(), $filter)
@@ -67,7 +59,8 @@ class TimetableController extends Application {
                 , $station
                 , $date
                 , $board->groupServices()
-                , $filter
+                , $query
+                , $this->locationRepository->getAllStations()
             )
         );
     }

@@ -2,6 +2,7 @@
 declare(strict_types = 1);
 
 use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
+use Miklcct\NationalRailTimetable\Controllers\TimetableQuery;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\DepartureBoard;
 use Miklcct\NationalRailTimetable\Models\Location;
@@ -21,11 +22,62 @@ use function Miklcct\ThinPhpApp\Escaper\html;
     <head>
         <link rel="stylesheet" href="common.css" />
         <link rel="stylesheet" href="timetable.css" />
-        <title>Timetable</title>
+        <title><?= html($this->getTitle()) . ($this->query->permanentOnly ? ' (permanent timetable)' : '') ?></title>
     </head>
     <body>
-        <h1>Timetable for <?= $this->station->name ?> on <?= $this->date ?></h1>
+        <?php
+        if ($this->errorMessage !== null) {
+            ?>
+            <p class="error"><?= html($this->errorMessage) ?></p>
+            <?php
+        }
+        ?>
+        <form action="timetable.php" method="GET">
+            <datalist id="stations">
+                <?php
+                foreach ($this->stations as $station) {
+                    ?>
+                    <option value="<?= html($station->getCrsCode()) ?>"><?= html($station->name) ?></option>
+                    <?php
+                }
+                ?>
+            </datalist>
+            <p>
+                Show
+                <?php
+                foreach (['departures', 'arrivals'] as $mode) {
+                    ?>
+                    <label>
+                        <input type="radio" name="mode" value="<?= html($mode) ?>" <?= ($this->query->toArray()['mode'] ?? 'departures') === $mode ? 'checked = "checked"' : ''?>/>
+                        <?= html($mode) ?>
+                    </label>
+                    <?php
+                }
+                ?>
+                <label>at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="32" value="<?= html($this->query->toArray()['station'] ?? null)?>"/></label><br/>
+                <label>on (leave empty for today)
+                    <input type="date"
+                           name="date"
+                           value="<?= html($this->query->toArray()['date']) ?>"
+                           min="<?= html((new DateTimeImmutable('-7 days'))->format('Y-m-d')) ?>"
+                           max="<?= html((new DateTimeImmutable('+180 days'))->format('Y-m-d')) ?>"
+                    />
+                </label>
+            </p>
+            <p>
+                <label>Show permanent timetable instead of actual timetable: <input type="checkbox" name="permanent_only" value="1" <?= !empty($this->query->toArray()['permanent_only']) ? 'checked="checked"' : '' ?>/></label><br/>
+            </p>
+            <p>
+                <input type="submit" />
+            </p>
+        </form>
+        <h1><?= html($this->getTitle()) ?></h1>
 <?php
+if ($this->query->permanentOnly) {
+?>
+        <p id="permanent_warning">Warning: Permanent timetable instead of actual timetable shown</p>
+<?php
+}
 /** @var DepartureBoard $board */
 foreach ($this->boards as $board) {
     $timetable = Timetable::generateFromBoard($board);
@@ -49,9 +101,10 @@ foreach ($this->boards as $board) {
     $destinations = $board->getDestinations();
 ?>
         <section>
-            <h2>Trains 
+            <h2>Trains
+                <?= $this->query->arrivalMode && $destinations ? ' from ' . html(implode(', ', array_map(static fn(Location $location) => $location->getShortName(), $destinations))) : '' ?>
                 <?= $via ? ' via ' . html(implode(', ', array_map(static fn(Location $location) => $location->getShortName(), $via))) : '' ?>
-                <?= $destinations ? ' towards ' . html(implode(', ', array_map(static fn(Location $location) => $location->getShortName(), $destinations))) : '' ?>
+                <?= !$this->query->arrivalMode && $destinations ? ' towards ' . html(implode(', ', array_map(static fn(Location $location) => $location->getShortName(), $destinations))) : '' ?>
             </h2>
             <div class="container">
                 <table>
@@ -89,13 +142,13 @@ foreach ($this->boards as $board) {
 ?>
                         </tr>
                         <tr>
-                            <td class="station_column">Destination</td>
+                            <td class="station_column"><?= html($this->query->arrivalMode ? 'Origin' : 'Destination') ?></td>
 <?php
     $i = 0;
     while (isset($calls[0][$i])) {
         /** @var ServiceCallWithDestination $call */
         $call = $calls[0][$i];
-        foreach ($call->destinations as $destination) {
+        foreach ($this->query->arrivalMode ? $call->origins : $call->destinations as $destination) {
             $destination_location = $destination->location;
             if (!$destination_location instanceof LocationWithCrs) {
                 $destination_location = null;
@@ -141,15 +194,44 @@ foreach ($this->boards as $board) {
                         </tr>
 <?php
     foreach ($stations as $i => $station) {
-        if ($i === 1) {
+        if ($i === 0 && $this->query->arrivalMode) {
 ?>
                     </thead>
+                    <tfoot>
+<?php
+        } elseif ($i === 1) {
+            if ($this->query->arrivalMode) {
+?>
+                    </tfoot>
+<?php
+            } else {
+?>
+                    </thead>
+<?php
+            }
+?>
                     <tbody>
 <?php
         }
 ?>
-                        <tr class="<?= $i === 0 ? 'origin' : '' ?> <?= $i !== 0 && in_array($station->getCrsCode(), array_map(static fn(LocationWithCrs $location) => $location->getCrsCode(), $this->filter), true) ? 'destination' : '' ?>">
-                            <td class="station_column"><?= html($station->getShortName()) ?></td>
+                        <tr class="<?= $i === 0 ? 'origin' : '' ?> <?= $i !== 0 && in_array($station->getCrsCode(), array_map(static fn(LocationWithCrs $location) => $location->getCrsCode(), $this->query->filter), true) ? 'destination' : '' ?>">
+                            <td class="station_column">
+<?php
+        if ($i !== 0) {
+?>
+                                <a href="<?= html((new TimetableQuery($this->query->arrivalMode, $station, [], $this->query->date, $this->query->permanentOnly))->getUrl()) ?>">
+<?php
+        }
+?>
+                                <?= html($station->getShortName()) ?>
+<?php
+        if ($i !== 0) {
+?>
+                                </a>
+<?php
+        }
+?>
+                            </td>
 <?php
         $j = 0;
         while (isset($calls[0][$j])) {
@@ -163,15 +245,15 @@ foreach ($this->boards as $board) {
                 $colspan = $get_colspan($calls[$i], $j);
                 $j += $colspan;
                 $link = $i === 0
-                    ? ServiceView::getServiceUrl($call->uid, $call->date, false)
+                    ? ServiceView::getServiceUrl($call->uid, $call->date, $this->query->permanentOnly)
                     : (new BoardQuery(
-                        false
+                        $this->query->arrivalMode
                         , $stations[$i]
                         , null
-                        , Date::fromDateTimeInterface($call->timestamp)
+                        , Date::fromDateTimeInterface($call->timestamp->sub(new DateInterval($this->query->arrivalMode ? 'PT4H30M' : 'P0D')))
                         , $call->timestamp
                         , $call->toc
-                        , false
+                        , $this->query->permanentOnly
                     ))->getUrl();
 ?>
                            <td colspan=<?= $colspan ?>><?= show_time($call->timestamp, $this->date, $link)?></td>

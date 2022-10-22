@@ -76,13 +76,13 @@ foreach (['departures', 'arrivals'] as $mode) {
                         max="<?= html(substr((new DateTimeImmutable('today +181 days'))->format('c'), 0, 16)) ?>"
                     />
                 </label>
-                <label>from TOC: 
+                <label>from TOC:
                     <select name="connecting_toc">
                         <option></option>
 <?php
 foreach (get_all_tocs() as $code => $name) {
 ?>
-                        <option value="<?= html($code) ?>" <?= 
+                        <option value="<?= html($code) ?>" <?=
                             $code === ($this->getFormData()['connecting_toc'] ?? null) ? 'selected="selected"' : ''
                         ?>><?= html($name) ?></option>
 <?php
@@ -107,7 +107,7 @@ if ($this instanceof BoardView) {
     $query = $this->query;
     if ($query->filter !== null) {
 ?>
-        <p><a href="<?= $this->getReverseDirectionLink() ?>">Show return timetable</a></p>
+        <p><a href="<?= $this->getReverseDirectionLink() ?>">Show return departure board</a></p>
 <?php
     }
     if ($query->permanentOnly) {

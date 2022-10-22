@@ -232,7 +232,7 @@ class DepartureBoard implements Persistable {
         $result = [];
         foreach ($this->calls as $call) {
             $group_id = $station_groups === [] ? 0 : max($station_groups) + 1;
-            foreach ($call->subsequentCalls as $subsequent_call) {
+            foreach ($this->timeType->isArrival() ? $call->precedingCalls : $call->subsequentCalls as $subsequent_call) {
                 $location = $subsequent_call->call->location;
                 if ($location instanceof LocationWithCrs) {
                     $subsequent_crs = $location->getCrsCode();

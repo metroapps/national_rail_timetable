@@ -25,19 +25,23 @@ class Timetable {
         /** @var LocationWithCrs[] $stations */
         $stations = [];
         // I hope this is good enough - I don't know how to sort the stations properly
+        $arrival_mode = $board->timeType->isArrival();
         usort(
             $calls
             , static fn(
                 ServiceCallWithDestinationAndCalls $a
                 , ServiceCallWithDestinationAndCalls $b
-            ) => -(count($a->subsequentCalls) <=> count($b->subsequentCalls))
+            ) => -(
+                count($arrival_mode ? $a->precedingCalls : $a->subsequentCalls)
+                <=> count($arrival_mode ? $b->precedingCalls : $b->subsequentCalls)
+            )
         );
         foreach ($calls as $call) {
-            foreach (array_keys($call->destinations) as $portion) {
+            foreach (array_keys($arrival_mode ? $call->origins : $call->destinations) as $portion) {
                 $order = [];
                 $i = 0;
-                foreach ($call->subsequentCalls as $subsequent_call) {
-                    if (array_key_exists($portion, $subsequent_call->destinations)) {
+                foreach ($arrival_mode ? $call->precedingCalls : $call->subsequentCalls as $subsequent_call) {
+                    if (array_key_exists($portion, $arrival_mode ? $subsequent_call->origins : $subsequent_call->destinations)) {
                         $current_station = $subsequent_call->call->location;
                         if ($current_station instanceof LocationWithCrs && $current_station->getCrsCode() !== null) {
                             $found = null;
@@ -94,12 +98,12 @@ class Timetable {
         // fill the calls matrix
         $i = 0;
         foreach ($board->calls as $call) {
-            foreach (array_keys($call->destinations) as $portion) {
+            foreach (array_keys($arrival_mode ? $call->origins : $call->destinations) as $portion) {
                 $matrix[0][$i] = $call;
                 $j = 1;
-                foreach ($call->subsequentCalls as $subsequent_call) {
+                foreach ($arrival_mode ? $call->precedingCalls : $call->subsequentCalls as $subsequent_call) {
                     $location = $subsequent_call->call->location;
-                    if ($location instanceof LocationWithCrs && array_key_exists($portion, $subsequent_call->destinations)) {
+                    if ($location instanceof LocationWithCrs && array_key_exists($portion, $arrival_mode ? $subsequent_call->origins : $subsequent_call->destinations)) {
                         $subsequent_crs = $location->getCrsCode();
                         while ($stations[$j]->getCrsCode() !== $subsequent_crs) {
                             ++$j;

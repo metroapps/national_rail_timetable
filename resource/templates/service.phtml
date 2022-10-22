@@ -23,7 +23,7 @@ $date = $this->datedService->date;
     <body>
         <h1><?= html($this->getTitle()) ?></h1>
         <p><?= html(get_all_tocs()[$service->toc] ?? '') ?></p>
-        <?php
+<?php
 if ($this->permanentOnly) {
 ?>
         <p id="permanent_warning">Warning: Permanent timetable instead of actual timetable shown</p>

@@ -45,6 +45,12 @@ thead {
     z-index: 2;
 }
 
+tfoot {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+}
+
 tbody tr:nth-child(odd) td {
     background-color: lightgrey;
 }
@@ -63,4 +69,9 @@ h1 {
 
 h2 {
     font-size: 1.25rem;
+}
+
+p {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
 }
