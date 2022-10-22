@@ -253,6 +253,10 @@ class DepartureBoard implements Persistable {
             }
             $result[$group_id][] = $call;
         }
+        foreach ($result as &$group) {
+            usort($group, static fn(ServiceCallWithDestinationAndCalls $a, ServiceCallWithDestinationAndCalls $b) => $a->timestamp <=> $b->timestamp);
+        }
+        unset($group);
         return array_map(
             fn(array $calls) => new static($this->crs, $this->from, $this->to, $this->timeType, $calls)
             , $result
