@@ -2,10 +2,10 @@
 declare(strict_types = 1);
 
 use DI\ContainerBuilder;
-use function DI\autowire;
 use Http\Factory\Guzzle\ResponseFactory;
 use Http\Factory\Guzzle\StreamFactory;
 use Miklcct\NationalRailTimetable\Config\Config;
+use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\MongodbFixedLinkRepository;
@@ -26,6 +26,7 @@ use Teapot\HttpException;
 use Whoops\Handler\Handler;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
+use function DI\autowire;
 
 /**
  * Return the 2 databases defined in the application
@@ -36,15 +37,15 @@ use Whoops\Run;
  */
 function get_databases() : array {
     $container = get_container();
-    /** @var Config */
+    /** @var Config $config */
     $config = $container->get(Config::class);
     $databases = array_map(
-        fn (string $name) => $container->get(Client::class)->selectDatabase($name)
+        static fn (string $name) => $container->get(Client::class)->selectDatabase($name)
         , [$config->databaseName, $config->alternativeDatabaseName]
     );
-    /** @var (Date|null)[] */
+    /** @var (Date|null)[] $generated_dates */
     $generated_dates = array_map(
-        fn (Database $database) => $database->selectCollection('metadata')->findOne(['generated' => ['$exists' => true]])?->generated
+        static fn (Database $database) => $database->selectCollection('metadata')->findOne(['generated' => ['$exists' => true]])?->generated
         , $databases
     );
     if ($generated_dates[0]?->toDateTimeImmutable() < $generated_dates[1]?->toDateTimeImmutable()) {
@@ -86,11 +87,11 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 $whoops = new Run;
 $pretty_page_handler = new PrettyPageHandler;
-$pretty_page_handler->setEditor(PrettyPageHandler::EDITOR_VSCODE);
+$pretty_page_handler->setEditor(PrettyPageHandler::EDITOR_PHPSTORM);
 $whoops->pushHandler($pretty_page_handler);
 $whoops->pushHandler(
     new class extends Handler {
-        public function handle() {
+        public function handle() : void {
             $exception = $this->getException();
             if ($exception instanceof HttpException) {
                 $this->getRun()->sendHttpCode($exception->getCode());

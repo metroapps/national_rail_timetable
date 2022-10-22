@@ -7,11 +7,10 @@ use DateInterval;
 use DateTimeImmutable;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\DepartureBoard;
-use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\FixedLink;
+use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\ServiceCall;
 use Psr\Http\Message\StreamFactoryInterface;
-
 use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
@@ -67,14 +66,21 @@ class BoardView extends BoardFormView {
         return sprintf('%s (%s)', $location->name, $location->crsCode);
     }
 
-    protected function getFixedLinkUrl(FixedLink $fixed_link, ?DateTimeImmutable $departure_time) {
+    protected function getFixedLinkUrl(FixedLink $fixed_link, ?DateTimeImmutable $departure_time) : string {
         return $this->boardUrl . '?' . http_build_query(
             [
                 'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
                 'station' => $fixed_link->destination->crsCode,
                 'filter' => '',
-                'date' => ($this->connectingTime !== null ? Date::fromDateTimeInterface($this->connectingTime->sub(new DateInterval($this->arrivalMode ? 'PT4H30M' : 'P0D'))) : $this->boardDate)->__toString(),
-                'connecting_time' => $departure_time === null ? '' : substr($fixed_link->getArrivalTime($departure_time, $this->arrivalMode)->format('c'), 0, 16),
+                'date' => (
+                    $this->connectingTime !== null
+                        ? Date::fromDateTimeInterface($this->connectingTime->sub(new DateInterval($this->arrivalMode ? 'PT4H30M' : 'P0D')))
+                        : $this->boardDate
+                )->__toString(),
+                'connecting_time' =>
+                    $departure_time === null
+                        ? ''
+                        : substr($fixed_link->getArrivalTime($departure_time, $this->arrivalMode)?->format('c') ?? '', 0, 16),
                 'connecting_toc' => '',
             ] + ($this->permanentOnly ? ['permanent_only' => '1'] : [])
         );
@@ -120,7 +126,7 @@ class BoardView extends BoardFormView {
         );
     }
 
-    protected function getServiceLink(ServiceCall $service_call) {
+    protected function getServiceLink(ServiceCall $service_call) : string {
          return '/service.php?' . http_build_query(
             [
                 'uid' => $service_call->uid,
