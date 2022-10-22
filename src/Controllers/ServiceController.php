@@ -6,7 +6,6 @@ namespace Miklcct\NationalRailTimetable\Controllers;
 use LogicException;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\ServiceCancellation;
-use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
 use Miklcct\NationalRailTimetable\Views\ServiceView;
 use Miklcct\ThinPhpApp\Controller\Application;
@@ -22,7 +21,6 @@ class ServiceController extends Application {
         private readonly ViewResponseFactoryInterface $viewResponseFactory
         , private readonly StreamFactoryInterface $streamFactory
         , private readonly ServiceRepositoryFactoryInterface $serviceRepositoryFactory
-        , private readonly FixedLinkRepositoryInterface $fixedLinkRepository
     ) {}
     
     public function run(ServerRequestInterface $request) : ResponseInterface {
