@@ -42,3 +42,11 @@ footer {
     font-style: italic;
 }
 
+#logo_container {
+    margin: 1em;
+    text-align: center;
+}
+
+#nre_logo {
+    width: 256px;
+}

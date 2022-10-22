@@ -31,9 +31,7 @@ if ($this->permanentOnly) {
 }
 
 $this->showPortions($this->splitIntoPortions($this->datedService));
+require __DIR__ . '/footer.phtml';
 ?>
-        <footer>
-            <p>Data updated: <?= $this->generated ?></p>
-        </footer>
     </body>
 </html>
