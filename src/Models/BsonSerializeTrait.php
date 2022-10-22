@@ -30,11 +30,11 @@ trait BsonSerializeTrait {
         }
         foreach ($class->getProperties() as $property) {
             $declaring_class_name = $property->getDeclaringClass()->getName();
-            if ($property->isPublic() && !$property->isStatic() && $declaring_class_name === self::class) {
+            if ($declaring_class_name === self::class && $property->isPublic() && !$property->isStatic()) {
                 $key = $property->name;
                 $type = $property->getType();
                 $value = $data[$key];
-                if ($type->getName() === 'array') {
+                if ($type?->getName() === 'array') {
                     if ($value instanceof stdClass) {
                         $value = (array)$value;
                     }
@@ -49,7 +49,7 @@ trait BsonSerializeTrait {
                     }
                 }
                 /** @noinspection PhpVariableVariableInspection */
-                $this->$key = self::processValue($type->getName(), $value);
+                $this->$key = self::processValue($type?->getName(), $value);
             }
         }
     }

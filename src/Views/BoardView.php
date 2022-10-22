@@ -5,125 +5,125 @@ namespace Miklcct\NationalRailTimetable\Views;
 
 use DateInterval;
 use DateTimeImmutable;
+use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\DepartureBoard;
 use Miklcct\NationalRailTimetable\Models\FixedLink;
 use Miklcct\NationalRailTimetable\Models\Location;
+use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\ServiceCall;
 use Psr\Http\Message\StreamFactoryInterface;
 use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 class BoardView extends BoardFormView {
+    /**
+     * @param StreamFactoryInterface $streamFactory
+     * @param array $stations
+     * @param DepartureBoard $board
+     * @param Date $boardDate
+     * @param BoardQuery $query
+     * @param FixedLink[]|null $fixedLinks
+     * @param DateTimeImmutable|null $fixedLinkDepartureTime
+     * @param Date|null $generated
+     */
     public function __construct(
         StreamFactoryInterface $streamFactory
-        , string $boardUrl
         , array $stations
         , protected readonly DepartureBoard $board
         , protected readonly Date $boardDate
-        , protected readonly ?DateTimeImmutable $connectingTime
-        , protected readonly ?string $connectingToc
-        , protected readonly Location $station
-        , protected readonly ?Location $destination
+        , protected readonly BoardQuery $query
         , protected readonly ?array $fixedLinks
         , protected readonly ?DateTimeImmutable $fixedLinkDepartureTime
-        , protected readonly bool $permanentOnly
-        , protected readonly bool $now
-        , protected readonly bool $arrivalMode
         , protected readonly ?Date $generated
     ) {
-        parent::__construct($streamFactory, $boardUrl, $stations);
+        parent::__construct($streamFactory, $stations);
     }
 
     protected function getTitle() : string {
         return sprintf(
             '%s at %s %s %s%s'
-            , $this->arrivalMode ? 'Arrivals' : 'Departures'
-            , $this->station->name 
-            , $this->destination !== null 
-                ? ($this->arrivalMode ? ' from ' : ' to ') . $this->destination->name
+            , $this->query->arrivalMode ? 'Arrivals' : 'Departures'
+            , $this->query->station->name
+            , $this->query->filter !== null
+                ? ($this->query->arrivalMode ? ' from ' : ' to ') . $this->query->filter->name
                 : ''
-            , $this->now ? 'today' : 'on ' . $this->boardDate
-            , $this->permanentOnly ? ' (permanent timetable)' : ''
+            , $this->query->date === null ? 'today' : 'on ' . $this->boardDate
+            , $this->query->permanentOnly ? ' (permanent timetable)' : ''
         );
     }
 
     protected function getHeading() : string {
-        $result = ($this->arrivalMode ? 'Arrivals at ' : 'Departures at ') . $this->getNameAndCrs($this->station);
+        $location = $this->query->station;
+        assert($location instanceof Location);
+        $result = ($this->query->arrivalMode ? 'Arrivals at ' : 'Departures at ') . $this->getNameAndCrs($location);
 
-        if ($this->destination !== null) {
-            $result .= ' calling at ' . $this->getNameAndCrs($this->destination);
+        $filter = $this->query->filter;
+        if ($filter instanceof Location) {
+            $result .= ' calling at ' . $this->getNameAndCrs($filter);
         }
         $result .= ' ';
-        $result .= $this->now ? 'today' : 'on ' . $this->boardDate;
+        $result .= $this->query->date === null ? 'today' : 'on ' . $this->boardDate;
         return $result;
     }
 
     protected function getNameAndCrs(Location $location) : string {
-        if ($location->crsCode === null) {
+        if (!$location instanceof LocationWithCrs) {
             return $location->name;
         }
-        return sprintf('%s (%s)', $location->name, $location->crsCode);
+        return sprintf('%s (%s)', $location->name, $location->getCrsCode());
     }
 
     protected function getFixedLinkUrl(FixedLink $fixed_link, ?DateTimeImmutable $departure_time) : string {
-        return $this->boardUrl . '?' . http_build_query(
-            [
-                'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
-                'station' => $fixed_link->destination->crsCode,
-                'filter' => '',
-                'date' => (
-                    $this->connectingTime !== null
-                        ? Date::fromDateTimeInterface($this->connectingTime->sub(new DateInterval($this->arrivalMode ? 'PT4H30M' : 'P0D')))
-                        : $this->boardDate
-                )->__toString(),
-                'connecting_time' =>
-                    $departure_time === null
-                        ? ''
-                        : substr($fixed_link->getArrivalTime($departure_time, $this->arrivalMode)?->format('c') ?? '', 0, 16),
-                'connecting_toc' => '',
-            ] + ($this->permanentOnly ? ['permanent_only' => '1'] : [])
-        );
+        return (
+            new BoardQuery(
+                $this->query->arrivalMode
+                , $fixed_link->destination
+                , null
+                , $this->query->connectingTime !== null
+                    ? Date::fromDateTimeInterface($this->query->connectingTime->sub(new DateInterval($this->query->arrivalMode ? 'PT4H30M' : 'P0D')))
+                    : $this->boardDate
+                , $departure_time === null
+                    ? null
+                    : $fixed_link->getArrivalTime($departure_time, $this->query->arrivalMode)
+                , null
+                , $this->query->permanentOnly
+            )
+        )->getUrl();
     }
 
     protected function getFormData(): array {
-        return [
-            'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
-            'station' => $this->station->crsCode,
-            'filter' => $this->destination?->crsCode ?? '',
-            'date' => $this->now ? '' : $this->boardDate->__toString(),
-            'connecting_time' => substr($this->connectingTime?->format('c') ?? '', 0, 16),
-            'connecting_toc' => $this->connectingToc,
-        ] + ($this->permanentOnly ? ['permanent_only' => '1'] : []);
+        return $this->query->toArray();
     }
 
     protected function getArrivalLink(ServiceCall $service_call) : ?string {
-        if ($service_call->call->location->crsCode === null) {
+        $location = $service_call->call->location;
+        if (!$location instanceof LocationWithCrs) {
             return null;
         }
-        return $this->boardUrl . '?' . http_build_query(
-            [
-                'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
-                'station' => $service_call->call->location->crsCode,
-                'filter' => '',
-                'date' => $service_call->timestamp->sub(new DateInterval($this->arrivalMode ? 'PT4H30M' : 'P0D'))->format('Y-m-d'),
-                'connecting_time' => substr($service_call->timestamp->format('c'), 0, 16),
-                'connecting_toc' => $service_call->toc
-            ] + ($this->permanentOnly ? ['permanent_only' => '1'] : [])
-        );
+        return (
+            new BoardQuery(
+                $this->query->arrivalMode
+                , $location
+                , null
+                , Date::fromDateTimeInterface($service_call->timestamp->sub(new DateInterval($this->query->arrivalMode ? 'PT4H30M' : 'P0D')))
+                , $service_call->timestamp
+                , $service_call->toc
+                , $this->query->permanentOnly
+            )
+        )->getUrl();
     }
 
     protected function getDayOffsetLink(int $days) : string {
-        return $this->boardUrl . '?' . http_build_query(
-            [
-                'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
-                'station' => $this->station->crsCode,
-                'filter' => $this->destination?->crsCode ?? '',
-                'date' => $this->boardDate->addDays($days)->__toString(), 
-                'connecting_time' => substr($this->connectingTime?->format('c') ?? '', 0, 16),
-                'connecting_toc' => $this->connectingToc,
-            ] + ($this->permanentOnly ? ['permanent_only' => '1'] : [])
-        );
+        return (new BoardQuery(
+            $this->query->arrivalMode
+            , $this->query->station
+            , $this->query->filter
+            , $this->boardDate->addDays($days)
+            , $this->query->connectingTime
+            , $this->query->connectingToc
+            , $this->query->permanentOnly
+        ))->getUrl();
     }
 
     protected function getServiceLink(ServiceCall $service_call) : string {
@@ -131,7 +131,7 @@ class BoardView extends BoardFormView {
             [
                 'uid' => $service_call->uid,
                 'date' => $service_call->date->__toString(),
-            ] + ($this->permanentOnly ? ['permanent_only' => '1'] : [])
+            ] + ($this->query->permanentOnly ? ['permanent_only' => '1'] : [])
         );
     }
 
@@ -144,15 +144,14 @@ class BoardView extends BoardFormView {
     }
 
     protected function getReverseDirectionLink() : string {
-        return $this->boardUrl . '?' . http_build_query(
-            [
-                'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
-                'station' => $this->destination->crsCode,
-                'filter' => $this->station->crsCode,
-                'date' => $this->now ? '' : $this->boardDate->__toString(), 
-                'connecting_time' => '',
-                'connecting_toc' => '',
-            ] + ($this->permanentOnly ? ['permanent_only' => '1'] : [])
-        );
+        return (new BoardQuery(
+            $this->query->arrivalMode
+            , $this->query->filter
+            , $this->query->station
+            , $this->query->date
+            , null
+            , null
+            , $this->query->permanentOnly
+        ))->getUrl();
     }
 }

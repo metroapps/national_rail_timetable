@@ -2,8 +2,7 @@
 declare(strict_types=1);
 
 use Miklcct\NationalRailTimetable\Enums\Activity;
-use Miklcct\NationalRailTimetable\Models\FixedLink;
-use Miklcct\NationalRailTimetable\Models\Location;
+use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\NationalRailTimetable\Views\BoardFormView;
@@ -33,13 +32,12 @@ if ($this->errorMessage !== null) {
 <?php
 }
 ?>
-        <form action="<?= html($this->boardUrl) ?>" method="GET">
+        <form action="index.php" method="GET">
             <datalist id="stations">
 <?php
-/** @var Location */
 foreach ($this->stations as $station) {
 ?>
-                <option value="<?= html($station->crsCode) ?>"><?= html($station->name) ?></option>
+                <option value="<?= html($station->getCrsCode()) ?>"><?= html($station->name) ?></option>
 <?php
 }
 ?>
@@ -81,7 +79,6 @@ foreach (['departures', 'arrivals'] as $mode) {
                     <select name="connecting_toc">
                         <option></option>
 <?php
-/** @var Location */
 foreach (get_all_tocs() as $code => $name) {
 ?>
                         <option value="<?= html($code) ?>" <?= 
@@ -102,24 +99,28 @@ foreach (get_all_tocs() as $code => $name) {
         </form>
 <?php
 if ($this instanceof BoardView) {
+    $view = $this;
 ?>  
         <h1><?= html($this->getHeading()) ?></h1>
 <?php
-    if ($this->destination !== null) {
+    $query = $this->query;
+    if ($query->filter !== null) {
 ?>
         <p><a href="<?= $this->getReverseDirectionLink() ?>">Show return timetable</a></p>
 <?php
     }
-    if ($this->permanentOnly) {
+    if ($query->permanentOnly) {
 ?>
         <p id="permanent_warning">Warning: Permanent timetable instead of actual timetable shown</p>
 <?php
     }
-    if ($this->station instanceof Station) {
+    $station = $query->station;
+    if ($station instanceof Station) {
 ?>
-        <p>Minimum connection time is <span class="time"><?= html($this->station->minimumConnectionTime . ($this->station->minimumConnectionTime === 1 ? ' minute' : ' minutes')) ?></span><?= $this->station->tocConnectionTimes === [] ? '.' : ', with the exception of the following:' ?></p>
+        <p>Minimum connection time is <span class="time"><?= html(
+                    $station->minimumConnectionTime . ($station->minimumConnectionTime === 1 ? ' minute' : ' minutes')) ?></span><?= $station->tocConnectionTimes === [] ? '.' : ', with the exception of the following:' ?></p>
 <?php
-        if ($this->station->tocConnectionTimes !== []) {
+        if ($station->tocConnectionTimes !== []) {
 ?>
         <table>
             <thead>
@@ -127,7 +128,7 @@ if ($this instanceof BoardView) {
             </thead>
             <tbody>
 <?php
-            foreach ($this->station->tocConnectionTimes as $entry) {
+            foreach ($station->tocConnectionTimes as $entry) {
 ?>
                 <tr>
                     <td><?= $this->showToc($entry->arrivingToc) ?></td>
@@ -163,7 +164,7 @@ if ($this instanceof BoardView) {
 <?php
             if ($this->fixedLinkDepartureTime !== null) {
 ?>
-                    <th><?= $this->arrivalMode ? 'Departure' : 'Arrival' ?></th>
+                    <th><?= $query->arrivalMode ? 'Departure' : 'Arrival' ?></th>
 <?php
             }
 ?>
@@ -171,15 +172,14 @@ if ($this instanceof BoardView) {
             </thead>
             <tbody>
 <?php
-            /** @var FixedLink */
             foreach ($this->fixedLinks as $link) {
                 if ($this->fixedLinkDepartureTime) {
-                    $kgx_hack = $this->station->crsCode === 'KGX' && $link->destination->crsCode === 'STP'
-                        || $this->station->crsCode === 'STP' && $link->destination->crsCode === 'KGX';
-                    $departure_time = $kgx_hack && $this->connectingTime !== null
-                        ? $this->arrivalMode ? $this->connectingTime->sub(new DateInterval('PT5M')) : $this->connectingTime->add(new DateInterval('PT5M'))
+                    $kgx_hack = $station->crsCode === 'KGX' && $link->destination->crsCode === 'STP'
+                        || $station->crsCode === 'STP' && $link->destination->crsCode === 'KGX';
+                    $departure_time = $kgx_hack && $query->connectingTime !== null
+                        ? $query->arrivalMode ? $query->connectingTime->sub(new DateInterval('PT5M')) : $query->connectingTime->add(new DateInterval('PT5M'))
                         : $this->fixedLinkDepartureTime;
-                    $arrival_time = $link->getArrivalTime($departure_time, $this->arrivalMode);
+                    $arrival_time = $link->getArrivalTime($departure_time, $query->arrivalMode);
                 }
 ?>
                 <tr>
@@ -212,7 +212,7 @@ if ($this instanceof BoardView) {
         <table>
             <thead>
 <?php
-    if ($this->arrivalMode) {
+    if ($query->arrivalMode) {
 ?>
                 <tr><th colspan="7"><a href="<?= $this->getDayOffsetLink(1) ?>">Next day</a></th></tr>
 <?php
@@ -228,13 +228,13 @@ if ($this instanceof BoardView) {
                     <th>Pl.</th>
                     <th>TOC</th>
                     <th>Train no.</th>
-                    <th><?= $this->arrivalMode ? 'Origin' : 'Destination' ?></th>
+                    <th><?= $query->arrivalMode ? 'Origin' : 'Destination' ?></th>
                     <th>Calling at</th>
                 </tr>
             </thead>
             <tfoot>
 <?php
-    if ($this->arrivalMode) {
+    if ($query->arrivalMode) {
 ?>
                <tr><th colspan="7"><a href="<?= $this->getDayOffsetLink(-1) ?>">Previous day</a></th></tr>
 <?php
@@ -248,26 +248,26 @@ if ($this instanceof BoardView) {
             <tbody>
 <?php
     $previous_timestamp = null;
-    foreach ($this->arrivalMode ? array_reverse($this->board->calls, true) : $this->board->calls as $service_call) {
+    foreach ($query->arrivalMode ? array_reverse($this->board->calls, true) : $this->board->calls as $service_call) {
         $timestamp = $service_call->timestamp;
-        $destinations = $this->arrivalMode ? $service_call->origins : $service_call->destinations;
+        $destinations = $query->arrivalMode ? $service_call->origins : $service_call->destinations;
         $portions_count = count($destinations);
         $portion_uids = array_keys($destinations);
         $overtaken_portions = array_combine(
             $portion_uids
             , array_map(
-                fn(string $uid) : bool => $this->destination !== null ? $this->board->isOvertaken($service_call, $this->destination->crsCode, $uid) : false
+                fn(string $uid) : bool => $query->filter !== null ? $view->board->isOvertaken($service_call, $query->filter->getCrsCode(), $uid) : false
                 , $portion_uids
             )
         );
         $whole_train_overtaken = !in_array(false, $overtaken_portions, true);
-        $day_offset = $timestamp->setTime(0, 0, 0)->diff($this->boardDate->toDateTimeImmutable())->days;
+        $day_offset = $timestamp->setTime(0, 0)->diff($this->boardDate->toDateTimeImmutable())->days;
 ?>
                 <tr data-timestamp="<?= html($timestamp->getTimestamp()) ?>">
                     <td class="time <?= 
-                        $this->connectingTime === null || !$this->station instanceof Station 
+                        $query->connectingTime === null || !$station instanceof Station
                             ? '' 
-                            : ($service_call->isValidConnection($this->connectingTime, $this->connectingToc ?? null) ? 'valid_connection' : 'invalid_connection') 
+                            : ($service_call->isValidConnection($query->connectingTime, $this->connectingToc ?? null) ? 'valid_connection' : 'invalid_connection')
                     ?> <?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>">
                         <?= 
                             show_time($timestamp, $this->boardDate, $this->getServiceLink($service_call))
@@ -292,23 +292,23 @@ if ($this instanceof BoardView) {
                         implode(
                             ', '
                             , array_map(
-                                function(ServiceCallWithDestination $service_call): string { 
+                                static function(ServiceCallWithDestination $service_call) use ($view): string {
                                     $station = $service_call->call->location;
-                                    $link = $this->getArrivalLink($service_call);
+                                    $link = $view->getArrivalLink($service_call);
                                     return sprintf(
                                         $link === null ? '<span class="%1$s">%3$s (%4$s%5$s)</span>' : '<span class="%s"><a href="%s">%s</a> (%s%s)</span>'
-                                        , $station->crsCode !== null && $station->crsCode === $this->destination?->crsCode ? 'destination' : ''
+                                        , $station instanceof LocationWithCrs && $station->getCrsCode() === $view->query->filter?->getCrsCode() ? 'destination' : ''
                                         , html($link)
                                         , html($station->getShortName())
-                                        , show_time($service_call->timestamp, $this->boardDate)
+                                        , show_time($service_call->timestamp, $view->boardDate)
                                         , in_array(Activity::REQUEST_STOP, $service_call->call->activities, true) ? '<abbr title="request stop">x</abbr>' : ''
                                     );
                                 }
                                 , array_filter(
-                                    $this->arrivalMode ? $service_call->precedingCalls : $service_call->subsequentCalls
+                                    $query->arrivalMode ? $service_call->precedingCalls : $service_call->subsequentCalls
                                     , fn(ServiceCallWithDestination $service_call) : bool => array_key_exists(
                                     $uid,
-                                    $this->arrivalMode ? $service_call->origins : $service_call->destinations
+                                    $this->query->arrivalMode ? $service_call->origins : $service_call->destinations
                                 )
                                 )
                             )

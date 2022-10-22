@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable\Models;
 
-use JsonSerializable;
 use DateTimeInterface;
+use JsonSerializable;
 use MongoDB\BSON\Persistable;
 
 class Time implements JsonSerializable, Persistable {
@@ -39,7 +39,7 @@ class Time implements JsonSerializable, Persistable {
         return new static(
             hours: (int)$datetime->format('G')
             , minutes: (int)$datetime->format('i')
-            , halfMinute: ((int)$datetime->format('s')) >= 30
+            , halfMinute: (int)$datetime->format('s') >= 30
         );
     }
 

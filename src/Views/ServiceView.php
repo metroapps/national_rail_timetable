@@ -6,6 +6,16 @@ namespace Miklcct\NationalRailTimetable\Views;
 use DateInterval;
 use DateTimeImmutable;
 use LogicException;
+use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
+use Miklcct\NationalRailTimetable\Enums\Activity;
+use Miklcct\NationalRailTimetable\Enums\AssociationCategory;
+use Miklcct\NationalRailTimetable\Exceptions\UnreachableException;
+use Miklcct\NationalRailTimetable\Models\Association;
+use Miklcct\NationalRailTimetable\Models\Date;
+use Miklcct\NationalRailTimetable\Models\DatedService;
+use Miklcct\NationalRailTimetable\Models\FullService;
+use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
+use Miklcct\NationalRailTimetable\Models\Points\DestinationPoint;
 use Miklcct\NationalRailTimetable\Models\Points\HasArrival;
 use Miklcct\NationalRailTimetable\Models\Points\HasDeparture;
 use Miklcct\NationalRailTimetable\Models\Points\TimingPoint;
@@ -13,15 +23,6 @@ use Miklcct\NationalRailTimetable\Models\Service;
 use Miklcct\NationalRailTimetable\Models\ServiceProperty;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
-use Miklcct\NationalRailTimetable\Enums\Activity;
-use Miklcct\NationalRailTimetable\Enums\AssociationCategory;
-use Miklcct\NationalRailTimetable\Models\Association;
-use Miklcct\NationalRailTimetable\Models\FullService;
-use Miklcct\NationalRailTimetable\Models\Date;
-use Miklcct\NationalRailTimetable\Models\DatedService;
-use Miklcct\NationalRailTimetable\Models\Points\DestinationPoint;
-
-use function Miklcct\NationalRailTimetable\Views\show_time;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 class ServiceView extends PhpTemplate {
@@ -53,7 +54,6 @@ class ServiceView extends PhpTemplate {
         }
         $origin_portion = $this->getOriginPortion();
         assert($origin_portion instanceof FullService);
-        /** @var Service */
         $service = $origin_portion->service;
         return sprintf(
             '%s %s %s %s to %s'
@@ -61,7 +61,7 @@ class ServiceView extends PhpTemplate {
             , substr($service->getOrigin()->serviceProperty->rsid, 0, 6)
             , $service->getOrigin()->getPublicOrWorkingDeparture()
             , $service->getOrigin()->location->getShortName()
-            , implode(' and ', array_map(fn(DestinationPoint $point) => $point->location->getShortName(), $origin_portion->getDestinations()))
+            , implode(' and ', array_map(static fn(DestinationPoint $point) => $point->location->getShortName(), $origin_portion->getDestinations()))
         );
     }
 
@@ -73,7 +73,7 @@ class ServiceView extends PhpTemplate {
         }
         $portions = [];
         for ($i = 0; $i < 8; ++$i) {
-            if ($suffix & (1 << $i)) {
+            if ($suffix & 1 << $i) {
                 $portions[] = $i + 1;
             }
         }
@@ -90,27 +90,28 @@ class ServiceView extends PhpTemplate {
         return show_time(
             $date->toDateTimeImmutable($time)
             , $board_date
-            , $point->location->crsCode !== null 
+            , $point->location instanceof LocationWithCrs
                 ? $this->getBoardLink(
                     $date->toDateTimeImmutable($time)
-                    , $point->location->crsCode
-                    , $departure_to_arrival_board ? 'arrivals' : 'departures'
+                    , $point->location
+                    , $departure_to_arrival_board
                 ) 
                 : null
         );
     }
 
-    protected function getBoardLink(DateTimeImmutable $timestamp, string $crs, string $mode) {
-        return '/index.php?' . http_build_query(
-            [
-                'mode' => $mode,
-                'station' => $crs,
-                'filter' => '',
-                'date' => $timestamp->sub(new DateInterval($mode === 'arrivals' ? 'PT4H30M' : 'P0D'))->format('Y-m-d'),
-                'connecting_time' => substr($timestamp->format('c'), 0, 16),
-                'connecting_toc' => $this->datedService->service->toc,
-            ] + ($this->permanentOnly ? ['permanent_only' => '1'] : [])
-        );
+    protected function getBoardLink(DateTimeImmutable $timestamp, LocationWithCrs $location, bool $arrival_mode) : ?string {
+        return (
+            new BoardQuery(
+                $arrival_mode
+                , $location
+                , null
+                , Date::fromDateTimeInterface($timestamp->sub(new DateInterval($arrival_mode ? 'PT4H30M' : 'P0D')))
+                , $timestamp
+                , $this->datedService->service->toc
+                , $this->permanentOnly
+            )
+        )->getUrl();
     }
 
     protected function splitIntoPortions(FullService $dated_service, bool $recursed = false) : array {
@@ -146,6 +147,8 @@ class ServiceView extends PhpTemplate {
                     case AssociationCategory::JOIN:
                         $result[$index - 1][] = $other_portion;
                         break;
+                    default:
+                        throw new UnreachableException();
                     }
                 }
             }
@@ -153,11 +156,11 @@ class ServiceView extends PhpTemplate {
         return $result;
     }
 
-    protected function showPortions(array $portion) {
+    protected function showPortions(array $portions) : void {
 ?>
 <table class="portion">
 <?php
-        foreach ($portion as $segment) {
+        foreach ($portions as $segment) {
 ?>
     <tr>
         <td>
@@ -189,7 +192,7 @@ class ServiceView extends PhpTemplate {
 <?php
     }
 
-    protected function showCallingPoints(array $points) {
+    protected function showCallingPoints(array $points) : void {
 ?>
         <table class="calling_points">
 <?php
@@ -199,7 +202,7 @@ class ServiceView extends PhpTemplate {
                 $show_arrival = $i !== 0 && $point instanceof HasArrival && $point->getPublicArrival() !== null;
                 $show_departure = $i !== count($points) - 2 && $point instanceof HasDeparture && $point->getPublicDeparture() !== null;
 
-                if ($i !== count($points) - 2 && isset($point->serviceProperty) && $point->serviceProperty != $service_property) {
+                if (isset($point->serviceProperty) && $point->serviceProperty != $service_property && $i !== count($points) - 2) {
                     $service_property = $point->serviceProperty;
 
                     if ($show_arrival && $point->isPublicCall()) {
@@ -209,7 +212,8 @@ class ServiceView extends PhpTemplate {
                 <td><?= html($point->platform) ?></td>
                 <td class="time"><?= $this->showTime($points['dated_service']->date, $this->getOriginPortion()->date, $point, false) ?></td>
                 <td class="time"></td>
-                <td><?= implode('<br/>', array_filter(array_map(fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
+                <td><?= implode('<br/>', array_filter(array_map(
+                        static fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
             </tr>
 
 <?php
@@ -222,10 +226,10 @@ class ServiceView extends PhpTemplate {
                 <td><?= html($point->platform) ?></td>
                 <td class="time"></td>
                 <td class="time"><?= $this->showTime($points['dated_service']->date, $this->getOriginPortion()->date, $point, true) ?></td>
-                <td><?= implode('<br/>', array_filter(array_map(fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
+                <td><?= implode('<br/>', array_filter(array_map(
+                        static fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
             </tr>
 <?php
-                        $service_property_changed = false;
                     }
                 } elseif ($point->isPublicCall()) {
 ?>
@@ -234,7 +238,8 @@ class ServiceView extends PhpTemplate {
                 <td><?= html($point->platform) ?></td>
                 <td class="time"><?= $show_arrival ? $this->showTime($points['dated_service']->date, $this->getOriginPortion()->date, $point, false) : '' ?></td>
                 <td class="time"><?= $show_departure ? $this->showTime($points['dated_service']->date, $this->getOriginPortion()->date, $point, true) : '' ?></td>
-                <td><?= implode('<br/>', array_filter(array_map(fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
+                <td><?= implode('<br/>', array_filter(array_map(
+                        static fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
             </tr>
 <?php
                 }
@@ -245,7 +250,7 @@ class ServiceView extends PhpTemplate {
 <?php
     }
 
-    protected function showServiceInformation(DatedService $dated_service, ServiceProperty $service_property) {
+    protected function showServiceInformation(DatedService $dated_service, ServiceProperty $service_property) : void {
 ?>
             <tr>
                 <td colspan="5" class="train_info">
@@ -261,8 +266,8 @@ class ServiceView extends PhpTemplate {
                                             , array_filter(
                                                 [
                                                     $service_property->trainCategory->getDescription(),
-                                                    strlen($service_property->identity) ? 'ID ' . $service_property->identity : '',
-                                                    strlen($service_property->headcode) ? 'Headcode ' . $service_property->headcode : '',
+                                                    $service_property->identity !== '' ? 'ID ' . $service_property->identity : '',
+                                                    $service_property->headcode !== '' ? 'Headcode ' . $service_property->headcode : '',
                                                 ]
                                             )
                                         )

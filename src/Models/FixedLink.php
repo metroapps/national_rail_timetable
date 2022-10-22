@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailTimetable\Models;
 
 use DateInterval;
-use Miklcct\NationalRailTimetable\Models\Date;
 use DateTimeImmutable;
 use Miklcct\NationalRailTimetable\Attributes\ElementType;
 use MongoDB\BSON\Persistable;
@@ -57,28 +56,32 @@ class FixedLink implements Persistable {
                 return $this->getArrivalTime($next_time->add($transfer_interval), true);
             }
             return null;
-        } else {
-            if ($date_valid && $time->toHalfMinutes() < $this->startTime->toHalfMinutes()) {
-                $next_time = $departure->setTime($this->startTime->hours, $this->startTime->minutes);
-            } elseif ($this->endDate !== null && $departure > $this->endDate->toDateTimeImmutable(new Time(23, 59, true))) {
-                $next_time = null;
-            } else {
-                $next_time = $departure->add(new DateInterval('P1D'))->setTime(0, 0);
-            }
-            if ($next_time !== null && $next_time->getTimestamp() - $departure->getTimestamp() < 60 * 60 * 6) {
-                return $this->getArrivalTime($next_time);
-            }
-            return null;
         }
+
+        if ($date_valid && $time->toHalfMinutes() < $this->startTime->toHalfMinutes()) {
+            $next_time = $departure->setTime($this->startTime->hours, $this->startTime->minutes);
+        } elseif ($this->endDate !== null && $departure > $this->endDate->toDateTimeImmutable(new Time(23, 59, true))) {
+            $next_time = null;
+        } else {
+            $next_time = $departure->add(new DateInterval('P1D'))->setTime(0, 0);
+        }
+        if ($next_time !== null && $next_time->getTimestamp() - $departure->getTimestamp() < 60 * 60 * 6) {
+            return $this->getArrivalTime($next_time);
+        }
+        return null;
     }
 
-    public function isActiveOnDate(Date $date) {
+    public function isActiveOnDate(Date $date) : bool {
         return $this->weekdays[$date->toDateTimeImmutable()->format('w')]
-        && ($this->startDate !== null ? $this->startDate->toDateTimeImmutable(new Time(0, 0)) <= $date->toDateTimeImmutable() : true)
-        && ($this->endDate !== null ? $this->endDate->toDateTimeImmutable(new Time(23, 59, true)) >= $date->toDateTimeImmutable() : true);
+        && (!($this->startDate !== null)
+                || $this->startDate->toDateTimeImmutable(new Time(0, 0))
+                <= $date->toDateTimeImmutable())
+        && (!($this->endDate !== null)
+                || $this->endDate->toDateTimeImmutable(new Time(23, 59, true))
+                >= $date->toDateTimeImmutable());
     }
 
-    public function isActiveAtTime(Time $time) {
+    public function isActiveAtTime(Time $time) : bool {
         return $this->startTime->toHalfMinutes() <= $time->toHalfMinutes()
             && $this->endTime->toHalfMinutes() >= $time->toHalfMinutes();
     }

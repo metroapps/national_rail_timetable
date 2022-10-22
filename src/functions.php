@@ -3,15 +3,15 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable;
 
-use function Safe\json_decode;
 use function Safe\file_get_contents;
+use function Safe\json_decode;
 
 /**
  * Rotate an array
  *
  * @param array $array
  * @param int $offset positive to rotate to the left, negative to the right
- * @return void
+ * @return array
  */
 function array_rotate(array $array, int $offset) : array {
     return array_merge(
@@ -22,6 +22,8 @@ function array_rotate(array $array, int $offset) : array {
 
 /**
  * Get the list of all TOCs in code => name format
+ *
+ * @return array<string, string>
  */
 function get_all_tocs() : array {
     static $result;

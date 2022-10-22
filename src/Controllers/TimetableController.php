@@ -6,6 +6,7 @@ namespace Miklcct\NationalRailTimetable\Controllers;
 use Miklcct\NationalRailTimetable\Enums\TimeType;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\Location;
+use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\Time;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
@@ -41,7 +42,7 @@ class TimetableController extends Application {
         }
         $date = Date::fromDateTimeInterface(new DateTimeImmutable($query['date'] ?: 'now'));
         $board = ($this->serviceRepositoryFactory)(false)->getDepartureBoard(
-            $station->crsCode
+            $station->getCrsCode()
             , $date->toDateTimeImmutable()
             , $date->toDateTimeImmutable(new Time(28, 30))
             , TimeType::PUBLIC_DEPARTURE
@@ -55,7 +56,7 @@ class TimetableController extends Application {
         );
         if ($filter !== []) {
             $board = $board->filterByDestination(
-                array_map(static fn(Location $location) => $location->crsCode, $filter)
+                array_map(static fn(LocationWithCrs $location) => $location->getCrsCode(), $filter)
                 , true
             );
         }

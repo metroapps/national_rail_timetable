@@ -8,6 +8,7 @@ use Miklcct\NationalRailTimetable\Enums\Activity;
 use Miklcct\NationalRailTimetable\Enums\TimeType;
 use Miklcct\NationalRailTimetable\Models\BsonSerializeTrait;
 use Miklcct\NationalRailTimetable\Models\Location;
+use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\Time;
 use Miklcct\NationalRailTimetable\Models\TiplocLocation;
 use MongoDB\BSON\Persistable;
@@ -35,6 +36,7 @@ abstract class TimingPoint implements Persistable {
     }
 
     public function isPublicCall() : bool {
+        $location = $this->location;
         return
             (
                 $this instanceof HasDeparture && $this->getPublicDeparture() !== null
@@ -42,8 +44,8 @@ abstract class TimingPoint implements Persistable {
             )
             // this filter out non-stations on rail services, but keeps bus stations without CRS
             && (
-                $this->location->crsCode !== null
-                || $this->location instanceof TiplocLocation && $this->location->stanox === null
+                $location instanceof LocationWithCrs
+                || $location instanceof TiplocLocation && $location->stanox === null
             );
     }
 

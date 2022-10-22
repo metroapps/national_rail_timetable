@@ -3,8 +3,6 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable\Enums;
 
-use PhpParser\Node\Expr\AssignOp\Pow;
-
 enum Power : string {
     case NONE = '';
     case DIESEL = 'D';
@@ -18,15 +16,15 @@ enum Power : string {
 
     public function getDescription() : string {
         return match($this) {
-            Power::NONE => '',
-            Power::DIESEL => 'Diesel Locomotive',
-            Power::DEMU => 'Diesel-Electric Multiple Unit',
-            Power::DMU => 'Diesel Multiple Unit',
-            Power::ELECTRIC => 'Electric Locomotive',
-            Power::ELECTRO_DIESEL => 'Diesel-Electric Locomotive',
-            Power::EMU_LOCOMOTIVE => 'EMU Locomotive',
-            Power::EMU => 'Electric Multiple Unit',
-            Power::HST => 'High Speed Train',
+            self::NONE => '',
+            self::DIESEL => 'Diesel Locomotive',
+            self::DEMU => 'Diesel-Electric Multiple Unit',
+            self::DMU => 'Diesel Multiple Unit',
+            self::ELECTRIC => 'Electric Locomotive',
+            self::ELECTRO_DIESEL => 'Diesel-Electric Locomotive',
+            self::EMU_LOCOMOTIVE => 'EMU Locomotive',
+            self::EMU => 'Electric Multiple Unit',
+            self::HST => 'High Speed Train',
         };
     }
 }

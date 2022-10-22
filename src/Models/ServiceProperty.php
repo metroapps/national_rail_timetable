@@ -40,7 +40,7 @@ class ServiceProperty implements Persistable {
         $result = [];
         $portion_bitmask = (int)substr($this->rsid, 6, 2);
         for ($bit = 0; 1 << $bit <= 99; ++$bit) {
-            if ($portion_bitmask & (1 << $bit)) {
+            if ($portion_bitmask & 1 << $bit) {
                 $result[] = $bit + 1;
             }
         }

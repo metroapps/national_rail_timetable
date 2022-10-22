@@ -11,7 +11,7 @@ use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\DatedService;
 use Miklcct\NationalRailTimetable\Models\DepartureBoard;
 use Miklcct\NationalRailTimetable\Models\Service;
-use Miklcct\NationalRailTimetable\Models\ServiceCall;
+use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestinationAndCalls;
 use Miklcct\NationalRailTimetable\Models\ServiceEntry;
 use MongoDB\BSON\Regex;
 use MongoDB\Collection;
@@ -228,11 +228,10 @@ class MongodbServiceRepository extends AbstractServiceRepository {
 
         // index possibilities with their UID and date
         $possibilities = array_combine(
-            array_map(fn(DatedService $dated_service) => $dated_service->service->uid . '_' . $dated_service->date, $possibilities)
+            array_map(static fn(DatedService $dated_service) => $dated_service->service->uid . '_' . $dated_service->date, $possibilities)
             , $possibilities
         );
 
-        /** @var ServiceCall[] */
         $results = array_merge(
             ...array_values(
                 array_map(
@@ -244,6 +243,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
                 )
             )
         );
+        /** @var ServiceCallWithDestinationAndCalls[] $results */
         $results = $this->sortCallResults($results);
         foreach ($results as &$result) {
             $dated_service = $this->getFullService($possibilities[$result->uid . '_' . $result->date]);
@@ -264,7 +264,7 @@ class MongodbServiceRepository extends AbstractServiceRepository {
         return $this->getMetaCollection()->findOne(['generated' => ['$exists' => true]])?->generated;
     }
 
-    public function setGeneratedDate(?Date $date) {
+    public function setGeneratedDate(?Date $date) : void {
         $this->getMetaCollection()->insertOne(['generated' => $date]);
     }
 

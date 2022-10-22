@@ -3,14 +3,14 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable\Models;
 
-use LogicException;
+use Miklcct\NationalRailTimetable\Exceptions\UnreachableException;
 
 class Timetable {
     // this number must be greater than the maximum number of calls for a train
     private const MULTIPLIER = 1000;
 
     /**
-     * @param Station[] $stations
+     * @param LocationWithCrs[] $stations
      * @param ServiceCall[][] $calls
      */
     public function __construct(
@@ -22,6 +22,7 @@ class Timetable {
     public static function generateFromBoard(DepartureBoard $board) : static {
         $calls = $board->calls;
         // try to order the stations
+        /** @var LocationWithCrs[] $stations */
         $stations = [];
         // I hope this is good enough - I don't know how to sort the stations properly
         usort(
@@ -38,11 +39,11 @@ class Timetable {
                 foreach ($call->subsequentCalls as $subsequent_call) {
                     if (array_key_exists($portion, $subsequent_call->destinations)) {
                         $current_station = $subsequent_call->call->location;
-                        if ($current_station->crsCode !== null) {
+                        if ($current_station instanceof LocationWithCrs && $current_station->getCrsCode() !== null) {
                             $found = null;
                             $old_i = $i;
                             while (isset($stations[$i])) {
-                                if ($stations[$i]->crsCode === $current_station->crsCode) {
+                                if ($stations[$i]->getCrsCode() === $current_station->getCrsCode()) {
                                     $found = $i++;
                                     break;
                                 }
@@ -97,12 +98,13 @@ class Timetable {
                 $matrix[0][$i] = $call;
                 $j = 1;
                 foreach ($call->subsequentCalls as $subsequent_call) {
-                    $subsequent_crs = $subsequent_call->call->location->crsCode;
-                    if ($subsequent_crs !== null && array_key_exists($portion, $subsequent_call->destinations)) {
-                        while ($stations[$j]->crsCode !== $subsequent_crs) {
+                    $location = $subsequent_call->call->location;
+                    if ($location instanceof LocationWithCrs && array_key_exists($portion, $subsequent_call->destinations)) {
+                        $subsequent_crs = $location->getCrsCode();
+                        while ($stations[$j]->getCrsCode() !== $subsequent_crs) {
                             ++$j;
                             if (!isset($stations[$j])) {
-                                throw new LogicException('Should not happen');
+                                throw new UnreachableException();
                             }
                         }
                         $matrix[$j][$i] = $subsequent_call;

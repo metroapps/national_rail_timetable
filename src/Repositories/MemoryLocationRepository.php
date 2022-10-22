@@ -4,12 +4,11 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailTimetable\Repositories;
 
 use Miklcct\NationalRailTimetable\Models\Location;
-use Miklcct\NationalRailTimetable\Models\Station;
-
+use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use function is_string;
 
 class MemoryLocationRepository implements LocationRepositoryInterface {
-    public function getLocationByCrs(string $crs) : ?Location {
+    public function getLocationByCrs(string $crs) : ?LocationWithCrs {
         return $this->locationsByCrs[strtoupper($crs)] ?? null;
     }
 
@@ -24,10 +23,10 @@ class MemoryLocationRepository implements LocationRepositoryInterface {
 
     public function insertLocations(array $locations) : void {
         foreach ($locations as $station) {
-            if ($station->crsCode !== null) {
+            if ($station instanceof LocationWithCrs) {
                 $this->updateStation(
                     $this->locationsByCrs
-                    , $station->crsCode
+                    , $station->getCrsCode()
                     , $station
                 );
             }
@@ -59,7 +58,7 @@ class MemoryLocationRepository implements LocationRepositoryInterface {
         return $this->locationsByCrs;
     }
 
-    /** @var array<string, Location> */
+    /** @var array<string, LocationWithCrs> */
     private array $locationsByCrs = [];
     /** @var array<string, string|Location> */
     private array $locationsByName = [];

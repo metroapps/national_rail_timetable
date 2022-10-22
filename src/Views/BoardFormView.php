@@ -3,14 +3,19 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable\Views;
 
+use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
-use Teapot\HttpException;
 
 class BoardFormView extends PhpTemplate {
+
+    /**
+     * @param StreamFactoryInterface $streamFactory
+     * @param LocationWithCrs[] $stations
+     * @param string|null $errorMessage
+     */
     public function __construct(
         StreamFactoryInterface $streamFactory
-        , protected readonly string $boardUrl
         , protected readonly array $stations
         , protected readonly ?string $errorMessage = null
     ) {

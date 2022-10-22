@@ -4,13 +4,14 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailTimetable\Models;
 
 use Miklcct\NationalRailTimetable\Attributes\ElementType;
+use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 
-class Station extends Location {
+class Station extends Location implements LocationWithCrs {
     use BsonSerializeTrait;
 
     public function __construct(
         string $tiploc
-        , string $crsCode
+        , public readonly string $crsCode
         , string $name
         , public readonly string $minorCrsCode
         , public readonly int $interchange
@@ -19,8 +20,12 @@ class Station extends Location {
         , public readonly int $minimumConnectionTime
         , array $tocConnectionTimes
     ) {
-        parent::__construct($tiploc, $crsCode, $name);
+        parent::__construct($tiploc, $name);
         $this->tocConnectionTimes = $tocConnectionTimes;
+    }
+
+    public function getCrsCode() : string {
+        return $this->crsCode;
     }
 
     public function getConnectionTime(?string $from_toc, ?string $to_toc) : int {
@@ -31,6 +36,23 @@ class Station extends Location {
         }
         return $this->minimumConnectionTime;
     }
+
+    public function promoteToStation(LocationRepositoryInterface $repository) : Station {
+        $station = $repository->getLocationByCrs($this->getCrsCode());
+        assert($station instanceof Station);
+        return new Station(
+            $this->tiploc
+            , $station->crsCode
+            , $station->name
+            , $station->minorCrsCode
+            , $station->interchange
+            , $station->easting
+            , $station->northing
+            , $station->minimumConnectionTime
+            , $station->tocConnectionTimes
+        );
+    }
+
 
     /** @var TocInterchange[] */
     #[ElementType(TocInterchange::class)]

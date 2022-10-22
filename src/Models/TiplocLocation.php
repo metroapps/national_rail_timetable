@@ -8,10 +8,9 @@ class TiplocLocation extends Location {
 
     public function __construct(
         string $tiploc
-        , ?string $crsCode
         , string $name
         , public readonly ?int $stanox
     ) {
-        parent::__construct($tiploc, $crsCode, $name);
+        parent::__construct($tiploc, $name);
     }
 }

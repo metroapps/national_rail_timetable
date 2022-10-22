@@ -19,6 +19,7 @@ use Miklcct\NationalRailTimetable\Models\AssociationCancellation;
 use Miklcct\NationalRailTimetable\Models\AssociationEntry;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\Location;
+use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\Period;
 use Miklcct\NationalRailTimetable\Models\Points\CallingPoint;
 use Miklcct\NationalRailTimetable\Models\Points\DestinationPoint;
@@ -31,6 +32,7 @@ use Miklcct\NationalRailTimetable\Models\ServiceEntry;
 use Miklcct\NationalRailTimetable\Models\ServiceProperty;
 use Miklcct\NationalRailTimetable\Models\Time;
 use Miklcct\NationalRailTimetable\Models\TiplocLocation;
+use Miklcct\NationalRailTimetable\Models\TiplocLocationWithCrs;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryInterface;
 use function array_filter;
@@ -57,7 +59,7 @@ class TimetableParser {
         $locations = [];
         $associations = [];
         while (($line = fgets($file)) !== false) {
-            switch (($transaction_type = substr($line, 0, 2))) {
+            switch ($transaction_type = substr($line, 0, 2)) {
             case 'AA':
             case 'BS':
                 if ($locations !== []) {
@@ -74,8 +76,13 @@ class TimetableParser {
                 }
                 break;
             case 'TI':
-                $locations[] = $this->parseStation($line);
+                $locations[] = $this->parseLocation($line);
                 break;
+            }
+
+            if (count($services) >= 1000) {
+                $this->serviceRepository->insertServices($services);
+                $services = [];
             }
         }
         $this->serviceRepository->insertServices($services);
@@ -396,7 +403,7 @@ class TimetableParser {
         return new Date($year, $month, $day);
     }
 
-    private function parseStation(string $line) : Location {
+    private function parseLocation(string $line) : TiplocLocation {
         $columns = $this->helper->parseLine(
             $line
             , [2, 7, 2, 6, 1, 26, 5, 4, 3, 16]
@@ -405,20 +412,30 @@ class TimetableParser {
         if ($stanox === 0) {
             $stanox = null;
         }
-        return new TiplocLocation(
-            tiploc: $columns[1]
-            , name: get_full_station_name($columns[5])
-            , crsCode: $columns[8] === '' ? null : $columns[8]
-            , stanox: $stanox
-        );
+        $crs = $columns[8] === '' ? null : $columns[8];
+        return $crs !== null
+            ? new TiplocLocationWithCrs(
+                tiploc: $columns[1]
+                , name: get_full_station_name($columns[5])
+                , crsCode: $crs
+                , stanox: $stanox
+            )
+            : new TiplocLocation(
+                tiploc: $columns[1]
+                , name: get_full_station_name($columns[5])
+                , stanox: $stanox
+            );
     }
 
     private function getLocation(string $location) : ?Location {
         if (substr($location, 3, 4) === '----') {
             // Z-train
-            return $this->locationRepository->getLocationByCrs(substr($location, 0, 3));
+            $result = $this->locationRepository->getLocationByCrs(substr($location, 0, 3));
+            // will not be needed beyond PHP 8.2
+            assert($result instanceof Location);
+            return $result;
         }
-        $location = $this->locationRepository->getLocationByTiploc($location);
-        return $location->promoteToStation($this->locationRepository) ?? $location;
+        $result = $this->locationRepository->getLocationByTiploc($location);
+        return ($result instanceof LocationWithCrs ? $result->promoteToStation($this->locationRepository) : null) ?? $result;
     }
 }

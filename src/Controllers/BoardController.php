@@ -4,11 +4,11 @@ declare(strict_types = 1);
 namespace Miklcct\NationalRailTimetable\Controllers;
 
 use DateInterval;
-use DateTimeImmutable;
 use DateTimeZone;
 use Http\Factory\Guzzle\StreamFactory;
 use Miklcct\NationalRailTimetable\Enums\TimeType;
 use Miklcct\NationalRailTimetable\Exceptions\StationNotFound;
+use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\FixedLink;
 use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\NationalRailTimetable\Models\Time;
@@ -37,46 +37,44 @@ class BoardController extends Application {
     ) {}
     
     public function run(ServerRequestInterface $request) : ResponseInterface {
-        $query = $request->getQueryParams();
-        $self = $request->getServerParams()['PHP_SELF'];
         try {
-            $station = $this->getQueryStation($query['station'] ?? '');
-            if ($station === null) {
-                return ($this->viewResponseFactory)(
-                    new BoardFormView(
-                        new StreamFactory()
-                        , $self
-                        , $this->locationRepository->getAllStations()
-                    )
-                )->withAddedHeader('Cache-Control', ['public', 'max-age=604800']);
-            }
-            $destination = $this->getQueryStation($query['filter'] ?? '');
+            $query = BoardQuery::fromArray($request->getQueryParams(), $this->locationRepository);
+            $station = $query->station;
+            $destination = $query->filter;
         } catch (StationNotFound $e) {
             return ($this->viewResponseFactory)(
                 new BoardFormView(
                     $this->streamFactory
-                    , $self
                     , $this->locationRepository->getAllStations()
                     , $e->getMessage()
                 )
             )->withStatus(WebDAV::UNPROCESSABLE_ENTITY);
         }
 
-        $arrival_mode = $this->getQueryArrivalMode($query);
-        $date = $this->getQueryDate($query);
+        if ($station === null) {
+            return ($this->viewResponseFactory)(
+                new BoardFormView(
+                    new StreamFactory()
+                    , $this->locationRepository->getAllStations()
+                )
+            )->withAddedHeader('Cache-Control', ['public', 'max-age=604800']);
+        }
+
+        $arrival_mode = $query->arrivalMode;
+        $date = $query->date ?? Date::today();
         $from = $date->toDateTimeImmutable(new Time(0, 0));
         $to = $date->toDateTimeImmutable(new Time(28, 30));
-        $connecting_time = !empty($_GET['connecting_time']) ? new DateTimeImmutable($_GET['connecting_time']) : null;
-        $permanent_only = !empty($query['permanent_only']);
+        $connecting_time = $query->connectingTime;
+        $permanent_only = $query->permanentOnly;
         $service_repository = ($this->serviceRepositoryFactory)($permanent_only);
         $board = $service_repository->getDepartureBoard(
-            $station->crsCode
+            $station->getCrsCode()
             , $from
             , $to
             , $arrival_mode ? TimeType::PUBLIC_ARRIVAL : TimeType::PUBLIC_DEPARTURE
         );
         if ($destination !== null) {
-            $board = $board->filterByDestination($destination->crsCode);
+            $board = $board->filterByDestination($destination->getCrsCode());
         }
 
         /** @var FixedLink[] $fixed_links */
@@ -92,7 +90,7 @@ class BoardController extends Application {
                 $arrival_time = $fixed_link->getArrivalTime($fixed_link_departure_time, $arrival_mode);
                 $existing = $fixed_links[$fixed_link->destination->crsCode] ?? null;
                 if (
-                    ($destination === null || $destination->crsCode === $fixed_link->destination->crsCode)
+                    ($destination === null || $destination->getCrsCode() === $fixed_link->destination->crsCode)
                     && $arrival_time !== null
                     && (
                         !$existing 
@@ -120,23 +118,16 @@ class BoardController extends Application {
         $response = ($this->viewResponseFactory)(
             new BoardView(
                 new StreamFactory()
-                , $self
                 , $this->locationRepository->getAllStations()
                 , $board
                 , $date
-                , $connecting_time
-                , empty($query['connecting_toc']) ? null : $query['connecting_toc']
-                , $station
-                , $destination
+                , $query
                 , $fixed_links
                 , $fixed_link_departure_time
-                , $permanent_only
-                , empty($query['date'])
-                , $arrival_mode
                 , $service_repository->getGeneratedDate()
             )
         )->withAddedHeader('Cache-Control', ['public']);
-        return empty($query['date'])
+        return $query->date === null
             ? $response->withAddedHeader(
                 'Expires',
                 str_replace(

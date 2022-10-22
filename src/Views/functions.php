@@ -8,7 +8,7 @@ use Miklcct\NationalRailTimetable\Models\Date;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 function show_time(DateTimeImmutable $timestamp, Date $base, string $link = null) : string {
-    $interval = $base->toDateTimeImmutable()->diff($timestamp->setTime(0, 0, 0));
+    $interval = $base->toDateTimeImmutable()->diff($timestamp->setTime(0, 0));
     $day_offset = $interval->days * ($interval->invert ? -1 : 1);
     $time_string = $timestamp->format('H:i') 
         . ((int)$timestamp->format('s') > 30 ? '½' : '');

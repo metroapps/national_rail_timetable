@@ -83,6 +83,7 @@ class MemoryServiceRepository extends AbstractServiceRepository {
                 }
             }
         }
+        /** @noinspection PhpParamsInspection */
         return new DepartureBoard(
             $crs
             , $from
@@ -100,7 +101,7 @@ class MemoryServiceRepository extends AbstractServiceRepository {
         return $this->date;
     }
 
-    public function setGeneratedDate(?Date $date) {
+    public function setGeneratedDate(?Date $date) : void {
         $this->date = $date;
     }
 

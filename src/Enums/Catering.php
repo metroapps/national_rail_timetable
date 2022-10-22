@@ -14,11 +14,11 @@ enum Catering : string {
 
     public function showIcon() : string {
         return match($this) {
-            Catering::BUFFET => '<img src="/images/buffet.png" alt="buffet" title="Buffet" />',
-            Catering::FIRST_CLASS_RESTAURANT => '<img src="/images/first_class_restaurant.png" alt="first class restaurant" title="Restaurant for first class passengers" />',
-            Catering::HOT_FOOD => '<img src="/images/first_class_restaurant.png" alt="hot food" title="Hot food" />',
-            Catering::RESTAURANT => '<img src="/images/restaurant.png" alt="restaurant" title="Restaurant" />',
-            Catering::TROLLEY => '<img src="/images/trolley.png" alt="restaurant" title="Trolley" />',
+            self::BUFFET => '<img src="/images/buffet.png" alt="buffet" title="Buffet" />',
+            self::FIRST_CLASS_RESTAURANT => '<img src="/images/first_class_restaurant.png" alt="first class restaurant" title="Restaurant for first class passengers" />',
+            self::HOT_FOOD => '<img src="/images/first_class_restaurant.png" alt="hot food" title="Hot food" />',
+            self::RESTAURANT => '<img src="/images/restaurant.png" alt="restaurant" title="Restaurant" />',
+            self::TROLLEY => '<img src="/images/trolley.png" alt="restaurant" title="Trolley" />',
             default => '',
         };
     }

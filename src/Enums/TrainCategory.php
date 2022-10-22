@@ -23,15 +23,15 @@ enum TrainCategory : string {
 
     public function getDescription() : string {
         return match ($this) {
-            TrainCategory::NONE => '',
-            TrainCategory::METRO => 'Metro Train',
-            TrainCategory::ORDINARY => 'Local Train',
-            TrainCategory::CHANNEL_TUNNEL => 'Channel Tunnel Train',
-            TrainCategory::EXPRESS => 'Express Train',
-            TrainCategory::SLEEPER => 'Sleeper',
-            TrainCategory::REPLACEMENT_BUS => 'Rail Replacement Bus',
-            TrainCategory::BUS => 'Service Bus',
-            TrainCategory::SHIP => 'Ship',  
+            self::NONE => '',
+            self::METRO => 'Metro Train',
+            self::ORDINARY => 'Local Train',
+            self::CHANNEL_TUNNEL => 'Channel Tunnel Train',
+            self::EXPRESS => 'Express Train',
+            self::SLEEPER => 'Sleeper',
+            self::REPLACEMENT_BUS => 'Rail Replacement Bus',
+            self::BUS => 'Service Bus',
+            self::SHIP => 'Ship',
         };
     }
 }

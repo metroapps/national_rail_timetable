@@ -3,6 +3,7 @@ declare(strict_types = 1);
 
 use Miklcct\NationalRailTimetable\Models\DepartureBoard;
 use Miklcct\NationalRailTimetable\Models\Location;
+use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 use Miklcct\NationalRailTimetable\Models\Timetable;
 use Miklcct\NationalRailTimetable\Views\TimetableView;
@@ -28,7 +29,7 @@ foreach ($this->boards as $board) {
     $stations = $timetable->stations;
     $calls = $timetable->calls;
 
-    $get_colspan = function(array $array, int $i) {
+    $get_colspan = static function(array $array, int $i) {
         $call = $array[$i];
         $colspan = 0;
         while (
@@ -40,13 +41,14 @@ foreach ($this->boards as $board) {
             ++$i;
         }
         return $colspan;
-    }
+    };
+    $via = $board->getDestinations(true);
+    $destinations = $board->getDestinations();
 ?>
         <section>
             <h2>Trains 
-                via <?= html(implode(', ', array_map(static fn(Location $location) => $location->getShortName(), $board->getLocationsOfFirstCall()))) ?>
-                towards <?= html(implode(', ', array_map(static fn(Location $location) => $location->getShortName(), $board->getDestinations())))
-                ?>
+                <?= $via ? ' via ' . html(implode(', ', array_map(static fn(Location $location) => $location->getShortName(), $via))) : '' ?>
+                <?= $destinations ? ' towards ' . html(implode(', ', array_map(static fn(Location $location) => $location->getShortName(), $destinations))) : '' ?>
             </h2>
             <div class="container">
                 <table>
@@ -91,8 +93,13 @@ foreach ($this->boards as $board) {
         /** @var ServiceCallWithDestination $call */
         $call = $calls[0][$i];
         foreach ($call->destinations as $destination) {
+            $destination_location = $destination->location;
+            if (!$destination_location instanceof LocationWithCrs) {
+                $destination_location = null;
+            }
 ?>
-                            <td><abbr title="<?= html($destination->location->getShortName()) ?>"><?= html($destination->location->crsCode) ?></abbr></td>
+                            <td><abbr title="<?=
+                                html($destination_location?->getShortName()) ?>"><?= html($destination_location?->getCrsCode()) ?></abbr></td>
 <?php
             ++$i;
         }
@@ -138,7 +145,7 @@ foreach ($this->boards as $board) {
 <?php
         }
 ?>
-                        <tr class="<?= $i === 0 ? 'origin' : '' ?> <?= $i !== 0 && in_array($station->crsCode, $this->filterCrs, true) ? 'destination' : '' ?>">
+                        <tr class="<?= $i === 0 ? 'origin' : '' ?> <?= $i !== 0 && in_array($station->getCrsCode(), array_map(static fn(LocationWithCrs $location) => $location->getCrsCode(), $this->filter), true) ? 'destination' : '' ?>">
                             <td class="station_column"><?= html($station->getShortName()) ?></td>
 <?php
         $j = 0;

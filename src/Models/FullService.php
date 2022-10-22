@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use LogicException;
 use Miklcct\NationalRailTimetable\Enums\AssociationCategory;
 use Miklcct\NationalRailTimetable\Enums\TimeType;
+use Miklcct\NationalRailTimetable\Exceptions\UnreachableException;
 use Miklcct\NationalRailTimetable\Models\Points\CallingPoint;
 use Miklcct\NationalRailTimetable\Models\Points\DestinationPoint;
 use Miklcct\NationalRailTimetable\Models\Points\HasArrival;
@@ -43,12 +44,11 @@ class FullService extends DatedService {
                     $this->service->getAssociationPoint(...)
                     , [$a->associationEntry, $b->associationEntry]
                 );
-                /** @var Time[] */
                 $times = array_map(
                     static fn(TimingPoint $point) =>
                         $point instanceof HasDeparture ? $point->getPublicOrWorkingDeparture() : (
                             $point instanceof HasArrival ? $point->getPublicOrWorkingArrival() : (
-                                $point instanceof PassingPoint ? $point->pass : assert(false)
+                                $point instanceof PassingPoint ? $point->pass : throw new UnreachableException()
                             )
                         )
                     , $points
@@ -63,11 +63,11 @@ class FullService extends DatedService {
                                 assert($dated_association->secondaryService instanceof FullService);
                                 return $dated_association->secondaryService->date->toDateTimeImmutable(
                                     match ($dated_association->associationEntry->category) {
-                                    AssociationCategory::DIVIDE =>
-                                        $dated_association->secondaryService->service->getOrigin()->getPublicOrWorkingDeparture(),
-                                    AssociationCategory::JOIN =>
-                                        $dated_association->secondaryService->service->getDestination()->getPublicOrWorkingArrival()
-
+                                        AssociationCategory::DIVIDE =>
+                                            $dated_association->secondaryService->service->getOrigin()->getPublicOrWorkingDeparture(),
+                                        AssociationCategory::JOIN =>
+                                            $dated_association->secondaryService->service->getDestination()->getPublicOrWorkingArrival(),
+                                        default => throw new UnreachableException(),
                                     }
                                 );
                             }
@@ -195,7 +195,7 @@ class FullService extends DatedService {
     }
 
     /**
-     * @return ServiceCallWithDestination[]
+     * @return ServiceCallWithDestinationAndCalls[]
      */
     public function getCalls(
         TimeType $time_type
@@ -265,7 +265,7 @@ class FullService extends DatedService {
             $association = $this->joinTo->associationEntry;
             assert($association instanceof Association);
             $primary_service = $this->joinTo->primaryService;
-            assert($primary_service instanceof FullService);
+            assert($primary_service instanceof self);
             $association_point = $primary_service->service->getAssociationPoint($association);
             assert($association_point instanceof CallingPoint);
             $association_timestamp = $primary_service->date->toDateTimeImmutable(
@@ -285,7 +285,7 @@ class FullService extends DatedService {
             $association = $this->divideFrom->associationEntry;
             assert($association instanceof Association);
             $primary_service = $this->divideFrom->primaryService;
-            assert($primary_service instanceof FullService);
+            assert($primary_service instanceof self);
             $association_point = $primary_service->service->getAssociationPoint($association);
             assert($association_point instanceof CallingPoint);
             $association_timestamp = $primary_service->date->toDateTimeImmutable(

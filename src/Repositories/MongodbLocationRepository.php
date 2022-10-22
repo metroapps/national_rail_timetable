@@ -4,21 +4,23 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailTimetable\Repositories;
 
 use Miklcct\NationalRailTimetable\Models\Location;
+use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\Station;
 use MongoDB\Collection;
 use MongoDB\Database;
 use MongoDB\Driver\Cursor;
+use stdClass;
 use function array_keys;
 use function array_values;
-use stdClass;
 
 class MongodbLocationRepository implements LocationRepositoryInterface {
     public function __construct(Database $database) {
         $this->collection = $database->selectCollection('locations');
     }
 
-    public function getLocationByCrs(string $crs) : ?Location {
+    public function getLocationByCrs(string $crs) : ?LocationWithCrs {
         $crs = strtoupper($crs);
+        /** @noinspection PhpIncompatibleReturnTypeInspection */
         return $this->crsCache[$crs] ??= $this->processResult($this->collection->find(['$or' => [['crsCode' => $crs], ['minorCrsCode' => $crs]]]));
     }
 
@@ -72,14 +74,13 @@ class MongodbLocationRepository implements LocationRepositoryInterface {
     public function getAllStations(): array {
         $this->crsCache = [];
         foreach ($this->collection->find(['crsCode' => ['$ne' => null]]) as $result) {
-            if ($result instanceof Location) {
-                $crs = $result->crsCode;
-                if ($crs !== null) {
-                    if (!isset($this->crsCache[$crs]) || $result->isSuperior($this->crsCache[$crs]))
+            if ($result instanceof LocationWithCrs) {
+                $crs = $result->getCrsCode();
+                if (!isset($this->crsCache[$crs]) || $result->isSuperior($this->crsCache[$crs])) {
                     $this->crsCache[$crs] = $result;
-                    if ($result instanceof Station && $result->minorCrsCode !== null) {
-                        $this->crsCache[$result->minorCrsCode] = $result;
-                    }
+                }
+                if ($result instanceof Station && $result->minorCrsCode !== null) {
+                    $this->crsCache[$result->minorCrsCode] = $result;
                 }
             }
         }
@@ -90,6 +91,7 @@ class MongodbLocationRepository implements LocationRepositoryInterface {
         $result = null;
         foreach ($cursor as $item) {
             if ($item instanceof stdClass && isset($item->alias)) {
+                /** @noinspection NullPointerExceptionInspection */
                 $item = $this->getLocationByName($item->alias);
             }
             if ($item instanceof Location && $item->isSuperior($result)) {

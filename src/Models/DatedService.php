@@ -19,7 +19,9 @@ class DatedService implements Persistable {
 
     /**
      * @param TimeType $time_type
-     * @param string $crs
+     * @param string|null $crs
+     * @param DateTimeImmutable|null $from
+     * @param DateTimeImmutable|null $to
      * @return ServiceCall[]
      */
     public function getCalls(
@@ -36,7 +38,8 @@ class DatedService implements Persistable {
             array_filter(
                 array_map(
                     function (TimingPoint $point) use ($service, $crs, $time_type) : ?ServiceCall {
-                        if ($crs !== null && $point->location->crsCode !== $crs) {
+                        $location = $point->location;
+                        if ($crs !== null && !($location instanceof LocationWithCrs && $location->getCrsCode() === $crs)) {
                             return null;
                         }
                         $time = $point->getTime($time_type);

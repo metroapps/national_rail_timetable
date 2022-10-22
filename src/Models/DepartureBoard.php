@@ -7,6 +7,8 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use Miklcct\NationalRailTimetable\Enums\TimeType;
 use MongoDB\BSON\Persistable;
+use function array_filter;
+use function array_merge;
 
 class DepartureBoard implements Persistable {
     use BsonSerializeTrait;
@@ -36,39 +38,61 @@ class DepartureBoard implements Persistable {
         if (in_array($this->timeType, [TimeType::WORKING_DEPARTURE, TimeType::PUBLIC_DEPARTURE], true)) {
             return array_filter(
                 $service_call->subsequentCalls
-                , fn(ServiceCallWithDestination $filter_call) : bool =>
-                    array_key_exists($portion_uid, $filter_call->destinations)
-                    && $filter_call->call->location->crsCode === $destination_crs 
-                    && array_filter(
-                        $this->calls
-                        , static fn(ServiceCallWithDestinationAndCalls $other_call) : bool =>
-                            $other_call->timestamp >= $service_call->timestamp
+                , function (ServiceCallWithDestination $filter_call) use (
+                    $portion_uid,
+                    $destination_crs,
+                    $service_call
+                ) : bool {
+                    $location = $filter_call->call->location;
+                    return $location instanceof LocationWithCrs
+                        && $location->getCrsCode() === $destination_crs
+                        && array_key_exists($portion_uid, $filter_call->destinations)
+                        && array_filter(
+                            $this->calls
+                            , static fn(ServiceCallWithDestinationAndCalls $other_call) : bool => $other_call->timestamp
+                            >= $service_call->timestamp
                             && array_filter(
                                 $other_call->subsequentCalls
-                                , static fn(ServiceCallWithDestination $compare_filter_call) : bool =>
-                                    $compare_filter_call->call->location->crsCode === $destination_crs
-                                    && $compare_filter_call->timestamp < $filter_call->timestamp
+                                , static function (ServiceCallWithDestination $compare_filter_call) use ($destination_crs, $filter_call) : bool {
+                                    $location = $compare_filter_call->call->location;
+                                    return $location instanceof LocationWithCrs
+                                        && $location->getCrsCode() === $destination_crs
+                                        && $compare_filter_call->timestamp < $filter_call->timestamp;
+                                }
                             ) !== []
-                    ) === []
+                        ) === [];
+                }
             ) === [];
         }
         if (in_array($this->timeType, [TimeType::WORKING_ARRIVAL, TimeType::PUBLIC_ARRIVAL], true)) {
             return array_filter(
                 $service_call->precedingCalls
-                , fn(ServiceCallWithDestination $filter_call) : bool =>
-                    array_key_exists($portion_uid, $filter_call->origins)
-                    && $filter_call->call->location->crsCode === $destination_crs 
-                    && array_filter(
-                        $this->calls
-                        , static fn(ServiceCallWithDestinationAndCalls $other_call) : bool =>
-                            $other_call->timestamp <= $service_call->timestamp
-                            && array_filter(
-                                $other_call->precedingCalls
-                                , static fn(ServiceCallWithDestination $compare_filter_call) : bool =>
-                                    $compare_filter_call->call->location->crsCode === $destination_crs
-                                    && $compare_filter_call->timestamp > $filter_call->timestamp
+                , function (ServiceCallWithDestination $filter_call) use (
+                    $portion_uid,
+                    $destination_crs,
+                    $service_call
+                ) : bool {
+                    $location = $filter_call->call->location;
+                    return array_key_exists($portion_uid, $filter_call->origins)
+                        && $location instanceof LocationWithCrs && $location->getCrsCode() === $destination_crs
+                        && array_filter(
+                            $this->calls
+                            , static fn(ServiceCallWithDestinationAndCalls $other_call) : bool =>
+                                $other_call->timestamp <= $service_call->timestamp
+                                && array_filter(
+                                    $other_call->precedingCalls
+                                    , static function (ServiceCallWithDestination $compare_filter_call) use (
+                                    $destination_crs,
+                                    $filter_call
+                                ) : bool {
+                                    $location = $compare_filter_call->call->location;
+                                    return $location instanceof LocationWithCrs
+                                        && $location->getCrsCode() === $destination_crs
+                                        && $compare_filter_call->timestamp > $filter_call->timestamp;
+                                }
                             ) !== []
-                    ) === []
+                        ) === [];
+                }
             ) === [];
         }
         return false;
@@ -85,6 +109,10 @@ class DepartureBoard implements Persistable {
         if (!is_array($filter_crs)) {
             $filter_crs = (array)$filter_crs;
         }
+        $filter = static function (ServiceCallWithDestination $filter_call) use ($filter_crs) : bool {
+            $location = $filter_call->call->location;
+            return $location instanceof LocationWithCrs && in_array($location->getCrsCode(), $filter_crs, true);
+        };
         return new static(
             $this->crs
             , $this->from
@@ -99,8 +127,10 @@ class DepartureBoard implements Persistable {
                                     static fn(ServiceCallWithDestination $filter_call) => $filter_call->destinations
                                     , array_filter(
                                         $service_call->subsequentCalls
-                                        , static fn(ServiceCallWithDestination $filter_call) : bool =>
-                                            in_array($filter_call->call->location->crsCode, $filter_crs, true)
+                                        , static function (ServiceCallWithDestination $filter_call) use ($filter_crs) : bool {
+                                            $location = $filter_call->call->location;
+                                            return $location instanceof LocationWithCrs && in_array($location->getCrsCode(), $filter_crs, true) ;
+                                        }
                                     )
                                 )
                             );
@@ -110,9 +140,18 @@ class DepartureBoard implements Persistable {
                                     array_intersect_key($destinations, $filter_call->destinations) !== []
                                     && (!$truncate || array_filter(
                                         array_slice($service_call->subsequentCalls, $offset, null)
-                                        , static fn(ServiceCallWithDestination $truncate_call) : bool =>
-                                            array_intersect_key($truncate_call->destinations, $filter_call->destinations) !== []
-                                            && in_array($truncate_call->call->location->crsCode, $filter_crs, true)
+                                        , static function (ServiceCallWithDestination $truncate_call) use (
+                                            $filter_call,
+                                            $filter_crs
+                                        ) : bool {
+                                            $location = $truncate_call->call->location;
+                                            return $location instanceof LocationWithCrs
+                                                && array_intersect_key(
+                                                    $truncate_call->destinations,
+                                                    $filter_call->destinations
+                                                ) !== []
+                                                && in_array($location->getCrsCode(), $filter_crs, true);
+                                        }
                                     ) !== [])
                                 , ARRAY_FILTER_USE_BOTH
                             );
@@ -126,8 +165,10 @@ class DepartureBoard implements Persistable {
                                     static fn(ServiceCallWithDestination $filter_call) => $filter_call->origins
                                     , array_filter(
                                         $service_call->precedingCalls
-                                        , static fn(ServiceCallWithDestination $filter_call) : bool =>
-                                            in_array($filter_call->call->location->crsCode, $filter_crs, true)
+                                        , static function (ServiceCallWithDestination $filter_call) use ($filter_crs) : bool {
+                                            $location = $filter_call->call->location;
+                                            return $location instanceof LocationWithCrs && in_array($location->getCrsCode(), $filter_crs, true);
+                                        }
                                     )
                                 )
                             );
@@ -137,9 +178,15 @@ class DepartureBoard implements Persistable {
                                     array_intersect_key($origins, $filter_call->origins) !== []
                                     && (!$truncate || array_filter(
                                         array_slice($service_call->precedingCalls, 0, $offset + 1)
-                                        , static fn(ServiceCallWithDestination $truncate_call) : bool =>
-                                            array_intersect_key($truncate_call->origins, $filter_call->origins) !== []
-                                            && in_array($truncate_call->call->location->crsCode, $filter_crs, true)
+                                        , static function (ServiceCallWithDestination $truncate_call) use (
+                                            $filter_call,
+                                            $filter_crs
+                                        ) : bool {
+                                            $location = $truncate_call->call->location;
+                                            return $location instanceof LocationWithCrs
+                                                && array_intersect_key($truncate_call->origins, $filter_call->origins) !== []
+                                                && in_array($location->getCrsCode(), $filter_crs, true);
+                                        }
                                     ) !== [])
                                 , ARRAY_FILTER_USE_BOTH
                             );
@@ -166,17 +213,9 @@ class DepartureBoard implements Persistable {
                         $this->calls
                         , fn(ServiceCallWithDestinationAndCalls $service_call) : bool =>
                             !in_array($this->timeType, [TimeType::PUBLIC_ARRIVAL, TimeType::WORKING_ARRIVAL], true)
-                                && array_filter(
-                                    $service_call->subsequentCalls
-                                    , static fn(ServiceCallWithDestination $filter_call) : bool =>
-                                        in_array($filter_call->call->location->crsCode, $filter_crs, true)
-                                ) !== []
+                                && array_filter($service_call->subsequentCalls, $filter) !== []
                             || !in_array($this->timeType, [TimeType::PUBLIC_DEPARTURE, TimeType::WORKING_DEPARTURE], true)
-                                && array_filter(
-                                    $service_call->precedingCalls
-                                    , static fn(ServiceCallWithDestination $filter_call) : bool =>
-                                        in_array($filter_call->call->location->crsCode, $filter_crs, true)
-                            ) !== []
+                                && array_filter($service_call->precedingCalls, $filter) !== []
                     )
                 )
             )
@@ -194,20 +233,25 @@ class DepartureBoard implements Persistable {
         foreach ($this->calls as $call) {
             $group_id = $station_groups === [] ? 0 : max($station_groups) + 1;
             foreach ($call->subsequentCalls as $subsequent_call) {
-                $subsequent_crs = $subsequent_call->call->location->crsCode;
-                if (isset($station_groups[$subsequent_crs])) {
-                    $group_to_be_joined = $station_groups[$subsequent_crs];
-                    if ($group_to_be_joined !== $group_id) {
-                        foreach ($station_groups as &$station_group) {
-                            if ($station_group === $group_id) {
-                                $station_group = $group_to_be_joined;
+                $location = $subsequent_call->call->location;
+                if ($location instanceof LocationWithCrs) {
+                    $subsequent_crs = $location->getCrsCode();
+                    if (isset($station_groups[$subsequent_crs])) {
+                        $group_to_be_joined = $station_groups[$subsequent_crs];
+                        if ($group_to_be_joined !== $group_id) {
+                            foreach ($station_groups as &$station_group) {
+                                if ($station_group === $group_id) {
+                                    $station_group = $group_to_be_joined;
+                                }
                             }
+                            unset($station_group);
+                            $result[$group_to_be_joined] = array_merge($result[$group_to_be_joined], $result[$group_id] ?? []);
+                            unset($result[$group_id]);
+                            $group_id = $group_to_be_joined;
                         }
-                        unset($station_group);
+                    } else {
+                        $station_groups[$subsequent_crs] = $group_id;
                     }
-                    $group_id = $group_to_be_joined;
-                } else {
-                    $station_groups[$subsequent_crs] = $group_id;
                 }
             }
             $result[$group_id][] = $call;
@@ -219,49 +263,58 @@ class DepartureBoard implements Persistable {
     }
 
     /**
-     * @return Location[]
+     * @return LocationWithCrs[]
      */
-    public function getLocationsOfFirstCall() : array {
-        $result = [];
+    public function getDestinations(bool $via = false) : array {
+        $all_locations = [];
+        $arrival_mode = $this->timeType->isArrival();
         foreach ($this->calls as $service_call) {
-            $first_call = $this->timeType->isArrival()
-                ? $service_call->precedingCalls[count($service_call->precedingCalls) - 1]
-                : $service_call->subsequentCalls[0];
-            $call_location = $first_call->call->location;
-            if (array_filter($result, static fn(Location $location) => $location->crsCode === $call_location->crsCode) === []) {
-                $result[] = $call_location;
+            foreach ($arrival_mode ? $service_call->precedingCalls : $service_call->subsequentCalls as $subsequent_call) {
+                $call_location = $subsequent_call->call->location;
+                if (
+                    $call_location instanceof LocationWithCrs
+                    && array_filter($all_locations, static fn(LocationWithCrs $location) => $location->getCrsCode() === $call_location->getCrsCode()) === []
+                ) {
+                    $all_locations[] = $call_location;
+                }
             }
         }
-        return $result;
-    }
-
-    /**
-     * @return Location[]
-     */
-    public function getDestinations() : array {
         $result = [];
-        foreach ($this->calls as $service_call) {
-            foreach ($service_call->destinations as $destination_point) {
-                $destination = $destination_point->location;
-                if (
-                    array_filter($result, static fn(Location $location) => $location->crsCode === $destination->crsCode) === []
-                    && array_filter(
-                        $this->calls
-                        , static fn(ServiceCallWithDestinationAndCalls $compare_call)
-                            => array_filter(
-                                $compare_call->subsequentCalls
-                                , static fn(ServiceCallWithDestination $compare_subsequent_call)
-                                    => $compare_subsequent_call->call->location->crsCode === $destination->crsCode
-                                        && array_filter(
-                                            $compare_call->subsequentCalls
-                                            , static fn(ServiceCallWithDestination $compare_filter_call)
-                                                => $compare_filter_call->isInSamePortion($compare_subsequent_call)
-                                                    && $compare_filter_call->timestamp > $compare_subsequent_call->timestamp
-                                        ) !== []
-                            ) !== []
-                    ) === []
-                ) {
-                    $result[] = $destination;
+        foreach ($all_locations as $call_location) {
+            if (
+                array_filter(
+                    $this->calls
+                    , static fn(ServiceCallWithDestinationAndCalls $compare_call)
+                        => $via
+                        ? array_filter(
+                            $arrival_mode ? $compare_call->precedingCalls : $compare_call->subsequentCalls
+                            , static function (ServiceCallWithDestination $compare_subsequent_call) use ($call_location) {
+                                $location = $compare_subsequent_call->call->location;
+                                return $location instanceof LocationWithCrs
+                                    && $location->getCrsCode()
+                                    === $call_location->getCrsCode();
+                            }
+                        ) === []
+                        : array_filter(
+                            $arrival_mode ? $compare_call->precedingCalls : $compare_call->subsequentCalls
+                            , static function (ServiceCallWithDestination $compare_subsequent_call) use ($arrival_mode, $call_location, $compare_call) {
+                                $location = $compare_subsequent_call->call->location;
+                                return $location instanceof LocationWithCrs && $location->getCrsCode() === $call_location->getCrsCode()
+                                    && array_filter(
+                                        $arrival_mode ? $compare_call->precedingCalls : $compare_call->subsequentCalls
+                                        , static fn(ServiceCallWithDestination $compare_filter_call) => $compare_filter_call->isInSamePortion($compare_subsequent_call)
+                                            && ($arrival_mode
+                                                ? $compare_filter_call->timestamp < $compare_subsequent_call->timestamp
+                                                : $compare_filter_call->timestamp > $compare_subsequent_call->timestamp
+                                            )
+                                    ) !== [];
+                            }
+                        ) !== []
+                ) === []
+            ) {
+                $result[] = $call_location;
+                if ($via) {
+                    break;
                 }
             }
         }

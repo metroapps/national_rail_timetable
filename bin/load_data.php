@@ -10,9 +10,8 @@ use Miklcct\NationalRailTimetable\Parsers\TimetableParser;
 use Miklcct\NationalRailTimetable\Repositories\MongodbFixedLinkRepository;
 use Miklcct\NationalRailTimetable\Repositories\MongodbLocationRepository;
 use Miklcct\NationalRailTimetable\Repositories\MongodbServiceRepository;
-use MongoDB\Database;
 use Psr\SimpleCache\CacheInterface;
-use RuntimeException;
+use function Safe\glob;
 
 require __DIR__ . '/../initialise.php';
 ini_set('memory_limit', '16G');
@@ -28,21 +27,25 @@ rsort($file_names);
 $prefix = basename($file_names[0], '.DAT');
 
 $dat_contents = file("$path/$prefix.DAT");
+$date = null;
 foreach ($dat_contents as $line) {
     if (str_contains($line, 'Generated')) {
-        $date = preg_match('/[0-9]{2}\/[0-9]{2}\/[0-9]{4}/', $line, $matches);
+        $date = preg_match('/\d{2}\/\d{2}\/\d{4}/', $line, $matches);
         sscanf($matches[0], '%d/%d/%d', $day, $month, $year);
         $date = new Date($year, $month, $day);
     }
 }
 
+if ($date === null) {
+    throw new RuntimeException('Cannot get date generated.');
+}
+
 fprintf(STDERR, "Loading dataset %s generated at %s.\n", $prefix, $date);
-fputs(STDERR, "Dropping old database.\n");
-/** @var Database */
+fwrite(STDERR, "Dropping old database.\n");
 $database = get_databases()[1];
 $database->drop();
 
-fputs(STDERR, "Loading station data.\n");
+fwrite(STDERR, "Loading station data.\n");
 $time = microtime(true);
 $stations = new MongodbLocationRepository($database);
 $fixed_links = new MongodbFixedLinkRepository($database);
@@ -57,7 +60,7 @@ $stations->addIndexes();
 $fixed_links->addIndexes();
 fprintf(STDERR, "Time used: %.3f s\n", microtime(true) - $time);
 
-fputs(STDERR, "Loading timetable data.\n");
+fwrite(STDERR, "Loading timetable data.\n");
 $time = microtime(true);
 $timetable = new MongodbServiceRepository($database, null);
 foreach (['MCA', 'ZTR'] as $suffix) {
@@ -69,8 +72,10 @@ foreach (['MCA', 'ZTR'] as $suffix) {
 $timetable->addIndexes();
 fprintf(STDERR, "Time used: %.3f s\n", microtime(true) - $time);
 
-/** @var CacheInterface */
+/** @var CacheInterface $cache */
 $cache = get_container()->get(CacheInterface::class);
 $timetable->setGeneratedDate($date);
-$cache->clear();
-fputs(STDERR, "Done!\n");
+if (!$cache->clear()) {
+    throw new RuntimeException("Can't clear cache. Please delete var/cache manually!");
+}
+fwrite(STDERR, "Done!\n");

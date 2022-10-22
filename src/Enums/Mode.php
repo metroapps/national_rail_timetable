@@ -10,8 +10,8 @@ enum Mode : string {
 
     public function showIcon() : string {
         return match($this) {
-            Mode::BUS => '<img src="/images/bus.png" alt="bus" title="Bus service" /><br/>',
-            Mode::SHIP => '<img src="/images/ship.png" alt="ship" title="Ferry service" /><br/>',
+            self::BUS => '<img src="/images/bus.png" alt="bus" title="Bus service" /><br/>',
+            self::SHIP => '<img src="/images/ship.png" alt="ship" title="Ferry service" /><br/>',
             default => '',
         };
     }
