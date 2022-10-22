@@ -3,6 +3,7 @@ declare(strict_types = 1);
 
 namespace Miklcct\NationalRailTimetable\Views;
 
+use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestinationAndCalls;
@@ -12,6 +13,8 @@ use Psr\Http\Message\StreamFactoryInterface;
 class TimetableView extends PhpTemplate {
     public function __construct(
         StreamFactoryInterface $streamFactory
+        , protected readonly Location $station
+        , protected readonly Date $date
         , protected readonly array $timetables
         , protected readonly array $filterCrs
     ) {

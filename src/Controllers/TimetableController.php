@@ -3,10 +3,12 @@ declare(strict_types = 1);
 
 namespace Miklcct\NationalRailTimetable\Controllers;
 
-use DateInterval;
 use LogicException;
 use Miklcct\NationalRailTimetable\Enums\TimeType;
+use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestinationAndCalls;
+use Miklcct\NationalRailTimetable\Models\Time;
+use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
 use Miklcct\NationalRailTimetable\Views\TimetableView;
 use Miklcct\ThinPhpApp\Controller\Application;
@@ -15,6 +17,8 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Safe\DateTimeImmutable;
+use Teapot\HttpException;
+use Teapot\StatusCode\Http;
 
 class TimetableController extends Application {
     // this number must be greater than the maximum number of calls for a train
@@ -24,16 +28,22 @@ class TimetableController extends Application {
         private readonly ViewResponseFactoryInterface $viewResponseFactory
         , private readonly StreamFactoryInterface $streamFactory
         , private readonly ServiceRepositoryFactoryInterface $serviceRepositoryFactory
+        , private readonly LocationRepositoryInterface $locationRepository
     ) {}
 
     public function run(ServerRequestInterface $request) : ResponseInterface {
         $query = $request->getQueryParams();
 
-        $date = new DateTimeImmutable($query['date'] ?: 'now');
+        $station = $this->locationRepository->getLocationByCrs($query['station'])
+            ?? $this->locationRepository->getLocationByName($query['station']);
+        if ($station === null) {
+            throw new HttpException('The station cannot be found', Http::NOT_FOUND);
+        }
+        $date = Date::fromDateTimeInterface(new DateTimeImmutable($query['date'] ?: 'now'));
         $board = ($this->serviceRepositoryFactory)(false)->getDepartureBoard(
-            $query['station']
-            , $date->setTime(0, 0, 0)
-            , $date->add(new DateInterval('P1DT4H30M'))
+            $station->crsCode
+            , $date->toDateTimeImmutable()
+            , $date->toDateTimeImmutable(new Time(28, 30))
             , TimeType::PUBLIC_DEPARTURE
         );
         $filter = array_filter($query['filter'] ?? []);
@@ -123,13 +133,6 @@ class TimetableController extends Application {
                         }
                         unset($item);
 
-                        for ($l = 1; $l < count($order); ++$l) {
-                            if ($order[$l][1] <= $order[$l - 1][1]) {
-                                xdebug_break();
-                                assert(false);
-                            }
-                        }
-
                         $new_stations = array_reduce(
                             $order
                             , static fn(array $carry, array $item) : array
@@ -156,9 +159,8 @@ class TimetableController extends Application {
             foreach ($board->calls as $call) {
                 if ($call_group[$call->uid . '_' . $call->date] === $group_id) {
                     foreach (array_keys($call->destinations) as $portion) {
-                        // origin station
                         $calls[0][$i] = $call;
-                        $j = 0;
+                        $j = 1;
                         foreach ($call->subsequentCalls as $subsequent_call) {
                             $subsequent_crs = $subsequent_call->call->location->crsCode;
                             if ($subsequent_crs !== null && in_array($portion, array_keys($subsequent_call->destinations), true)) {
@@ -170,6 +172,7 @@ class TimetableController extends Application {
                                 }
                                 if ($j === 0) throw new LogicException('Should not happen');
                                 $calls[$j][$i] = $subsequent_call;
+                                ++$j;
                             }
                         }
                         ++$i;
@@ -181,7 +184,7 @@ class TimetableController extends Application {
 
         }
 
-        return ($this->viewResponseFactory)(new TimetableView($this->streamFactory, $timetables, $filter));
+        return ($this->viewResponseFactory)(new TimetableView($this->streamFactory, $station, $date, $timetables, $filter));
 
     }
 }

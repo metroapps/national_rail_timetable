@@ -5,6 +5,7 @@ use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 use Miklcct\NationalRailTimetable\Views\TimetableView;
 
 use function Miklcct\NationalRailTimetable\get_all_tocs;
+use function Miklcct\NationalRailTimetable\Views\show_time;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 /** @var TimetableView $this */
@@ -17,6 +18,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
         <title>Timetable</title>
     </head>
     <body>
+        <h1>Timetable for <?= $this->station->name ?> on <?= $this->date ?></h1>
 <?php
 foreach ($this->timetables as $timetable) {
     ['stations' => $stations, 'calls' => $calls] = $timetable;
@@ -24,7 +26,11 @@ foreach ($this->timetables as $timetable) {
     $get_colspan = function(array $array, int $i) use ($calls) {
         $call = $array[$i];
         $colspan = 0;
-        while (isset($array[$i]) && $array[$i]->uid === $call->uid) {
+        while (
+            isset($array[$i]) 
+            && $array[$i]->uid === $call->uid
+            && $array[$i]->timestamp == $call->timestamp
+        ) {
             ++$colspan;
             ++$i;
         }
@@ -34,10 +40,10 @@ foreach ($this->timetables as $timetable) {
     /** @var ServiceCallWithDestination[][] $calls */
 ?>
         <section>
-            <h1>Trains 
+            <h2>Trains 
                 via <?= html(implode(', ', $this->getGroupFirstCalls($timetable))) ?>
                 towards <?= html(implode(', ', $this->getGroupDestinations($timetable))) ?>
-            </h1>
+            </h2>
             <div class="container">
                 <table>
                     <thead>
@@ -143,7 +149,7 @@ foreach ($this->timetables as $timetable) {
                 $colspan = $get_colspan($calls[$i], $j);
                 $j += $colspan;
 ?>
-                           <td colspan=<?= $colspan ?>><?= html($call->timestamp->format('H:i'))?></td>
+                           <td colspan=<?= $colspan ?>><?= show_time($call->timestamp, $this->date)?></td>
 <?php
             }
         }
