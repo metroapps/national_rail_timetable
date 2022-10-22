@@ -92,7 +92,7 @@ class Timetable {
 
         // fill the calls matrix
         $i = 0;
-        foreach ($calls as $call) {
+        foreach ($board->calls as $call) {
             foreach (array_keys($call->destinations) as $portion) {
                 $matrix[0][$i] = $call;
                 $j = 1;
