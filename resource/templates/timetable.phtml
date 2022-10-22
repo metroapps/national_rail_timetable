@@ -46,6 +46,7 @@ if ($this->station !== null) {
     foreach ($this->boards as $board) {
         $timetable = Timetable::generateFromBoard($board);
         $stations = $timetable->stations;
+        /** @var ServiceCallWithDestination[][] $calls */
         $calls = $timetable->calls;
 
         $get_colspan = static function(array $array, int $i) {
@@ -215,6 +216,17 @@ if ($this->station !== null) {
                     ? $calls[0][$j]->isValidConnection($this->query->connectingTime, $this->query->connectingToc)
                     ? 'valid_connection' : 'invalid_connection'
                     : '';
+                if (
+                    $i !== 0
+                    && isset($calls[$i][$j])
+                    && $board->isOvertaken(
+                        $calls[0][$j]
+                        , $stations[$i]->getCrsCode()
+                        , array_keys($this->query->arrivalMode ? $calls[$i][$j]->origins : $calls[$i][$j]->destinations)[0]
+                    )
+                ) {
+                    $connection_class .= 'overtaken';
+                }
                 if (!isset($calls[$i][$j])) {
 ?>
                             <td class="<?= $connection_class ?>"></td>

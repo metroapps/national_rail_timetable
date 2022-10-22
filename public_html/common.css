@@ -56,3 +56,9 @@ footer {
     white-space: nowrap;
 }
 
+.overtaken, .overtaken :link {
+    color: lightgrey;
+}
+
+
+

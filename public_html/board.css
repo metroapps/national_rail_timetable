@@ -34,10 +34,6 @@ h1 {
     font-weight: bold;
 }
 
-.overtaken, .overtaken :link {
-    color: lightgrey;
-}
-
 .train_info {
     text-align: center;
 }
