@@ -32,7 +32,7 @@ class TimetableView extends PhpTemplate {
                     , array_filter(
                         array_slice($stations, 1)
                         , static fn(Location $location) 
-                            // which doesn't have a service
+                            // which have a service
                             => array_filter(
                                 $calls[0]
                                 , static fn(ServiceCallWithDestinationAndCalls $call) =>
@@ -41,18 +41,52 @@ class TimetableView extends PhpTemplate {
                                         $call->subsequentCalls
                                         , static fn(ServiceCallWithDestination $subsequent_call) =>
                                             $subsequent_call->call->location->crsCode === $location->crsCode
-                                            // and have further calls beyond it
+                                            // which is the first call
                                             && array_filter(
                                                 $call->subsequentCalls
                                                 , static fn(ServiceCallWithDestination $further_call) =>
                                                     array_intersect_key($subsequent_call->destinations, $further_call->destinations)
-                                                    && $further_call->timestamp > $subsequent_call->timestamp
-                                            ) !== []
+                                                    && $further_call->timestamp < $subsequent_call->timestamp
+                                            ) === []
                                     ) !== []
-                            ) === []
+                            ) !== []
                     )
                 )
             )
         );
     }
+
+    // protected function getGroupDestinations(array $timetable) : array {
+    //     ['stations' => $stations, 'calls' => $calls] = $timetable;
+    //     return array_values(
+    //         array_unique(
+    //             array_map(
+    //                 static fn(Location $location) => $location->getShortName()
+    //                 // filter the stations
+    //                 , array_filter(
+    //                     array_slice($stations, 1)
+    //                     , static fn(Location $location) 
+    //                         // which doesn't have a service
+    //                         => array_filter(
+    //                             $calls[0]
+    //                             , static fn(ServiceCallWithDestinationAndCalls $call) =>
+    //                                 // calling at the location specified
+    //                                 array_filter(
+    //                                     $call->subsequentCalls
+    //                                     , static fn(ServiceCallWithDestination $subsequent_call) =>
+    //                                         $subsequent_call->call->location->crsCode === $location->crsCode
+    //                                         // and have further calls beyond it
+    //                                         && array_filter(
+    //                                             $call->subsequentCalls
+    //                                             , static fn(ServiceCallWithDestination $further_call) =>
+    //                                                 array_intersect_key($subsequent_call->destinations, $further_call->destinations)
+    //                                                 && $further_call->timestamp > $subsequent_call->timestamp
+    //                                         ) !== []
+    //                                 ) !== []
+    //                         ) === []
+    //                 )
+    //             )
+    //         )
+    //     );
+    // }
 }
