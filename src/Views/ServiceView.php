@@ -121,7 +121,7 @@ class ServiceView extends PhpTemplate {
                 , $this->datedService->service->toc
                 , $this->permanentOnly
             )
-        )->getUrl('/index.php');
+        )->getUrl(BoardView::URL);
     }
 
     protected function splitIntoPortions(FullService $dated_service, bool $recursed = false) : array {
