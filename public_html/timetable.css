@@ -88,3 +88,15 @@ p {
 #go_to_top {
     display: none;
 }
+
+.info {
+    font-size: x-small;
+}
+
+.facility {
+    width: 16px;
+}
+
+.mode {
+    width: 20px;
+}

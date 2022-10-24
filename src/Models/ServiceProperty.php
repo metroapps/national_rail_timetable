@@ -54,10 +54,10 @@ class ServiceProperty implements Persistable {
         }
         $result .= $this->reservation->showIcon();
         if ($this->seatingClasses[1]) {
-            $result .= '<img src="/images/first_class.png" alt="first class" title="First class available" />';
+            $result .= '<img class="facility" src="/images/first_class.png" alt="first class" title="First class available" />';
         }
         if (array_filter($this->sleeperClasses)) {
-            $result .= '<img src="/images/sleeper.png" alt="sleeper" title="Sleeper available" />';
+            $result .= '<img class="facility" src="/images/sleeper.png" alt="sleeper" title="Sleeper available" />';
         }
         return $result;
     }

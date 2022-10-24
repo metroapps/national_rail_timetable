@@ -47,12 +47,11 @@ use function Miklcct\ThinPhpApp\Escaper\html;
             <div class="container">
                 <table>
                     <thead>
-                        <tr>
+                        <tr class="info">
                             <th class="station_column">TOC</th>
 <?php
         $i = 0;
         while (isset($calls[0][$i])) {
-            /** @var ServiceCallWithDestination $call */
             $call = $calls[0][$i];
             $colspan = $get_colspan($calls[0], $i);
 ?>
@@ -64,7 +63,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
         }
 ?>
                         </tr>
-                        <tr>
+                        <tr class="info">
                             <td class="station_column">Headcode</td>
 <?php
         $i = 0;
@@ -79,7 +78,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
         }
 ?>
                         </tr>
-                        <tr>
+                        <tr class="info">
                             <td class="station_column"><?= html($this->query->arrivalMode ? 'Origin' : 'Destination') ?></td>
 <?php
         $i = 0;
@@ -100,7 +99,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
         }
 ?>
                         </tr>
-                        <tr>
+                        <tr class="info">
                             <td class="station_column">Facilities</td>
 <?php
         $i = 0;
@@ -118,7 +117,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
 <?php
         $show_platforms = function () use ($get_colspan, $calls) {
 ?>
-            <tr>
+            <tr class="info">
                 <td class="station_column">Platform</td>
 <?php
             $i = 0;
