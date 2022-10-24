@@ -63,7 +63,7 @@ $station = $query->station;
             $overtaken_portions = array_combine(
                 $portion_uids
                 , array_map(
-                    fn(string $uid) : bool => count($query->filter) === 1 ? $view->board->isOvertaken($service_call, $query->filter[0]->getCrsCode(), $uid) : false
+                    fn(string $uid) : bool => count($query->filter) === 1 ? $view->board->isPortionOvertaken($service_call, $query->filter[0]->getCrsCode(), $uid) : false
                     , $portion_uids
                 )
             );
@@ -95,7 +95,7 @@ $station = $query->station;
                 }
                 ?>
                 <td class="destination <?= $overtaken_portions[$uid] ? 'overtaken' : '' ?>"><?= html($destinations[$uid]->location->getShortName()) ?></td>
-                <td class="calls" class="<?= $overtaken_portions[$uid] ? 'overtaken' : '' ?>"><?=
+                <td class="calls <?= $overtaken_portions[$uid] ? 'overtaken' : '' ?>"><?=
                     implode(
                         ', '
                         , array_map(

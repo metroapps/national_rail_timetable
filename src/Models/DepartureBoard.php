@@ -6,13 +6,11 @@ namespace Miklcct\NationalRailTimetable\Models;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use Miklcct\NationalRailTimetable\Enums\TimeType;
-use MongoDB\BSON\Persistable;
+use RuntimeException;
 use function array_filter;
 use function array_merge;
 
-class DepartureBoard implements Persistable {
-    use BsonSerializeTrait;
-
+class DepartureBoard {
     /**
      * @param string $crs
      * @param DateTimeImmutable $from
@@ -32,69 +30,56 @@ class DepartureBoard implements Persistable {
                 throw new InvalidArgumentException('Calls must be ServiceCallWithDestinationAndCalls');
             }
         }
+        $this->callMatrix = $this->buildCallMatrix();
     }
 
-    public function isOvertaken(ServiceCallWithDestinationAndCalls $service_call, string $destination_crs, string $portion_uid) : bool {
-        if (in_array($this->timeType, [TimeType::WORKING_DEPARTURE, TimeType::PUBLIC_DEPARTURE], true)) {
-            return array_filter(
-                $service_call->subsequentCalls
-                , function (ServiceCallWithDestination $filter_call) use (
-                    $portion_uid,
-                    $destination_crs,
-                    $service_call
-                ) : bool {
-                    $location = $filter_call->call->location;
-                    return $location instanceof LocationWithCrs
-                        && $location->getCrsCode() === $destination_crs
-                        && array_key_exists($portion_uid, $filter_call->destinations)
-                        && array_filter(
-                            $this->calls
-                            , static fn(ServiceCallWithDestinationAndCalls $other_call) : bool => $other_call->timestamp
-                            >= $service_call->timestamp
-                            && array_filter(
-                                $other_call->subsequentCalls
-                                , static function (ServiceCallWithDestination $compare_filter_call) use ($destination_crs, $filter_call) : bool {
-                                    $location = $compare_filter_call->call->location;
-                                    return $location instanceof LocationWithCrs
-                                        && $location->getCrsCode() === $destination_crs
-                                        && $compare_filter_call->timestamp < $filter_call->timestamp;
-                                }
-                            ) !== []
-                        ) === [];
+    public function isPortionOvertaken(ServiceCallWithDestinationAndCalls $self_departure, string $destination_crs, string $portion_uid) : bool {
+        $arrival_mode = $this->timeType->isArrival();
+
+        $self_arrival = null;
+        foreach ($arrival_mode ? array_reverse($self_departure->precedingCalls) : $self_departure->subsequentCalls as $arrival) {
+            $location = $arrival->call->location;
+            if ($location instanceof LocationWithCrs) {
+                if (
+                    array_key_exists($portion_uid, $arrival_mode ? $arrival->origins : $arrival->destinations)
+                    && $location->getCrsCode() === $destination_crs
+                ) {
+                    $self_arrival = $arrival;
+                    break;
                 }
-            ) === [];
+            }
         }
-        if (in_array($this->timeType, [TimeType::WORKING_ARRIVAL, TimeType::PUBLIC_ARRIVAL], true)) {
-            return array_filter(
-                $service_call->precedingCalls
-                , function (ServiceCallWithDestination $filter_call) use (
-                    $portion_uid,
-                    $destination_crs,
-                    $service_call
-                ) : bool {
-                    $location = $filter_call->call->location;
-                    return array_key_exists($portion_uid, $filter_call->origins)
-                        && $location instanceof LocationWithCrs && $location->getCrsCode() === $destination_crs
-                        && array_filter(
-                            $this->calls
-                            , static fn(ServiceCallWithDestinationAndCalls $other_call) : bool =>
-                                $other_call->timestamp <= $service_call->timestamp
-                                && array_filter(
-                                    $other_call->precedingCalls
-                                    , static function (ServiceCallWithDestination $compare_filter_call) use (
-                                    $destination_crs,
-                                    $filter_call
-                                ) : bool {
-                                    $location = $compare_filter_call->call->location;
-                                    return $location instanceof LocationWithCrs
-                                        && $location->getCrsCode() === $destination_crs
-                                        && $compare_filter_call->timestamp > $filter_call->timestamp;
-                                }
-                            ) !== []
-                        ) === [];
-                }
-            ) === [];
+        if ($self_arrival === null) {
+            return true;
         }
+
+        return $this->isCallOvertaken($self_departure, $self_arrival, $destination_crs, $arrival_mode);
+    }
+
+    public function isCallOvertaken(
+        ServiceCallWithDestination $self_departure,
+        ServiceCallWithDestination $self_arrival,
+    ) : bool {
+        $arrival_mode = $this->timeType->isArrival();
+        $location = $self_arrival->call->location;
+        if (!$location instanceof LocationWithCrs) {
+            throw new RuntimeException('Checking overtaking can only be done at a CRS loation.');
+        }
+        $destination_crs = $location->getCrsCode();
+        foreach ($this->callMatrix[$destination_crs] as [$other_departure, $other_arrival]) {
+            if (
+                $arrival_mode
+                    ? $other_arrival->timestamp > $self_arrival->timestamp
+                    && $other_departure->timestamp
+                    <= $self_departure->timestamp
+                    : $other_arrival->timestamp < $self_arrival->timestamp
+                    && $other_departure->timestamp
+                    >= $self_departure->timestamp
+            ) {
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -321,4 +306,26 @@ class DepartureBoard implements Persistable {
         }
         return $result;
     }
+
+    private function buildCallMatrix() : array {
+        $result = [];
+        foreach ($this->calls as $here_call) {
+            $arrival_mode = $this->timeType->isArrival();
+            foreach ($arrival_mode ? $here_call->precedingCalls : $here_call->subsequentCalls as $there_call) {
+                $location = $there_call->call->location;
+                if ($location instanceof LocationWithCrs) {
+                    /** @var ServiceCallWithDestination[]|null $existing */
+                    $existing = &$result[$location->getCrsCode()][$there_call->uid . '_' . $there_call->date];
+                    if ($existing === null || ($arrival_mode ? $existing[1]->timestamp > $there_call->timestamp : $existing[1]->timestamp < $there_call->timestamp)) {
+                        $existing = [$here_call, $there_call];
+                    }
+                    unset($existing);
+                }
+            }
+        }
+        return $result;
+    }
+
+    /** @var array<string, array<string, ServiceCallWithDestination[]>> */
+    private readonly array $callMatrix;
 }

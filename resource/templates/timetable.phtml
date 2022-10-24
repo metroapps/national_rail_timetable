@@ -191,10 +191,9 @@ use function Miklcct\ThinPhpApp\Escaper\html;
                 if (
                     $i !== 0
                     && isset($calls[$i][$j])
-                    && $board->isOvertaken(
+                    && $board->isCallOvertaken(
                         $calls[0][$j]
-                        , $stations[$i]->getCrsCode()
-                        , array_keys($this->query->arrivalMode ? $calls[$i][$j]->origins : $calls[$i][$j]->destinations)[0]
+                        , $calls[$i][$j]
                     )
                 ) {
                     $connection_class .= ' overtaken';
