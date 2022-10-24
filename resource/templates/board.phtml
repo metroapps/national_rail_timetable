@@ -34,7 +34,7 @@ $station = $query->station;
             <th></th>
             <th>Pl.</th>
             <th>TOC</th>
-            <th>Train no.</th>
+<!--            <th>Train no.</th>-->
             <th><?= $query->arrivalMode ? 'Origin' : 'Destination' ?></th>
             <th>Calling at</th>
         </tr>
@@ -84,7 +84,7 @@ $station = $query->station;
             <td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><?= $this->showFacilities($service_call) ?></td>
             <td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><?= html($service_call->call->platform) ?></td>
             <td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><?= $this->showToc($service_call->toc) ?></td>
-            <td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><a href="<?= html(ServiceView::getServiceUrl($service_call->uid, $service_call->date, $query->permanentOnly)) ?>"><?= html(substr($service_call->serviceProperty->rsid, 0, 6)) ?></a></td>
+            <!--<td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><a href="<?= html(ServiceView::getServiceUrl($service_call->uid, $service_call->date, $query->permanentOnly)) ?>"><?= html(substr($service_call->serviceProperty->rsid, 0, 6)) ?></a></td>-->
             <?php
             foreach ($portion_uids as $i => $uid) {
                 if ($i > 0) {
