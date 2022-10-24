@@ -45,7 +45,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
                 <?= !$this->query->arrivalMode && $destinations ? ' towards ' . html(implode(', ', array_map(static fn(Location $location) => $location->getShortName(), $destinations))) : '' ?>
             </h2>
             <div class="container">
-                <table>
+                <table class="timetable">
                     <thead>
                         <tr class="info">
                             <th class="station_column">TOC</th>

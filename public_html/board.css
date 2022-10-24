@@ -41,9 +41,3 @@ h1 {
 .train_number {
     font-weight: bold;
 }
-
-#go_to_top {
-    position: fixed;
-    right: 0;
-    top: 0;
-}

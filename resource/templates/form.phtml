@@ -17,7 +17,6 @@ if ($this instanceof ScheduleFormView && $this->errorMessage !== null) {
 
 $query = $this instanceof ScheduleView ? $this->query->toArray() : [];
 ?>
-<p id="permanent_warning">Warning: This service is in beta. Always check with <a href="https://nationalrail.co.uk/">National Rail Enquiries</a> on the day of travel to get up-to-date real time information.</p>
 <form action="board.php" method="GET">
     <datalist id="stations">
 <?php
@@ -105,3 +104,4 @@ if ($this->getViewMode() !== ViewMode::TIMETABLE) {
 ?>
     </p>
 </form>
+<p id="permanent_warning">Warning: This service is in beta. Always check with <a href="https://nationalrail.co.uk/">National Rail Enquiries</a> on the day of travel to get up-to-date real time information.</p>
