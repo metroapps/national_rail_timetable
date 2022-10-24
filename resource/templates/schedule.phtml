@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\NationalRailTimetable\Views\ScheduleView;
-use Miklcct\NationalRailTimetable\Views\ViewMode;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 /** @var ScheduleView $this */
@@ -13,7 +12,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
     <head>
         <meta content="width=device-width, initial-scale=1.0" name="viewport" />
         <link rel="stylesheet" href="common.css" />
-        <link rel="stylesheet" href="<?= html($this->getViewMode() === ViewMode::TIMETABLE ? 'timetable.css' : 'board.css')?>" />
+        <link rel="stylesheet" href="timetable.css" />
         <title><?= html($this->getTitle()) ?></title>
         <script defer="defer" src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
         <script defer="defer" src="board.js"></script>

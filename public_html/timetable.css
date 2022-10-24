@@ -53,7 +53,7 @@ tfoot {
 }
 
 tbody tr:nth-child(odd) {
-    background-color: #e0e0e0;
+    background-color: #f0f0f0;
 }
 
 tbody tr:nth-child(even) .valid_connection, thead .valid_connection, tfoot .valid_connection {
