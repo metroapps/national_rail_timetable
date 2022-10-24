@@ -45,7 +45,7 @@ abstract class ScheduleView extends ScheduleBaseView {
 
     protected function getTitle() : string {
         return sprintf(
-            '%s at %s %s %s%s'
+            '%s at %s %s %s%s - GBTT.uk'
             , $this->query->arrivalMode ? 'Arrivals' : 'Departures'
             , $this->query->station->name
             , $this->query->filter !== []
@@ -74,8 +74,7 @@ abstract class ScheduleView extends ScheduleBaseView {
                     )
                 );
         }
-        $result .= ' ';
-        $result .= $this->query->date === null ? 'today' : 'on ' . $this->date;
+        $result .= ' on ' . $this->date;
         return $result;
     }
 

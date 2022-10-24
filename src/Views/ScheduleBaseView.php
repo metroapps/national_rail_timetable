@@ -24,4 +24,6 @@ abstract class ScheduleBaseView extends PhpTemplate {
     }
 
     abstract public function getViewMode() : ViewMode;
+
+    abstract protected function getTitle() : string;
 }

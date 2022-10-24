@@ -6,12 +6,8 @@ namespace Miklcct\NationalRailTimetable\Views;
 use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\DepartureBoard;
-use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Psr\Http\Message\StreamFactoryInterface;
-use function array_map;
-use function implode;
-use function sprintf;
 
 class TimetableView extends ScheduleView {
     public const URL = '/timetable.php';
@@ -37,25 +33,7 @@ class TimetableView extends ScheduleView {
         parent::__construct($streamFactory, $stations, $date, $query, $fixedLinks, $generated);
     }
 
-    protected function getTitle() : string {
-        if ($this->query->station === null) {
-            return 'Timetable';
-        }
-        return sprintf(
-            '%s at %s %s %s'
-            , $this->query->arrivalMode ? 'Arrivals' : 'Departures'
-            , $this->query->station->name
-            , $this->query->filter !== []
-            ? ($this->query->arrivalMode ? ' from ' : ' to ') . implode(
-                ', '
-                , array_map(static fn(Location $location) => $location->name, $this->query->filter)
-            )
-            : ''
-            , $this->query->date === null ? 'today' : 'on ' . $this->date
-        );
-    }
-
-    protected function getIncludePath() {
+   protected function getIncludePath() {
         return __DIR__ . '/../../resource/templates/timetable.phtml';
     }
 
