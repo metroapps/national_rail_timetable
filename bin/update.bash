@@ -16,3 +16,4 @@ curl -f --location -H "X-Auth-Token: $token" https://opendata.nationalrail.co.uk
 unzip timetables.zip
 "$DIR"/load_data.php .
 rm -fr "$TMPDIR"
+"$DIR"/cache_boards.bash
