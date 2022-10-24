@@ -24,6 +24,7 @@ use Symfony\Component\Cache\Adapter\PhpFilesAdapter;
 use Symfony\Component\Cache\Psr16Cache;
 use Teapot\HttpException;
 use Whoops\Handler\Handler;
+use Whoops\Handler\PlainTextHandler;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 use function DI\autowire;
@@ -87,22 +88,26 @@ function get_container() : ContainerInterface {
 require_once __DIR__ . '/vendor/autoload.php';
 
 $whoops = new Run;
-$pretty_page_handler = new PrettyPageHandler;
-$pretty_page_handler->setEditor(PrettyPageHandler::EDITOR_PHPSTORM);
-$whoops->pushHandler($pretty_page_handler);
-$whoops->pushHandler(
-    new class extends Handler {
-        public function handle() : void {
-            $exception = $this->getException();
-            if ($exception instanceof HttpException) {
-                $this->getRun()->sendHttpCode($exception->getCode());
+if (PHP_SAPI === 'cli') {
+    $whoops->pushHandler(new PlainTextHandler());
+} else {
+    $pretty_page_handler = new PrettyPageHandler;
+    $pretty_page_handler->setEditor(PrettyPageHandler::EDITOR_PHPSTORM);
+    $whoops->pushHandler($pretty_page_handler);
+    $whoops->pushHandler(
+        new class extends Handler {
+            public function handle() : void {
+                $exception = $this->getException();
+                if ($exception instanceof HttpException) {
+                    $this->getRun()->sendHttpCode($exception->getCode());
+                }
             }
         }
-    }
-);
+    );
+}
 $whoops->register();
 
-error_reporting(E_ALL);
 set_time_limit(300);
 ini_set('memory_limit', '4G');
 date_default_timezone_set('Europe/London');
+umask(0o002);
