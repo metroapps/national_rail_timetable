@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="0a7291b6-d464-420e-85d9-6af265078eb9" name="gbtt.uk" url="https://gbtt.uk/">
+        <fileTransfer rootFolder="/var/www/gbtt.uk/" accessType="SFTP" host="gbtt.uk" port="22" sshConfigId="a1cff0b8-8dcc-493f-9a3a-0960da5151f5" sshConfig="michael@gbtt.uk:22 key" keyPair="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

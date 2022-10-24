@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" serverName="gbtt.uk" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="gbtt.uk">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="" />
+            <mapping deploy="/public/html" local="$PROJECT_DIR$/public_html" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="$PROJECT_DIR$/var/cache" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>
