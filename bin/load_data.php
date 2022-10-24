@@ -11,6 +11,7 @@ use Miklcct\NationalRailTimetable\Repositories\MongodbFixedLinkRepository;
 use Miklcct\NationalRailTimetable\Repositories\MongodbLocationRepository;
 use Miklcct\NationalRailTimetable\Repositories\MongodbServiceRepository;
 use Psr\SimpleCache\CacheInterface;
+use function Miklcct\NationalRailTimetable\get_generated;
 use function Safe\glob;
 
 require __DIR__ . '/../initialise.php';
@@ -38,6 +39,11 @@ foreach ($dat_contents as $line) {
 
 if ($date === null) {
     throw new RuntimeException('Cannot get date generated.');
+}
+
+if ($date->__toString() === get_generated(get_databases()[0])?->__toString()) {
+    fwrite(STDERR, "Database is up to date. Exiting.\n");
+    die;
 }
 
 fprintf(STDERR, "Loading dataset %s generated at %s.\n", $prefix, $date);

@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable;
 
+use Miklcct\NationalRailTimetable\Models\Date;
+use MongoDB\Database;
 use function Safe\file_get_contents;
 use function Safe\json_decode;
 
@@ -38,5 +40,9 @@ function get_full_station_name(string $name) : string {
     static $mapping;
     $mapping ??= json_decode(file_get_contents(__DIR__ . '/../resource/long_station_names.json'), true);
     return $mapping[$name] ?? $name;
+}
+
+function get_generated(Database $database) : ?Date {
+    return $database->selectCollection('metadata')->findOne(['generated' => ['$exists' => true]])?->generated;
 }
 

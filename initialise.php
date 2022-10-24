@@ -27,6 +27,7 @@ use Whoops\Handler\Handler;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 use function DI\autowire;
+use function Miklcct\NationalRailTimetable\get_generated;
 
 /**
  * Return the 2 databases defined in the application
@@ -45,7 +46,7 @@ function get_databases() : array {
     );
     /** @var (Date|null)[] $generated_dates */
     $generated_dates = array_map(
-        static fn (Database $database) => $database->selectCollection('metadata')->findOne(['generated' => ['$exists' => true]])?->generated
+        get_generated(...)
         , $databases
     );
     if ($generated_dates[0]?->toDateTimeImmutable() < $generated_dates[1]?->toDateTimeImmutable()) {
