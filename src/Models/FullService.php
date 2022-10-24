@@ -203,6 +203,7 @@ class FullService extends DatedService {
         , DateTimeImmutable $from = null
         , DateTimeImmutable $to = null
         , bool $with_subsequent_calls = false
+        , DateTimeImmutable $base = null
     ) : array {
         $this_portion = parent::getCalls($time_type, $crs, $from, $to);
         foreach ($this_portion as &$service_call) {
@@ -219,6 +220,8 @@ class FullService extends DatedService {
                     , null
                     , null
                     , $service_call->timestamp
+                    , false
+                    , $service_call->timestamp
                 );
                 $subsequent_calls = $this->getCalls(
                     match ($service_call->timeType) {
@@ -228,6 +231,9 @@ class FullService extends DatedService {
                     }
                     , null
                     , $service_call->timestamp->add(new DateInterval('PT1S'))
+                    , null
+                    , false
+                    , $service_call->timestamp
                 );
                 $service_call = new ServiceCallWithDestinationAndCalls(
                     $service_call->timestamp
@@ -301,7 +307,7 @@ class FullService extends DatedService {
         }
         $other_portions = array_merge(
             ...array_map(
-                function (DatedAssociation $dated_association) use ($with_subsequent_calls, $time_type, $crs, $to, $from) {
+                function (DatedAssociation $dated_association) use ($base, $with_subsequent_calls, $time_type, $crs, $to, $from) {
                     $association = $dated_association->associationEntry;
                     assert($association instanceof Association);
                     $secondary_service = $dated_association->secondaryService;
@@ -312,7 +318,7 @@ class FullService extends DatedService {
                         $divide_timestamp = $this->date->toDateTimeImmutable(
                             $association_point->getPublicOrWorkingArrival()
                         );
-                        return $divide_timestamp < $from
+                        return $divide_timestamp < $from || $divide_timestamp < $base
                             ? []
                             : $secondary_service->getCalls(
                                 $time_type
@@ -328,7 +334,7 @@ class FullService extends DatedService {
                         $join_timestamp = $this->date->toDateTimeImmutable(
                             $association_point->getPublicOrWorkingDeparture()
                         );
-                        return $join_timestamp > $to
+                        return $join_timestamp > $to || $join_timestamp > $base
                             ? []
                             : $secondary_service->getCalls(
                                 $time_type
