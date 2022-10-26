@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace Miklcct\NationalRailTimetable\Models;
 
 use Miklcct\NationalRailTimetable\Exceptions\UnreachableException;
+use function array_filter;
 use function array_reverse;
+use function count;
 
 class Timetable {
     // this number must be greater than the maximum number of calls for a train
@@ -40,7 +42,9 @@ class Timetable {
         if ($arrival_mode) {
             $calls = array_reverse($calls);
         }
+        $common_check = true;
         while (array_filter($calls) !== []) {
+            $initial_count = count(array_filter($calls));
             foreach ($calls as &$call) {
                 if ($call !== null) {
                     $destinations = $arrival_mode ? $call->origins : $call->destinations;
@@ -80,7 +84,7 @@ class Timetable {
                                 }
                             }
                         }
-                        if (!$found_one && $stations !== []) {
+                        if ($common_check && !$found_one && $stations !== []) {
                             // current portion has no common calls with processed services
                             // try another one first
                             continue;
@@ -127,6 +131,9 @@ class Timetable {
                 }
             }
             unset($call);
+            if (count(array_filter($calls)) === $initial_count) {
+                $common_check = false;
+            }
         }
         $stations = array_merge([$board->calls[0]->call->location], $stations);
 
