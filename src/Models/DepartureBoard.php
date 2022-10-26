@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Miklcct\NationalRailTimetable\Enums\TimeType;
 use RuntimeException;
 use function array_filter;
+use function array_key_exists;
 use function array_merge;
 
 class DepartureBoard {
@@ -273,14 +274,18 @@ class DepartureBoard {
                     , static fn(ServiceCallWithDestinationAndCalls $compare_call)
                         => $via
                         ? array_filter(
-                            $arrival_mode ? $compare_call->precedingCalls : $compare_call->subsequentCalls
-                            , static function (ServiceCallWithDestination $compare_subsequent_call) use ($call_location) {
-                                $location = $compare_subsequent_call->call->location;
-                                return $location instanceof LocationWithCrs
-                                    && $location->getCrsCode()
-                                    === $call_location->getCrsCode();
-                            }
-                        ) === []
+                            array_keys($arrival_mode ? $compare_call->origins : $compare_call->destinations)
+                            , static fn(string $portion) =>
+                                array_filter(
+                                    $arrival_mode ? $compare_call->precedingCalls : $compare_call->subsequentCalls
+                                    , static function (ServiceCallWithDestination $compare_subsequent_call) use ($portion, $arrival_mode, $call_location) {
+                                        $location = $compare_subsequent_call->call->location;
+                                        return array_key_exists($portion, $arrival_mode ? $compare_subsequent_call->origins : $compare_subsequent_call->destinations)
+                                            && $location instanceof LocationWithCrs
+                                            && $location->getCrsCode() === $call_location->getCrsCode();
+                                    }
+                                ) === []
+                        ) !== []
                         : array_filter(
                             $arrival_mode ? $compare_call->precedingCalls : $compare_call->subsequentCalls
                             , static function (ServiceCallWithDestination $compare_subsequent_call) use ($arrival_mode, $call_location, $compare_call) {
