@@ -37,6 +37,9 @@ $('.container').each(
         this.scrollLeft = element.offsetLeft - (
             mode === 'arrivals' ? this.offsetWidth : $(this).find('th:first-child')[0].offsetWidth
         );
+        if (mode === 'arrivals') {
+            this.scrollTop = $(this).find('tbody')[0].offsetHeight;
+        }
     }
 )
 
