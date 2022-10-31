@@ -1,6 +1,7 @@
 {
-    "name" : "miklcct/national_rail_journey_planner",
-    "description" : "National Rail journey planner - supports turning up and go",
+    "name" : "miklcct/national_rail_timetable",
+    "description" : "National Rail Timetable on the web",
+    "type" : "project",
     "license" : "AGPL-3.0-or-later",
     "require" : {
         "php" : "^8.1",
