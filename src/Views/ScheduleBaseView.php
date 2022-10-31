@@ -11,6 +11,7 @@ abstract class ScheduleBaseView extends PhpTemplate {
     public function __construct(
         StreamFactoryInterface $streamFactory
         , protected readonly array $stations
+        , protected readonly string $siteName
     ) {
         parent::__construct($streamFactory);
     }

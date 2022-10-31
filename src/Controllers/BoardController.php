@@ -4,6 +4,7 @@ declare(strict_types = 1);
 namespace Miklcct\NationalRailTimetable\Controllers;
 
 use Http\Factory\Guzzle\StreamFactory;
+use Miklcct\NationalRailTimetable\Config\Config;
 use Miklcct\NationalRailTimetable\Enums\TimeType;
 use Miklcct\NationalRailTimetable\Exceptions\StationNotFound;
 use Miklcct\NationalRailTimetable\Models\Date;
@@ -31,6 +32,7 @@ class BoardController extends Application {
         , private readonly LocationRepositoryInterface $locationRepository
         , private readonly ServiceRepositoryFactoryInterface $serviceRepositoryFactory
         , private readonly FixedLinkRepositoryInterface $fixedLinkRepository
+        , private readonly Config $config
     ) {}
     
     private function runWithoutCache(ServerRequestInterface $request, BoardQuery $query) : ResponseInterface {
@@ -42,6 +44,7 @@ class BoardController extends Application {
                     new StreamFactory()
                     , $this->locationRepository->getAllStations()
                     , ViewMode::BOARD
+                    , $this->config->siteName
                 )
             );
         }
@@ -76,6 +79,7 @@ class BoardController extends Application {
                 , $query
                 , $this->getFixedLinks($query)
                 , $service_repository->getGeneratedDate()
+                , $this->config->siteName
             )
         );
     }
@@ -86,6 +90,7 @@ class BoardController extends Application {
                 $this->streamFactory
                 , $this->locationRepository->getAllStations()
                 , ViewMode::BOARD
+                , $this->config->siteName
                 , $e->getMessage()
             )
         )->withStatus(WebDAV::UNPROCESSABLE_ENTITY);

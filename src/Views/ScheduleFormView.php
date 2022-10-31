@@ -16,9 +16,10 @@ class ScheduleFormView extends ScheduleBaseView {
         StreamFactoryInterface $streamFactory
         , array $stations
         , protected readonly ViewMode $viewMode
+        , string $siteName
         , protected readonly ?string $errorMessage = null
     ) {
-        parent::__construct($streamFactory, $stations);
+        parent::__construct($streamFactory, $stations, $siteName);
     }
 
     protected function getPathToTemplate() : string {
@@ -27,7 +28,7 @@ class ScheduleFormView extends ScheduleBaseView {
 
     protected function getTitle() : string {
         return ($this->viewMode === ViewMode::TIMETABLE ? 'Timetable' : 'Departure board')
-            . ' - GBTT.uk';
+            . ' - ' . $this->siteName;
     }
 
     protected function getStylesheets() : array {

@@ -29,8 +29,17 @@ class TimetableView extends ScheduleView {
         , array $stations
         , ?array $fixedLinks
         , ?Date $generated
+        , string $siteName
     ) {
-        parent::__construct($streamFactory, $stations, $date, $query, $fixedLinks, $generated);
+        parent::__construct(
+            $streamFactory
+            , $stations
+            , $date
+            , $query
+            , $fixedLinks
+            , $generated
+            , $siteName
+        );
     }
 
    protected function getIncludePath() {

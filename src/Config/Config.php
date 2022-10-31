@@ -8,6 +8,7 @@ class Config {
         , public readonly ?array $mongodbUriOptions
         , public readonly string $databaseName
         , public readonly string $alternativeDatabaseName
+        , public readonly string $siteName
     ) {
         
     }

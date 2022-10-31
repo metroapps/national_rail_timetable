@@ -39,13 +39,14 @@ abstract class ScheduleView extends ScheduleBaseView {
         , protected readonly BoardQuery $query
         , protected readonly ?array $fixedLinks
         , protected readonly ?Date $generated
+        , string $siteName
     ) {
-        parent::__construct($streamFactory, $stations);
+        parent::__construct($streamFactory, $stations, $siteName);
     }
 
     protected function getTitle() : string {
         return sprintf(
-            '%s at %s %s %s%s - GBTT.uk'
+            '%s at %s %s %s%s - %s'
             , $this->query->arrivalMode ? 'Arrivals' : 'Departures'
             , $this->query->station->name
             , $this->query->filter !== []
@@ -56,6 +57,7 @@ abstract class ScheduleView extends ScheduleBaseView {
             : ''
             , $this->query->date === null ? 'today' : 'on ' . $this->date
             , $this->query->permanentOnly ? ' (permanent timetable)' : ''
+            , $this->siteName
         );
     }
 

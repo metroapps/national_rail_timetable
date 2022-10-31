@@ -3,6 +3,7 @@ declare(strict_types = 1);
 
 namespace Miklcct\NationalRailTimetable\Controllers;
 
+use Miklcct\NationalRailTimetable\Config\Config;
 use Miklcct\NationalRailTimetable\Enums\TimeType;
 use Miklcct\NationalRailTimetable\Exceptions\StationNotFound;
 use Miklcct\NationalRailTimetable\Models\Date;
@@ -33,6 +34,7 @@ class TimetableController extends Application {
         , private readonly ServiceRepositoryFactoryInterface $serviceRepositoryFactory
         , private readonly LocationRepositoryInterface $locationRepository
         , private readonly FixedLinkRepositoryInterface $fixedLinkRepository
+        , private readonly Config $config
     ) {}
 
     public function runWithoutCache(ServerRequestInterface $request, BoardQuery $query) : ResponseInterface {
@@ -43,6 +45,7 @@ class TimetableController extends Application {
                     $this->streamFactory
                     , $this->locationRepository->getAllStations()
                     , ViewMode::TIMETABLE
+                    , $this->config->siteName
                 )
             );
         }
@@ -71,6 +74,7 @@ class TimetableController extends Application {
                 , $this->locationRepository->getAllStations()
                 , $this->getFixedLinks($query)
                 , $service_repository->getGeneratedDate()
+                , $this->config->siteName
             )
         );
     }
@@ -81,6 +85,7 @@ class TimetableController extends Application {
                 $this->streamFactory
                 , $this->locationRepository->getAllStations()
                 , ViewMode::TIMETABLE
+                , $this->config->siteName
                 , $e->getMessage()
             )
         )->withStatus(WebDAV::UNPROCESSABLE_ENTITY);

@@ -19,8 +19,17 @@ class BoardView extends ScheduleView {
         , BoardQuery $query
         , ?array $fixedLinks
         , ?Date $generated
+        , string $siteName
     ) {
-        parent::__construct($streamFactory, $stations, $date, $query, $fixedLinks, $generated);
+        parent::__construct(
+            $streamFactory
+            , $stations
+            , $date
+            , $query
+            , $fixedLinks
+            , $generated
+            , $siteName
+        );
     }
 
     protected function getIncludePath() : string {
