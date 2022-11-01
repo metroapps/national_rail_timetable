@@ -2,6 +2,7 @@
 
 const query = new URLSearchParams(window.location.search.substring(1));
 const mode = query.get('mode');
+// FIXME: doesn't work properly if the browser is in another time zone
 const reference_timestamp = (
     query.get('connecting_time') 
         ? new Date(query.get('connecting_time'))
