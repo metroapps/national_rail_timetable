@@ -40,7 +40,7 @@ class BoardQuery {
             , empty($query['station']) ? null : static::getQueryStation($query['station'], $location_repository)
             , array_map(
                 static fn(string $string) => static::getQueryStation($string, $location_repository)
-                , array_filter((array)($query['filter'] ?? []))
+                , array_values(array_filter((array)($query['filter'] ?? [])))
             )
             , empty($query['date']) ? null : Date::fromDateTimeInterface(new \Safe\DateTimeImmutable($query['date']))
             , empty($query['connecting_time']) ? null : new \Safe\DateTimeImmutable($query['connecting_time'])
