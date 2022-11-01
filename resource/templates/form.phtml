@@ -54,7 +54,7 @@ for ($i = 0; $i < 5; ++$i) {
                    name="date"
                    value="<?= html($query['date'] ?? null) ?>"
                    min="<?= html((new DateTimeImmutable('-7 days'))->format('Y-m-d')) ?>"
-                   max="<?= html((new DateTimeImmutable('+180 days'))->format('Y-m-d')) ?>"
+                   max="<?= html((new DateTimeImmutable('+84 days'))->format('Y-m-d')) ?>"
             />
         </label>
     </p>
@@ -65,7 +65,7 @@ for ($i = 0; $i < 5; ++$i) {
                 name="connecting_time"
                 value="<?= html($query['connecting_time'] ?? null) ?>"
                 min="<?= html(substr((new DateTimeImmutable('today -7 days'))->format('c'), 0, 16)) ?>"
-                max="<?= html(substr((new DateTimeImmutable('today +181 days'))->format('c'), 0, 16)) ?>"
+                max="<?= html(substr((new DateTimeImmutable('today +85 days'))->format('c'), 0, 16)) ?>"
             />
         </label>
         <label>from TOC:
