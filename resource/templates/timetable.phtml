@@ -9,6 +9,7 @@ use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 use Miklcct\NationalRailTimetable\Models\Timetable;
 use Miklcct\NationalRailTimetable\Views\ServiceView;
 use Miklcct\NationalRailTimetable\Views\TimetableView;
+use function Miklcct\NationalRailTimetable\Views\show_activities;
 use function Miklcct\NationalRailTimetable\Views\show_time;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
@@ -222,23 +223,30 @@ use function Miklcct\ThinPhpApp\Escaper\html;
 ?>
                         <tr class="<?= $i === 0 ? 'origin' : '' ?> <?= $i !== 0 && in_array($station->getCrsCode(), array_map(static fn(LocationWithCrs $location) => $location->getCrsCode(), $this->query->filter), true) ? 'destination' : '' ?>">
                             <td class="station_column">
+                                <div class="station_name">
+                                    <span>
+
 <?php
             if ($i !== 0) {
 ?>
-                                <a href="<?= html((new BoardQuery($this->query->arrivalMode, $station, [], $this->query->date, null, null, $this->query->permanentOnly))->getUrl(
-                                    TimetableView::URL
-                                )) ?>">
+                                        <a href="<?= html((new BoardQuery($this->query->arrivalMode, $station, [], $this->query->date, null, null, $this->query->permanentOnly))->getUrl(
+                                            TimetableView::URL
+                                        )) ?>">
 <?php
             }
 ?>
-                                <?= html($station->getShortName()) ?>
+                                            <?= html($station->getShortName()) ?>
 <?php
             if ($i !== 0) {
 ?>
-                                </a>
+                                        </a>
 <?php
             }
+            $is_arrival = $this->query->arrivalMode === ($i === 0);
 ?>
+                                    </span>
+                                    <abbr class="departure_arrival" title="<?= html($is_arrival ? 'arrival' : 'departure') ?>"><?= html($is_arrival ? 'a' : 'd') ?></abbr>
+                                </div>
                             </td>
 <?php
             $j = 0;
@@ -269,7 +277,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
                         ? ServiceView::getServiceUrl($call->uid, $call->date, $this->query->permanentOnly)
                         : $this->getArrivalLink($calls[$i][$j]);
 ?>
-                           <td class="<?= $connection_class ?>" colspan=<?= $colspan ?>><?= show_time($call->timestamp, $this->date, $link)?></td>
+                           <td class="<?= $connection_class ?>" colspan=<?= $colspan ?>><?= show_time($call->timestamp, $this->date, $link) . show_activities($call->call->activities) ?></td>
 <?php
                     $j += $colspan;
                 }

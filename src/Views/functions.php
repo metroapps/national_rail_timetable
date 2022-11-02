@@ -4,7 +4,9 @@ declare(strict_types = 1);
 namespace Miklcct\NationalRailTimetable\Views;
 
 use DateTimeImmutable;
+use Miklcct\NationalRailTimetable\Enums\Activity;
 use Miklcct\NationalRailTimetable\Models\Date;
+use function implode;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 function show_time(DateTimeImmutable $timestamp, Date $base, string $link = null) : string {
@@ -26,4 +28,23 @@ function show_time(DateTimeImmutable $timestamp, Date $base, string $link = null
                 }, $day_offset) 
             : ''
         );
+}
+
+/**
+ * @param Activity[] $activities
+ */
+function show_activities(array $activities) : string {
+    return implode(
+        ''
+        , array_map(
+            static fn(Activity $activity) =>
+                match ($activity) {
+                    Activity::REQUEST_STOP => '<abbr class="activity" title="request stop">x</abbr>',
+                    Activity::PICK_UP => '<abbr class="activity" title="pick up only">u</abbr>',
+                    Activity::SET_DOWN => '<abbr class="activity" title="set down only">s</abbr>',
+                    default => ''
+                }
+            , $activities
+        )
+    );
 }

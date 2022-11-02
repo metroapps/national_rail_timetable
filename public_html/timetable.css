@@ -106,3 +106,19 @@ p {
 .calls {
     font-size: x-small;
 }
+
+.station_name {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5em;
+}
+
+.station_name span {
+    flex-grow: 1;
+}
+
+.departure_arrival {
+    font-size: x-small;
+}
