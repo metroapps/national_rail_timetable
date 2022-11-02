@@ -79,22 +79,81 @@ use function Miklcct\ThinPhpApp\Escaper\html;
 ?>
                         </tr>
                         <tr class="info">
-                            <td class="station_column"><?= html($this->query->arrivalMode ? 'Origin' : 'Destination') ?></td>
+                            <td class="station_column">Origin</td>
 <?php
         $i = 0;
         while (isset($calls[0][$i])) {
-            /** @var ServiceCallWithDestination $call */
             $call = $calls[0][$i];
-            foreach ($this->query->arrivalMode ? $call->origins : $call->destinations as $destination) {
-                $destination_location = $destination->location;
-                if (!$destination_location instanceof LocationWithCrs) {
-                    $destination_location = null;
-                }
+            if ($this->query->arrivalMode) {
+                foreach ($call->origins as $origin) {
+                    $location = $origin->location;
+                    if (!$location instanceof LocationWithCrs) {
+                        $location = null;
+                    }
 ?>
                             <td><abbr title="<?=
-                                html($destination_location?->getShortName()) ?>"><?= html($destination_location?->getCrsCode()) ?></abbr></td>
+                                html($location?->getShortName()) ?>"><?= html($location?->getCrsCode()) ?></abbr></td>
 <?php
-                ++$i;
+                    ++$i;
+                }
+            } else {
+                $colspan = $get_colspan($calls[0], $i);
+?>
+                            <td colspan="<?= $colspan ?>">
+<?php
+                foreach ($call->origins as $origin) {
+                    $location = $origin->location;
+                    if (!$location instanceof LocationWithCrs) {
+                        $location = null;
+                    }
+?>
+                    <abbr title="<?= html($location?->getShortName()) ?>"><?= html($location?->getCrsCode()) ?></abbr>
+<?php
+                }
+?>
+                            </td>
+<?php
+                $i += $colspan;
+            }
+        }
+?>
+                        </tr>
+                        <tr class="info">
+                            <td class="station_column">Destination</td>
+<?php
+        $i = 0;
+        while (isset($calls[0][$i])) {
+            $call = $calls[0][$i];
+            if (!$this->query->arrivalMode) {
+                foreach ($call->destinations as $destination) {
+                    $location = $destination->location;
+                    if (!$location instanceof LocationWithCrs) {
+                        $location = null;
+                    }
+?>
+                            <td><abbr title="<?=
+                                html($location?->getShortName()) ?>"><?= html($location?->getCrsCode()) ?></abbr></td>
+<?php
+                    ++$i;
+                }
+            } else {
+                $colspan = $get_colspan($calls[0], $i);
+?>
+                            <td colspan="<?= $colspan ?>">
+<?php
+                foreach ($call->destinations as $destination) {
+                    $location = $destination->location;
+                    if (!$location instanceof LocationWithCrs) {
+                        $location = null;
+                    }
+?>
+                    <abbr title="<?= html($location?->getShortName()) ?>"><?= html($location?->getCrsCode()) ?></abbr>
+<?php
+                }
+?>
+                            </td>
+<?php
+                $i += $colspan;
             }
         }
 ?>
