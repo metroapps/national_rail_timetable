@@ -61,7 +61,6 @@ class TimetableController extends Application {
         if ($filter !== []) {
             $board = $board->filterByDestination(
                 array_map(static fn(LocationWithCrs $location) => $location->getCrsCode(), $filter)
-                , true
             );
         }
 
