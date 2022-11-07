@@ -89,7 +89,7 @@ class DepartureBoard {
      * @param bool $truncate
      * @return static
      */
-    public function filterByDestination(array $filter_crs, array $inverse_filter_crs, bool $truncate = false) : static {
+    public function filterByDestination(array $filter_crs, array $inverse_filter_crs) : static {
         $get_filter = static fn(array $crs) =>
             static function (ServiceCallWithDestination $filter_call) use ($crs) : bool {
                 $location = $filter_call->call->location;
@@ -104,7 +104,7 @@ class DepartureBoard {
             , $this->timeType
             , array_values(
                 array_map(
-                    function (ServiceCallWithDestinationAndCalls $service_call) use ($filter_crs, $truncate): ServiceCallWithDestinationAndCalls {
+                    function (ServiceCallWithDestinationAndCalls $service_call) use ($filter_crs): ServiceCallWithDestinationAndCalls {
                         if (!in_array($this->timeType, [TimeType::PUBLIC_ARRIVAL, TimeType::WORKING_ARRIVAL], true)) {
                             $destinations = array_merge(
                                 ...array_map(
@@ -120,23 +120,7 @@ class DepartureBoard {
                             );
                             $subsequentCalls = array_filter(
                                 $service_call->subsequentCalls
-                                , static fn(ServiceCallWithDestination $filter_call, int $offset) : bool =>
-                                    array_intersect_key($destinations, $filter_call->destinations) !== []
-                                    && (!$truncate || array_filter(
-                                        array_slice($service_call->subsequentCalls, $offset, null)
-                                        , static function (ServiceCallWithDestination $truncate_call) use (
-                                            $filter_call,
-                                            $filter_crs
-                                        ) : bool {
-                                            $location = $truncate_call->call->location;
-                                            return $location instanceof LocationWithCrs
-                                                && array_intersect_key(
-                                                    $truncate_call->destinations,
-                                                    $filter_call->destinations
-                                                ) !== []
-                                                && in_array($location->getCrsCode(), $filter_crs, true);
-                                        }
-                                    ) !== [])
+                                , static fn(ServiceCallWithDestination $filter_call, int $offset) : bool => array_intersect_key($destinations, $filter_call->destinations) !== []
                                 , ARRAY_FILTER_USE_BOTH
                             );
                         } else {
@@ -158,20 +142,7 @@ class DepartureBoard {
                             );
                             $precedingCalls = array_filter(
                                 $service_call->precedingCalls
-                                , static fn(ServiceCallWithDestination $filter_call, int $offset) : bool =>
-                                    array_intersect_key($origins, $filter_call->origins) !== []
-                                    && (!$truncate || array_filter(
-                                        array_slice($service_call->precedingCalls, 0, $offset + 1)
-                                        , static function (ServiceCallWithDestination $truncate_call) use (
-                                            $filter_call,
-                                            $filter_crs
-                                        ) : bool {
-                                            $location = $truncate_call->call->location;
-                                            return $location instanceof LocationWithCrs
-                                                && array_intersect_key($truncate_call->origins, $filter_call->origins) !== []
-                                                && in_array($location->getCrsCode(), $filter_crs, true);
-                                        }
-                                    ) !== [])
+                                , static fn(ServiceCallWithDestination $filter_call, int $offset) : bool => array_intersect_key($origins, $filter_call->origins) !== []
                                 , ARRAY_FILTER_USE_BOTH
                             );
                         } else {
