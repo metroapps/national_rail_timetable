@@ -54,28 +54,26 @@ class DepartureBoard {
             return true;
         }
 
-        return $this->isCallOvertaken($self_departure, $self_arrival, $destination_crs, $arrival_mode);
+        return $this->isCallOvertaken($self_departure, $self_arrival);
     }
 
     public function isCallOvertaken(
-        ServiceCallWithDestination $self_departure,
-        ServiceCallWithDestination $self_arrival,
+        ServiceCallWithDestination $self_departure
+        , ServiceCallWithDestination $self_arrival
     ) : bool {
         $arrival_mode = $this->timeType->isArrival();
         $location = $self_arrival->call->location;
         if (!$location instanceof LocationWithCrs) {
-            throw new RuntimeException('Checking overtaking can only be done at a CRS loation.');
+            throw new RuntimeException('Checking overtaking can only be done at a CRS location.');
         }
         $destination_crs = $location->getCrsCode();
         foreach ($this->callMatrix[$destination_crs] as [$other_departure, $other_arrival]) {
             if (
                 $arrival_mode
-                    ? $other_arrival->timestamp > $self_arrival->timestamp
-                    && $other_departure->timestamp
-                    <= $self_departure->timestamp
-                    : $other_arrival->timestamp < $self_arrival->timestamp
-                    && $other_departure->timestamp
-                    >= $self_departure->timestamp
+                ? $other_arrival->timestamp > $self_arrival->timestamp
+                    && $other_departure->timestamp <= $self_departure->timestamp
+                : $other_arrival->timestamp < $self_arrival->timestamp
+                    && $other_departure->timestamp >= $self_departure->timestamp
             ) {
                 return true;
             }
@@ -321,7 +319,7 @@ class DepartureBoard {
                 if ($location instanceof LocationWithCrs) {
                     /** @var ServiceCallWithDestination[]|null $existing */
                     $existing = &$result[$location->getCrsCode()][$there_call->uid . '_' . $there_call->date];
-                    if ($existing === null || ($arrival_mode ? $existing[1]->timestamp > $there_call->timestamp : $existing[1]->timestamp < $there_call->timestamp)) {
+                    if ($existing === null || ($arrival_mode ? $existing[1]->timestamp < $there_call->timestamp : $existing[1]->timestamp > $there_call->timestamp)) {
                         $existing = [$here_call, $there_call];
                     }
                     unset($existing);
