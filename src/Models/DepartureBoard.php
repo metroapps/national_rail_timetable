@@ -89,11 +89,14 @@ class DepartureBoard {
      * @param bool $truncate
      * @return static
      */
-    public function filterByDestination(array $filter_crs, bool $truncate = false) : static {
-        $filter = static function (ServiceCallWithDestination $filter_call) use ($filter_crs) : bool {
-            $location = $filter_call->call->location;
-            return $location instanceof LocationWithCrs && in_array($location->getCrsCode(), $filter_crs, true);
-        };
+    public function filterByDestination(array $filter_crs, array $inverse_filter_crs, bool $truncate = false) : static {
+        $get_filter = static fn(array $crs) =>
+            static function (ServiceCallWithDestination $filter_call) use ($crs) : bool {
+                $location = $filter_call->call->location;
+                return $location instanceof LocationWithCrs && in_array($location->getCrsCode(), $crs, true);
+            };
+        $filter = $get_filter($filter_crs);
+        $inverse_filter = $get_filter($inverse_filter_crs);
         return new static(
             $this->crs
             , $this->from
@@ -195,8 +198,10 @@ class DepartureBoard {
                         , fn(ServiceCallWithDestinationAndCalls $service_call) : bool =>
                             !in_array($this->timeType, [TimeType::PUBLIC_ARRIVAL, TimeType::WORKING_ARRIVAL], true)
                                 && array_filter($service_call->subsequentCalls, $filter) !== []
+                                && array_filter($service_call->subsequentCalls, $inverse_filter) === []
                             || !in_array($this->timeType, [TimeType::PUBLIC_DEPARTURE, TimeType::WORKING_DEPARTURE], true)
                                 && array_filter($service_call->precedingCalls, $filter) !== []
+                                && array_filter($service_call->precedingCalls, $inverse_filter) === []
                     )
                 )
             )

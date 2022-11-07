@@ -46,15 +46,21 @@ abstract class ScheduleView extends ScheduleBaseView {
 
     protected function getTitle() : string {
         return sprintf(
-            '%s at %s %s %s%s - %s'
+            '%s at %s %s %s %s%s - %s'
             , $this->query->arrivalMode ? 'Arrivals' : 'Departures'
             , $this->query->station->name
             , $this->query->filter !== []
-            ? ($this->query->arrivalMode ? ' from ' : ' to ') . implode(
-                ', '
-                , array_map(static fn(Location $location) => $location->name, $this->query->filter)
-            )
-            : ''
+                ? ($this->query->arrivalMode ? 'from ' : 'to ') . implode(
+                    ', '
+                    , array_map(static fn(Location $location) => $location->name, $this->query->filter)
+                )
+                : ''
+            , $this->query->inverseFilter !== []
+                ? 'not ' . implode(
+                    ', '
+                    , array_map(static fn(Location $location) => $location->name, $this->query->inverseFilter)
+                )
+                : ''
             , $this->query->date === null ? 'today' : 'on ' . $this->date
             , $this->query->permanentOnly ? ' (permanent timetable)' : ''
             , $this->siteName
@@ -76,6 +82,16 @@ abstract class ScheduleView extends ScheduleBaseView {
                     )
                 );
         }
+        $inverse_filter = $this->query->inverseFilter;
+        if ($inverse_filter !== []) {
+            $result .= ' but not ' . implode(
+                    ', '
+                    , array_map(
+                        fn(Location $location) => $location->name
+                        , $inverse_filter
+                    )
+                );
+        }
         $result .= ' on ' . $this->date;
         return $result;
     }
@@ -94,6 +110,7 @@ abstract class ScheduleView extends ScheduleBaseView {
             $this->query->arrivalMode
             , $location
             , []
+            , []
             , Date::fromDateTimeInterface($service_call->timestamp->sub(new DateInterval($this->query->arrivalMode ? 'PT4H30M' : 'P0D')))
             , $service_call->timestamp
             , $service_call->toc
@@ -107,6 +124,7 @@ abstract class ScheduleView extends ScheduleBaseView {
             $this->query->arrivalMode
             , $this->query->station
             , $this->query->filter
+            , $this->query->inverseFilter
             , $this->date->addDays($days)
             , $this->query->connectingTime
             , $this->query->connectingToc
@@ -129,6 +147,7 @@ abstract class ScheduleView extends ScheduleBaseView {
         return (new BoardQuery(
             $this->query->arrivalMode
             , $this->query->filter[0]
+            , $this->query->inverseFilter
             , [$this->query->station]
             , $this->query->date
             , null
@@ -145,14 +164,15 @@ abstract class ScheduleView extends ScheduleBaseView {
             $this->query->arrivalMode
             , $this->query->arrivalMode ? $fixed_link->origin : $fixed_link->destination
             , []
+            , []
             , $this->query->connectingTime !== null
-            ? Date::fromDateTimeInterface(
-                $this->query->connectingTime->sub(new DateInterval($this->query->arrivalMode ? 'PT4H30M' : 'P0D'))
-            )
-            : $this->query->date ?? Date::today()
+                ? Date::fromDateTimeInterface(
+                    $this->query->connectingTime->sub(new DateInterval($this->query->arrivalMode ? 'PT4H30M' : 'P0D'))
+                )
+                : $this->query->date ?? Date::today()
             , $departure_time === null
-            ? null
-            : $fixed_link->getArrivalTime($departure_time, $this->query->arrivalMode)
+                ? null
+                : $fixed_link->getArrivalTime($departure_time, $this->query->arrivalMode)
             , null
             , $this->query->permanentOnly
         )

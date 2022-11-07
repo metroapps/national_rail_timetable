@@ -229,7 +229,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
 <?php
             if ($i !== 0) {
 ?>
-                                        <a href="<?= html((new BoardQuery($this->query->arrivalMode, $station, [], $this->query->date, null, null, $this->query->permanentOnly))->getUrl(
+                                        <a href="<?= html((new BoardQuery($this->query->arrivalMode, $station, [], [], $this->query->date, null, null, $this->query->permanentOnly))->getUrl(
                                             TimetableView::URL
                                         )) ?>">
 <?php

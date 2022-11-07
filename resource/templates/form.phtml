@@ -49,6 +49,15 @@ for ($i = 0; $i < 5; ++$i) {
 }
 ?>
         </label><br/>
+        <label>but not at (optional):
+            <?php
+            for ($i = 0; $i < 5; ++$i) {
+                ?>
+                <input autocomplete="off" list="stations" type="text" name="inverse_filter[]" size="3" value="<?= html($query['inverse_filter'][$i] ?? null) ?>"/>
+                <?php
+            }
+            ?>
+        </label><br/>
         <label>on (leave empty for today)
             <input type="date"
                    name="date"

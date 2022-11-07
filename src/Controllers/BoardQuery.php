@@ -19,15 +19,17 @@ class BoardQuery {
      * @param bool $arrivalMode
      * @param LocationWithCrs|null $station
      * @param LocationWithCrs[] $filter
+     * @param LocationWithCrs[] $inverseFilter
      * @param Date|null $date
      * @param DateTimeImmutable|null $connectingTime
      * @param string|null $connectingToc
      * @param bool $permanentOnly
      */
-    public function __construct(
+    final public function __construct(
         public readonly bool $arrivalMode = false
         , public readonly ?LocationWithCrs $station = null
         , public readonly array $filter = []
+        , public readonly array $inverseFilter = []
         , public readonly ?Date $date = null
         , public readonly ?DateTimeImmutable $connectingTime = null
         , public readonly ?string $connectingToc = null
@@ -42,6 +44,10 @@ class BoardQuery {
                 static fn(string $string) => static::getQueryStation($string, $location_repository)
                 , array_values(array_filter((array)($query['filter'] ?? [])))
             )
+            , array_map(
+                static fn(string $string) => static::getQueryStation($string, $location_repository)
+                , array_values(array_filter((array)($query['inverse_filter'] ?? [])))
+            )
             , empty($query['date']) ? null : Date::fromDateTimeInterface(new \Safe\DateTimeImmutable($query['date']))
             , empty($query['connecting_time']) ? null : new \Safe\DateTimeImmutable($query['connecting_time'])
             , ($query['connecting_toc'] ?? '') ?: null
@@ -53,11 +59,15 @@ class BoardQuery {
         return [
             'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
             'station' => $this->station?->getCrsCode(),
-                'filter' => array_map(
-                    static fn(LocationWithCrs $location) => $location->getCrsCode()
-                    , $this->filter
-                ),
-                'date' => $this->date?->__toString() ?? '',
+            'filter' => array_map(
+                static fn(LocationWithCrs $location) => $location->getCrsCode()
+                , $this->filter
+            ),
+            'inverse_filter' => array_map(
+                static fn(LocationWithCrs $location) => $location->getCrsCode()
+                , $this->inverseFilter
+            ),
+            'date' => $this->date?->__toString() ?? '',
             'connecting_time' => substr($this->connectingTime?->format('c') ?? '', 0, 16),
             'connecting_toc' => $this->connectingToc ?? '',
         ] + ($this->permanentOnly ? ['permanent_only' => '1'] : []);

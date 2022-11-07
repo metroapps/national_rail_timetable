@@ -37,7 +37,6 @@ class BoardController extends Application {
     
     private function runWithoutCache(ServerRequestInterface $request, BoardQuery $query) : ResponseInterface {
         $station = $query->station;
-        $destinations = $query->filter;
         if ($station === null) {
             return ($this->viewResponseFactory)(
                 new ScheduleFormView(
@@ -61,11 +60,15 @@ class BoardController extends Application {
             , $to
             , $arrival_mode ? TimeType::PUBLIC_ARRIVAL : TimeType::PUBLIC_DEPARTURE
         );
-        if ($destinations !== []) {
+        if ($query->filter !== []) {
             $board = $board->filterByDestination(
                 array_map(
                     static fn(LocationWithCrs $destination) => $destination->getCrsCode()
-                    , $destinations
+                    , $query->filter
+                )
+                , array_map(
+                    static fn(LocationWithCrs $destination) => $destination->getCrsCode()
+                    , $query->inverseFilter
                 )
             );
         }
