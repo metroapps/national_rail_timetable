@@ -147,8 +147,8 @@ abstract class ScheduleView extends ScheduleBaseView {
         return (new BoardQuery(
             $this->query->arrivalMode
             , $this->query->filter[0]
-            , $this->query->inverseFilter
             , [$this->query->station]
+            , $this->query->inverseFilter
             , $this->query->date
             , null
             , null
