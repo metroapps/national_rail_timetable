@@ -112,10 +112,10 @@ $station = $query->station;
                             }
                             , array_filter(
                                 $query->arrivalMode ? $service_call->precedingCalls : $service_call->subsequentCalls
-                                , fn(ServiceCallWithDestination $service_call) : bool => array_key_exists(
-                                $uid,
-                                $this->query->arrivalMode ? $service_call->origins : $service_call->destinations
-                            )
+                                , fn(ServiceCallWithDestination $service_call) : bool => $service_call->call->isPublicCall() && array_key_exists(
+                                    $uid,
+                                    $this->query->arrivalMode ? $service_call->origins : $service_call->destinations
+                                )
                             )
                         )
                     )
