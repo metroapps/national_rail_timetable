@@ -163,6 +163,44 @@ class Timetable {
             }
         }
 
+        // check if duplicated stations can be simplified
+        ksort($matrix);
+        ksort($stations);
+        do {
+            $removed_duplication = false;
+            for ($i = $arrival_mode ? 1 : count($stations) - 1; $i >= ($arrival_mode ? count($stations) - 1 : 1); $i += $arrival_mode ? 1 : -1) {
+                for ($j = $i + ($arrival_mode ? 1 : - 1); $arrival_mode ? $j <= count($stations) - 1 : $j >= 1; $j += $arrival_mode ? 1 : -1) {
+                    if ($stations[$i]->getCrsCode() === $stations[$j]->getCrsCode()) {
+                        $failed = false;
+                        foreach (array_keys($matrix[0]) as $column) {
+                            if (isset($matrix[$j][$column])) {
+                                for (
+                                    $k = $j + ($arrival_mode ? -1 : 1);
+                                    $arrival_mode ? $k >= $i : $k <= $i;
+                                    $k += $arrival_mode ? -1 : 1
+                                ) {
+                                    if (isset($matrix[$k][$column])) {
+                                        $failed = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (!$failed) {
+                            foreach ($matrix[$j] as $column => $call) {
+                                $matrix[$i][$column] = $call;
+                            }
+                            unset($matrix[$j]);
+                            unset($stations[$j]);
+                            $stations = array_values($stations);
+                            $matrix = array_values($matrix);
+                            $removed_duplication = true;
+                        }
+                    }
+                }
+            }
+        } while ($removed_duplication);
+
         return new static($stations, $matrix);
     }
 }
