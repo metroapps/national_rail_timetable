@@ -1,12 +1,12 @@
 <?php
 declare(strict_types = 1);
 
-use Miklcct\NationalRailTimetable\Enums\Activity;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\NationalRailTimetable\Views\BoardView;
 use Miklcct\NationalRailTimetable\Views\ServiceView;
+use function Miklcct\NationalRailTimetable\Views\show_activities;
 use function Miklcct\NationalRailTimetable\Views\show_time;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
@@ -78,7 +78,7 @@ $station = $query->station;
             ?> <?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>">
                 <?=
                 show_time($timestamp, $this->date, ServiceView::getServiceUrl($service_call->uid, $service_call->date, $query->permanentOnly))
-                . (in_array(Activity::REQUEST_STOP, $service_call->call->activities, true) ? '<abbr title="request stop">x</abbr>' : '')
+                . show_activities($service_call->call->activities)
                 ?>
             </td>
             <td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><?= $this->showFacilities($service_call) ?></td>
@@ -103,12 +103,11 @@ $station = $query->station;
                                 $station = $service_call->call->location;
                                 $link = $view->getArrivalLink($service_call);
                                 return sprintf(
-                                    $link === null ? '<span class="%1$s">%3$s (%4$s%5$s)</span>' : '<span class="%s"><a href="%s">%s</a> (%s%s)</span>'
+                                    $link === null ? '<span class="%1$s">%3$s (%4$s)</span>' : '<span class="%s"><a href="%s">%s</a> (%s)</span>'
                                     , $station instanceof LocationWithCrs && in_array($station->getCrsCode(), array_map(static fn(LocationWithCrs $destination) => $destination->getCrsCode(), $view->query->filter), true) ? 'destination' : ''
                                     , html($link)
                                     , html($station->getShortName())
-                                    , show_time($service_call->timestamp, $view->date)
-                                    , in_array(Activity::REQUEST_STOP, $service_call->call->activities, true) ? '<abbr title="request stop">x</abbr>' : ''
+                                    , show_time($service_call->timestamp, $view->date) . show_activities($service_call->call->activities)
                                 );
                             }
                             , array_filter(
