@@ -52,15 +52,15 @@ table, tr {
     z-index: 2;
 }
 
-tbody tr:nth-child(odd) {
+tbody tr:not(.even):nth-child(odd), tbody tr.odd {
     background-color: #f0f0f0;
 }
 
-tbody tr:nth-child(even) .valid_connection, thead .valid_connection, tfoot .valid_connection {
+tbody tr:not(.odd):nth-child(even) .valid_connection, tbody tr.even .valid_connection, thead .valid_connection, tfoot .valid_connection {
     background-color: #e0ffe0;
 }
 
-tbody tr:nth-child(even) .invalid_connection, thead .invalid_connection, tfoot .invalid_connection {
+tbody tr:not(.odd):nth-child(even) .invalid_connection, tbody tr.even .invalid_connection, thead .invalid_connection, tfoot .invalid_connection {
     background-color: #ffe0e0;
 }
 

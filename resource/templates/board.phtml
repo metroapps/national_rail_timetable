@@ -55,7 +55,7 @@ $station = $query->station;
     <tbody>
         <?php
         $previous_timestamp = null;
-        foreach ($query->arrivalMode ? array_reverse($this->board->calls, true) : $this->board->calls as $service_call) {
+        foreach ($query->arrivalMode ? array_reverse($this->board->calls, true) : $this->board->calls as $h => $service_call) {
             $timestamp = $service_call->timestamp;
             $destinations = $query->arrivalMode ? $service_call->origins : $service_call->destinations;
             $portions_count = count($destinations);
@@ -70,7 +70,7 @@ $station = $query->station;
             $whole_train_overtaken = !in_array(false, $overtaken_portions, true);
             $day_offset = $timestamp->setTime(0, 0)->diff($this->date->toDateTimeImmutable())->days;
             ?>
-        <tr data-timestamp="<?= html($timestamp->getTimestamp()) ?>">
+        <tr class="<?= $h % 2 ? 'odd' : 'even'?>" data-timestamp="<?= html($timestamp->getTimestamp()) ?>">
             <td class="time <?=
             $query->connectingTime === null || !$station instanceof Station
                 ? ''
@@ -90,7 +90,7 @@ $station = $query->station;
                 if ($i > 0) {
                     ?>
                     </tr>
-                    <tr>
+                    <tr class="<?= $h % 2 ? 'odd' : 'even'?>">
                     <?php
                 }
                 ?>
