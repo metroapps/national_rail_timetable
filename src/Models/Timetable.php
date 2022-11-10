@@ -166,9 +166,11 @@ class Timetable {
         // check if duplicated stations can be simplified
         ksort($matrix);
         ksort($stations);
+        $stations = array_values($stations);
+        $matrix = array_values($matrix);
         do {
             $removed_duplication = false;
-            for ($i = $arrival_mode ? 1 : count($stations) - 1; $i >= ($arrival_mode ? count($stations) - 1 : 1); $i += $arrival_mode ? 1 : -1) {
+            for ($i = $arrival_mode ? 1 : count($stations) - 1; $arrival_mode ? $i <= count($stations) - 1 : $i >= 1; $i += $arrival_mode ? 1 : -1) {
                 for ($j = $i + ($arrival_mode ? 1 : - 1); $arrival_mode ? $j <= count($stations) - 1 : $j >= 1; $j += $arrival_mode ? 1 : -1) {
                     if ($stations[$i]->getCrsCode() === $stations[$j]->getCrsCode()) {
                         $failed = false;
@@ -195,6 +197,7 @@ class Timetable {
                             $stations = array_values($stations);
                             $matrix = array_values($matrix);
                             $removed_duplication = true;
+                            break 2;
                         }
                     }
                 }
