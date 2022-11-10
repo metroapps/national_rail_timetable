@@ -57,12 +57,10 @@ class TimetableController extends Application {
             , $date->toDateTimeImmutable(new Time(28, 30))
             , $query->arrivalMode ? TimeType::PUBLIC_ARRIVAL : TimeType::PUBLIC_DEPARTURE
         );
-        if ($query->filter !== []) {
-            $board = $board->filterByDestination(
-                array_map(static fn(LocationWithCrs $location) => $location->getCrsCode(), $query->filter)
-                , array_map(static fn(LocationWithCrs $location) => $location->getCrsCode(), $query->inverseFilter)
-            );
-        }
+        $board = $board->filterByDestination(
+            array_map(static fn(LocationWithCrs $location) => $location->getCrsCode(), $query->filter)
+            , array_map(static fn(LocationWithCrs $location) => $location->getCrsCode(), $query->inverseFilter)
+        );
 
         return ($this->viewResponseFactory)(
             new TimetableView(

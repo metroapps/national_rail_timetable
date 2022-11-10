@@ -60,18 +60,16 @@ class BoardController extends Application {
             , $to
             , $arrival_mode ? TimeType::PUBLIC_ARRIVAL : TimeType::PUBLIC_DEPARTURE
         );
-        if ($query->filter !== []) {
-            $board = $board->filterByDestination(
-                array_map(
-                    static fn(LocationWithCrs $destination) => $destination->getCrsCode()
-                    , $query->filter
-                )
-                , array_map(
-                    static fn(LocationWithCrs $destination) => $destination->getCrsCode()
-                    , $query->inverseFilter
-                )
-            );
-        }
+        $board = $board->filterByDestination(
+            array_map(
+                static fn(LocationWithCrs $destination) => $destination->getCrsCode()
+                , $query->filter
+            )
+            , array_map(
+                static fn(LocationWithCrs $destination) => $destination->getCrsCode()
+                , $query->inverseFilter
+            )
+        );
 
         return ($this->viewResponseFactory)(
             new BoardView(

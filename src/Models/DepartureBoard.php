@@ -113,7 +113,7 @@ class DepartureBoard {
                                         $service_call->subsequentCalls
                                         , static function (ServiceCallWithDestination $filter_call) use ($filter_crs) : bool {
                                             $location = $filter_call->call->location;
-                                            return $location instanceof LocationWithCrs && in_array($location->getCrsCode(), $filter_crs, true) ;
+                                            return $location instanceof LocationWithCrs && ($filter_crs === [] || in_array($location->getCrsCode(), $filter_crs, true));
                                         }
                                     )
                                 )
@@ -168,10 +168,10 @@ class DepartureBoard {
                         $this->calls
                         , fn(ServiceCallWithDestinationAndCalls $service_call) : bool =>
                             !in_array($this->timeType, [TimeType::PUBLIC_ARRIVAL, TimeType::WORKING_ARRIVAL], true)
-                                && array_filter($service_call->subsequentCalls, $filter) !== []
+                                && ($filter_crs === [] || array_filter($service_call->subsequentCalls, $filter) !== [])
                                 && array_filter($service_call->subsequentCalls, $inverse_filter) === []
                             || !in_array($this->timeType, [TimeType::PUBLIC_DEPARTURE, TimeType::WORKING_DEPARTURE], true)
-                                && array_filter($service_call->precedingCalls, $filter) !== []
+                                && ($filter_crs === [] || array_filter($service_call->precedingCalls, $filter) !== [])
                                 && array_filter($service_call->precedingCalls, $inverse_filter) === []
                     )
                 )
