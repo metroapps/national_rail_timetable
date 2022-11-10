@@ -41,3 +41,10 @@ h1 {
 .train_number {
     font-weight: bold;
 }
+
+#map {
+    display: none;
+    position: relative;
+    height: 80vh;
+    padding: 1em;
+}

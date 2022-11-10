@@ -37,12 +37,12 @@ class FullService extends DatedService {
         usort(
             $dividesJoinsEnRoute
             , function (DatedAssociation $a, DatedAssociation $b) {
-                assert($a->associationEntry instanceof Association);
-                assert($b->associationEntry instanceof Association);
+                assert($a->association instanceof Association);
+                assert($b->association instanceof Association);
                 /** @var TimingPoint[] $points */
                 $points = array_map(
                     $this->service->getAssociationPoint(...)
-                    , [$a->associationEntry, $b->associationEntry]
+                    , [$a->association, $b->association]
                 );
                 $times = array_map(
                     static fn(TimingPoint $point) =>
@@ -55,14 +55,14 @@ class FullService extends DatedService {
                 );
                 if ($times[0]->toHalfMinutes() === $times[1]->toHalfMinutes()) {
                     // the associations are at the same call
-                    if ($a->associationEntry->category === $b->associationEntry->category) {
+                    if ($a->association->category === $b->association->category) {
                         /** @var DateTimeImmutable[] $timestamps */
                         $timestamps = array_map(
                             static function (DatedAssociation $dated_association) {
-                                assert($dated_association->associationEntry instanceof Association);
+                                assert($dated_association->association instanceof Association);
                                 assert($dated_association->secondaryService instanceof FullService);
                                 return $dated_association->secondaryService->date->toDateTimeImmutable(
-                                    match ($dated_association->associationEntry->category) {
+                                    match ($dated_association->association->category) {
                                         AssociationCategory::DIVIDE =>
                                             $dated_association->secondaryService->service->getOrigin()->getPublicOrWorkingDeparture(),
                                         AssociationCategory::JOIN =>
@@ -78,7 +78,7 @@ class FullService extends DatedService {
                         return $timestamps[0] <=> $timestamps[1];
                     }
                     // one is join and one is divide - order divide before join
-                    return $a->associationEntry->category->name <=> $b->associationEntry->category->name;
+                    return $a->association->category->name <=> $b->association->category->name;
                 }
                 return $times[0]->toHalfMinutes() <=> $times[1]->toHalfMinutes();
             }
@@ -112,14 +112,14 @@ class FullService extends DatedService {
                     array_filter(
                         $this->dividesJoinsEnRoute
                         , function (DatedAssociation $association) use ($time) {
-                            if (!$association->associationEntry instanceof Association) {
+                            if (!$association->association instanceof Association) {
                                 return false;
                             }
-                            if ($association->associationEntry->category !== AssociationCategory::JOIN) {
+                            if ($association->association->category !== AssociationCategory::JOIN) {
                                 return false;
                             }
                             assert($this->service instanceof Service);
-                            $association_point = $this->service->getAssociationPoint($association->associationEntry);
+                            $association_point = $this->service->getAssociationPoint($association->association);
                             assert($association_point instanceof CallingPoint);
                             return $time === null
                                 || $association_point->getPublicOrWorkingDeparture()->toHalfMinutes() <= $time->toHalfMinutes();
@@ -164,14 +164,14 @@ class FullService extends DatedService {
                     array_filter(
                         $this->dividesJoinsEnRoute
                         , function (DatedAssociation $association) use ($time) {
-                            if (!$association->associationEntry instanceof Association) {
+                            if (!$association->association instanceof Association) {
                                 return false;
                             }
-                            if ($association->associationEntry->category !== AssociationCategory::DIVIDE) {
+                            if ($association->association->category !== AssociationCategory::DIVIDE) {
                                 return false;
                             }
                             assert($this->service instanceof Service);
-                            $association_point = $this->service->getAssociationPoint($association->associationEntry);
+                            $association_point = $this->service->getAssociationPoint($association->association);
                             assert($association_point instanceof CallingPoint);
                             return $time === null
                                 || $association_point->getPublicOrWorkingArrival()->toHalfMinutes() >= $time->toHalfMinutes();
@@ -268,7 +268,7 @@ class FullService extends DatedService {
         if ($this->joinTo === null) {
             $join_portion = [];
         } else {
-            $association = $this->joinTo->associationEntry;
+            $association = $this->joinTo->association;
             assert($association instanceof Association);
             $primary_service = $this->joinTo->primaryService;
             assert($primary_service instanceof self);
@@ -288,7 +288,7 @@ class FullService extends DatedService {
         if ($this->divideFrom === null) {
             $divide_portion = [];
         } else {
-            $association = $this->divideFrom->associationEntry;
+            $association = $this->divideFrom->association;
             assert($association instanceof Association);
             $primary_service = $this->divideFrom->primaryService;
             assert($primary_service instanceof self);
@@ -308,7 +308,7 @@ class FullService extends DatedService {
         $other_portions = array_merge(
             ...array_map(
                 function (DatedAssociation $dated_association) use ($base, $with_subsequent_calls, $time_type, $crs, $to, $from) {
-                    $association = $dated_association->associationEntry;
+                    $association = $dated_association->association;
                     assert($association instanceof Association);
                     $secondary_service = $dated_association->secondaryService;
                     assert($secondary_service instanceof FullService);

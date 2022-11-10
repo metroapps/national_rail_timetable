@@ -10,7 +10,6 @@ use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
 use Miklcct\NationalRailTimetable\Enums\Activity;
 use Miklcct\NationalRailTimetable\Enums\AssociationCategory;
 use Miklcct\NationalRailTimetable\Exceptions\UnreachableException;
-use Miklcct\NationalRailTimetable\Models\Association;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\DatedService;
 use Miklcct\NationalRailTimetable\Models\FullService;
@@ -18,9 +17,12 @@ use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\Points\DestinationPoint;
 use Miklcct\NationalRailTimetable\Models\Points\HasArrival;
 use Miklcct\NationalRailTimetable\Models\Points\HasDeparture;
+use Miklcct\NationalRailTimetable\Models\Points\IntermediatePoint;
+use Miklcct\NationalRailTimetable\Models\Points\OriginPoint;
 use Miklcct\NationalRailTimetable\Models\Points\TimingPoint;
 use Miklcct\NationalRailTimetable\Models\Service;
 use Miklcct\NationalRailTimetable\Models\ServiceProperty;
+use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 use function http_build_query;
@@ -142,7 +144,7 @@ class ServiceView extends PhpTemplate {
             $result[$index][0][] = $point;
             $new_portion = false;
             foreach ($dated_service->dividesJoinsEnRoute as $dated_association) {
-                $association_point = $dated_service->service->getAssociationPoint($dated_association->associationEntry);
+                $association_point = $dated_service->service->getAssociationPoint($dated_association->association);
                 if ($point->location->tiploc === $association_point->location->tiploc && $point->locationSuffix === $association_point->locationSuffix) {
                     if (!$new_portion) {
                         $result[++$index][0][0] = $point;
@@ -150,8 +152,7 @@ class ServiceView extends PhpTemplate {
                         $new_portion = true;
                     }
                     $other_portion = $this->splitIntoPortions($dated_association->secondaryService, true);
-                    assert($dated_association->associationEntry instanceof Association);
-                    switch ($dated_association->associationEntry->category) {
+                    switch ($dated_association->association->category) {
                     case AssociationCategory::DIVIDE:
                         $result[$index][] = $other_portion;
                         break;
@@ -203,9 +204,19 @@ class ServiceView extends PhpTemplate {
 <?php
     }
 
+    /**
+     * @param (DatedService|TimingPoint)[] $points
+     * @return void
+     */
     protected function showCallingPoints(array $points) : void {
+        $line = [];
+        foreach ($points as $point) {
+            if ($point instanceof TimingPoint && $point->location instanceof Station) {
+                $line[] = [$point->location->easting, $point->location->northing];
+            }
+        }
 ?>
-        <table class="calling_points">
+        <table class="calling_points" data-line="<?= html(json_encode($line)) ?>">
 <?php
         $service_property = null;
         foreach ($points as $i => $point) {
@@ -213,12 +224,20 @@ class ServiceView extends PhpTemplate {
                 $show_arrival = $i !== 0 && $point instanceof HasArrival && $point->getPublicArrival() !== null;
                 $show_departure = $i !== count($points) - 2 && $point instanceof HasDeparture && $point->getPublicDeparture() !== null;
 
-                if (isset($point->serviceProperty) && $point->serviceProperty != $service_property && $i !== count($points) - 2) {
+                $easting_northing = $point->location instanceof Station
+                    ? sprintf(
+                        'data-crs="%s" data-name="%s" data-easting="%d" data-northing="%d"',
+                        html($point->location->getCrsCode()),
+                        html($point->location->getShortName()),
+                        $point->location->easting,
+                        $point->location->northing
+                    ) : '';
+                if (($point instanceof OriginPoint || $point instanceof IntermediatePoint) && $point->serviceProperty !== null && $point->serviceProperty != $service_property && $i !== count($points) - 2) {
                     $service_property = $point->serviceProperty;
 
                     if ($show_arrival && $point->isPublicCall()) {
 ?>
-            <tr>
+            <tr <?= $easting_northing ?>>
                 <td><?= html($point->location->getShortName()) ?></td>
                 <td><?= html($point->platform) ?></td>
                 <td class="time"><?= $this->showTime($points['dated_service']->date, $this->getOriginPortion()->date, $point, false) ?></td>
@@ -232,7 +251,7 @@ class ServiceView extends PhpTemplate {
                     $this->showServiceInformation($points['dated_service'], $point->serviceProperty);
                     if ($show_departure && $point->isPublicCall()) {
 ?>
-            <tr>
+            <tr <?= $easting_northing ?>>
                 <td><?= html($point->location->getShortName()) ?></td>
                 <td><?= html($point->platform) ?></td>
                 <td class="time"></td>
@@ -244,7 +263,7 @@ class ServiceView extends PhpTemplate {
                     }
                 } elseif ($point->isPublicCall()) {
 ?>
-            <tr>
+            <tr <?= $easting_northing ?>>
                 <td><?= html($point->location->getShortName()) ?></td>
                 <td><?= html($point->platform) ?></td>
                 <td class="time"><?= $show_arrival ? $this->showTime($points['dated_service']->date, $this->getOriginPortion()->date, $point, false) : '' ?></td>
