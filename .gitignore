@@ -3,3 +3,10 @@ vendor/
 /config.php
 node_modules/
 public_html/dist/
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions

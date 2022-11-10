@@ -12,6 +12,7 @@
       <excludeFolder url="file://$MODULE_DIR$/var/cache" />
       <excludeFolder url="file://$MODULE_DIR$/public_html/scripts" />
       <excludeFolder url="file://$MODULE_DIR$/public_html/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/.yarn/cache" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

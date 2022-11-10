@@ -8,5 +8,6 @@
   "devDependencies": {
     "@types/jquery": "^3.5.14",
     "@types/proj4": "^2.5.2"
-  }
+  },
+  "packageManager": "yarn@3.2.4"
 }
