@@ -127,7 +127,7 @@ class DepartureBoard {
                             $destinations = $service_call->destinations;
                             $subsequentCalls = $service_call->subsequentCalls;
                         }
-                        if (in_array($this->timeType, [TimeType::PUBLIC_DEPARTURE, TimeType::WORKING_DEPARTURE], true)) {
+                        if (!in_array($this->timeType, [TimeType::PUBLIC_DEPARTURE, TimeType::WORKING_DEPARTURE], true)) {
                             $origins = array_merge(
                                 ...array_map(
                                     static fn(ServiceCallWithDestination $filter_call) => $filter_call->origins
