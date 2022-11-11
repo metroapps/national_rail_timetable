@@ -1,6 +1,7 @@
 <?php
 declare(strict_types = 1);
 
+use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\NationalRailTimetable\Views\ScheduleBaseView;
 use Miklcct\NationalRailTimetable\Views\ScheduleFormView;
 use Miklcct\NationalRailTimetable\Views\ScheduleView;
@@ -21,8 +22,11 @@ $query = $this instanceof ScheduleView ? $this->query->toArray() : [];
     <datalist id="stations">
 <?php
 foreach ($this->stations as $station) {
+    $easting_northing = $station instanceof Station
+        ? sprintf('data-easting="%d" data-northing="%d"', $station->easting, $station->northing)
+        : '';
 ?>
-        <option value="<?= html($station->getCrsCode()) ?>"><?= html($station->name) ?></option>
+        <option <?= $easting_northing ?> value="<?= html($station->getCrsCode()) ?>"><?= html($station->name) ?></option>
 <?php
 }
 ?>

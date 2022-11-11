@@ -3,6 +3,7 @@ import {Coordinate} from 'ol/coordinate';
 import TileLayer from 'ol/layer/Tile';
 import VectorLayer from 'ol/layer/Vector';
 import Map from 'ol/Map';
+import 'ol/ol.css';
 import {transform} from 'ol/proj';
 import {register} from 'ol/proj/proj4';
 import {OSM} from 'ol/source';
@@ -16,6 +17,7 @@ function osgb36_to_web_mercator(coordinate : Coordinate) : Coordinate {
 }
 
 function initialise_map(element : HTMLElement) : Map {
+    element.style.display = 'block';
     const map = new Map(
         {
             target : element,

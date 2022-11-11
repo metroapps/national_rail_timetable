@@ -60,5 +60,12 @@ footer {
     color: lightgrey;
 }
 
+#map {
+    display: none;
+    position: relative;
+    height: 80vh;
+    padding: 1em;
+}
+
 
 

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\NationalRailTimetable\Views\ScheduleView;
+use function Miklcct\NationalRailTimetable\Views\show_script_tags;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 /** @var ScheduleView $this */
@@ -12,10 +13,10 @@ use function Miklcct\ThinPhpApp\Escaper\html;
     <head>
         <meta content="width=device-width, initial-scale=1.0" name="viewport" />
         <link rel="stylesheet" href="common.css" />
-        <link rel="stylesheet" href="timetable.css" />
+<?php
+show_script_tags('schedule');
+?>
         <title><?= html($this->getTitle()) ?></title>
-        <script defer="defer" src="https://code.jquery.com/jquery-3.6.1.min.js"></script>
-        <script defer="defer" src="board.js"></script>
     </head>
     <body>
         <button id="go_to_top">🔝</button>
@@ -72,6 +73,11 @@ if ($this instanceof ScheduleView) {
     $include_path = $this->getIncludePath();
     (function () use ($include_path) {require $include_path;})();
     (function () {require __DIR__ . '/footer.phtml';})();
+} else {
+?>
+        <p>Click a station in the map to fill in the station field:</p>
+        <div id="map"></div>
+<?php
 }
 ?>
     </body>

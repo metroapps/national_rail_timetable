@@ -46,3 +46,6 @@ function get_generated(Database $database) : ?Date {
     return $database->selectCollection('metadata')->findOne(['generated' => ['$exists' => true]])?->generated;
 }
 
+function is_development() : bool {
+    return $_SERVER['SERVER_NAME'] === 'gbtt.localhost';
+}

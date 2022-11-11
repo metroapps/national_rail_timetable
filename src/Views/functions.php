@@ -7,6 +7,7 @@ use DateTimeImmutable;
 use Miklcct\NationalRailTimetable\Enums\Activity;
 use Miklcct\NationalRailTimetable\Models\Date;
 use function implode;
+use function Miklcct\NationalRailTimetable\is_development;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 function show_time(DateTimeImmutable $timestamp, Date $base, string $link = null) : string {
@@ -47,4 +48,19 @@ function show_activities(array $activities) : string {
             , $activities
         )
     );
+}
+
+function show_script_tags(string $basename) : void {
+    if (is_development()) {
+?>
+        <script type="module" src="http://localhost:5173/@vite/client"></script>
+        <script type="module" src="http://localhost:5173/<?= html($basename) ?>.ts"></script>
+<?php
+    } else {
+        $manifest = json_decode(file_get_contents(__DIR__ . '/../../public_html/dist/manifest.json'), true);
+?>
+        <script type="module" src="/dist/<?= html($manifest["$basename.ts"]['file']) ?>"></script>
+        <link rel="stylesheet" href="/dist/<?= html($manifest["$basename.css"]['file']) ?>" />
+<?php
+    }
 }

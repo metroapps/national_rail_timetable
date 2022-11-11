@@ -3,9 +3,8 @@ declare(strict_types=1);
 
 use Miklcct\NationalRailTimetable\Views\ServiceView;
 use function Miklcct\NationalRailTimetable\get_all_tocs;
+use function Miklcct\NationalRailTimetable\Views\show_script_tags;
 use function Miklcct\ThinPhpApp\Escaper\html;
-use function Safe\file_get_contents;
-use function Safe\json_decode;
 
 /** @var ServiceView $this */
 
@@ -18,18 +17,7 @@ $date = $this->datedService->date;
     <head>
         <meta content="width=device-width, initial-scale=1.0" name="viewport" />
 <?php
-if ($_SERVER['SERVER_NAME'] === 'gbtt.localhost') {
-?>
-        <script type="module" src="http://localhost:5173/@vite/client"></script>
-        <script type="module" src="http://localhost:5173/service.ts"></script>
-<?php
-} else {
-    $manifest = json_decode(file_get_contents(__DIR__ . '/../../public_html/dist/manifest.json'), true);
-?>
-        <script type="module" src="/dist/<?= html($manifest['service.ts']['file']) ?>"></script>
-        <link rel="stylesheet" href="/dist/<?= html($manifest['service.css']['file']) ?>" />
-<?php
-}
+show_script_tags('service');
 ?>
         <link rel="stylesheet" href="/common.css" />
         <title>

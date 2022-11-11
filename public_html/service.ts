@@ -2,7 +2,6 @@ import $ from 'jquery';
 import {Feature, Overlay} from 'ol';
 import {FeatureLike} from 'ol/Feature';
 import {LineString, Point} from 'ol/geom';
-import 'ol/ol.css';
 import {initialise_map, osgb36_to_web_mercator, source} from './map';
 import './service.css';
 
@@ -15,7 +14,6 @@ function require_element(id : string) : HTMLElement {
 }
 
 const map_element = require_element('map');
-map_element.style.display = 'block';
 const map = initialise_map(map_element);
 
 const rendered = new Set();
