@@ -7,7 +7,7 @@ export default defineConfig({
         manifest : true,
         rollupOptions : {
             // overwrite default .html entry
-            input: ['/map.ts']
+            input: ['/service.ts']
         },
         target : 'esnext',
     },
