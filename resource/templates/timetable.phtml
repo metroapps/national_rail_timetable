@@ -9,6 +9,7 @@ use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 use Miklcct\NationalRailTimetable\Models\Timetable;
 use Miklcct\NationalRailTimetable\Views\ServiceView;
 use Miklcct\NationalRailTimetable\Views\TimetableView;
+use Miklcct\NationalRailTimetable\Views\ViewMode;
 use function Miklcct\NationalRailTimetable\Views\show_activities;
 use function Miklcct\NationalRailTimetable\Views\show_time;
 use function Miklcct\ThinPhpApp\Escaper\html;
@@ -300,7 +301,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
                     $call = $calls[$i][$j];
                     $colspan = $get_colspan($calls[$i], $j);
                     $link = $i === 0
-                        ? ServiceView::getServiceUrl($call->uid, $call->date, $this->query->permanentOnly)
+                        ? ServiceView::getServiceUrl($call->uid, $call->date, $this->query->permanentOnly, ViewMode::TIMETABLE)
                         : $this->getArrivalLink($calls[$i][$j]);
 ?>
                            <td class="<?= $connection_class ?>" colspan=<?= $colspan ?>><?= show_time($call->timestamp, $this->date, $link) . show_activities($call->call->activities) ?></td>

@@ -25,15 +25,25 @@ class ServiceView extends PhpTemplate {
         , protected readonly FullService $datedService
         , protected readonly bool $permanentOnly
         , protected readonly ?Date $generated
+        , protected readonly ViewMode $fromViewMode
     ) {
         parent::__construct($streamFactory);
     }
 
-    public static function getServiceUrl(string $uid, Date $date, bool $permanent_only = false) {
+    public static function getServiceUrl(
+        string $uid
+        , Date $date
+        , bool $permanent_only
+        , ViewMode $view_mode
+    ) {
         return '/service.php?' . http_build_query(
             [
                 'uid' => $uid,
                 'date' => $date->__toString(),
+                'from' => match ($view_mode) {
+                    ViewMode::TIMETABLE => 'timetable',
+                    ViewMode::BOARD => 'board',
+                }
             ] + ($permanent_only ? ['permanent_only' => '1'] : [])
         );
     }

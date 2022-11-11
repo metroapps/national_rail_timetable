@@ -20,9 +20,22 @@ foreach ($this->portions as $segment) {
                     <td>
 <?php
         if ($i === 0) {
-            echo new Portion($this->getStreamFactory(), $this->dateFromOrigin, $portion['dated_service'], array_diff_key($portion, ['dated_service' => null]), $this->permanentOnly);
+            echo new Portion(
+                $this->getStreamFactory()
+                , $this->dateFromOrigin
+                , $portion['dated_service']
+                , array_diff_key($portion, ['dated_service' => null])
+                , $this->permanentOnly
+                , $this->fromViewMode
+            );
         } else {
-            echo new AllPortions($this->getStreamFactory(), $this->dateFromOrigin, $portion, $this->permanentOnly);
+            echo new AllPortions(
+                $this->getStreamFactory()
+                , $this->dateFromOrigin
+                , $portion
+                , $this->permanentOnly
+                , $this->fromViewMode
+            );
         }
 ?>
                     </td>

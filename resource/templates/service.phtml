@@ -38,7 +38,13 @@ if ($this->permanentOnly) {
         <div id="map"><div id="popup"></div></div>
 
 <?php
-echo new AllPortions($this->getStreamFactory(), $this->getOriginPortion()->date, $this->splitIntoPortions($this->datedService), $this->permanentOnly);
+echo new AllPortions(
+    $this->getStreamFactory()
+    , $this->getOriginPortion()->date
+    , $this->splitIntoPortions($this->datedService)
+    , $this->permanentOnly
+    , $this->fromViewMode
+);
 require __DIR__ . '/footer.phtml';
 ?>
     </body>

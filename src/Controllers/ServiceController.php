@@ -8,6 +8,7 @@ use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\ServiceCancellation;
 use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
 use Miklcct\NationalRailTimetable\Views\ServiceView;
+use Miklcct\NationalRailTimetable\Views\ViewMode;
 use Miklcct\ThinPhpApp\Controller\Application;
 use Miklcct\ThinPhpApp\Response\ViewResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -53,6 +54,7 @@ class ServiceController extends Application {
                 , $service
                 , $permanent_only
                 , $service_repository->getGeneratedDate()
+                , $query['from'] === 'board' ? ViewMode::BOARD : ViewMode::TIMETABLE
             )
         )->withAddedHeader('Cache-Control', ['public', 'max-age=21600']);
     }

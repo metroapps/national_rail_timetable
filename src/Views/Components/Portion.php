@@ -14,7 +14,7 @@ use Miklcct\NationalRailTimetable\Models\Points\HasDeparture;
 use Miklcct\NationalRailTimetable\Models\Points\TimingPoint;
 use Miklcct\NationalRailTimetable\Models\Service;
 use Miklcct\NationalRailTimetable\Models\Station;
-use Miklcct\NationalRailTimetable\Views\BoardView;
+use Miklcct\NationalRailTimetable\Views\ViewMode;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 use RuntimeException;
@@ -35,6 +35,7 @@ class Portion extends PhpTemplate {
         , protected readonly DatedService $datedService
         , protected readonly array $points
         , protected readonly bool $permanentOnly
+        , protected readonly ViewMode $fromViewMode
     ) {
         parent::__construct($streamFactory);
         $line = [];
@@ -70,7 +71,7 @@ class Portion extends PhpTemplate {
         );
     }
 
-    protected function getBoardLink(DateTimeImmutable $timestamp, LocationWithCrs $location, bool $arrival_mode) : ?string {
+    private function getBoardLink(DateTimeImmutable $timestamp, LocationWithCrs $location, bool $arrival_mode) : ?string {
         $service = $this->datedService->service;
         if (!$service instanceof Service) {
             throw new RuntimeException('Service must be a service.');
@@ -86,7 +87,7 @@ class Portion extends PhpTemplate {
                 , $service->toc
                 , $this->permanentOnly
             )
-        )->getUrl(BoardView::URL);
+        )->getUrl($this->fromViewMode->getUrl());
     }
 
     /** @var int[][] */
