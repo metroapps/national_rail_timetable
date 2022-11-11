@@ -164,6 +164,11 @@ class Timetable {
         }
 
         // check if duplicated stations can be simplified
+        foreach (array_keys($stations) as $key) {
+            if (!array_key_exists($key, $matrix)) {
+                unset($stations[$key]);
+            }
+        }
         ksort($matrix);
         ksort($stations);
         $stations = array_values($stations);
