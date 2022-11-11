@@ -1,6 +1,7 @@
 import $ from 'jquery';
-import {Feature, View} from 'ol';
+import {Feature, Overlay, View} from 'ol';
 import {Coordinate} from 'ol/coordinate';
+import {FeatureLike} from 'ol/Feature';
 import {LineString, Point} from 'ol/geom';
 import TileLayer from 'ol/layer/Tile';
 import VectorLayer from 'ol/layer/Vector';
@@ -12,12 +13,21 @@ import {OSM} from 'ol/source';
 import VectorSource from 'ol/source/Vector';
 import {Icon, Stroke, Style} from 'ol/style';
 
+function require_element(id : string) : HTMLElement {
+    const element = document.getElementById(id);
+    if (element === null) {
+        throw new Error(`Element ${id} cannot be found.`);
+    }
+    return element;
+}
+
 $('#map').css('display', 'block');
 const source = new VectorSource();
 const view = new View;
-new Map(
+const map_element = require_element('map');
+const map = new Map(
     {
-        target : 'map',
+        target : map_element,
         layers : [
             new TileLayer(
                 {
@@ -58,7 +68,7 @@ function osgb36_to_web_mercator(coordinate : Coordinate) : Coordinate {
     return transform(coordinate, 'EPSG:27700', 'EPSG:3857');
 }
 
-let rendered = new Set();
+const rendered = new Set();
 $('tr[data-crs]').each(
     function (this : HTMLElement) {
         const $this = $(this);
@@ -90,5 +100,59 @@ $('table[data-line]').each(
         }
     }
 );
+
+const popup_element = require_element('popup');
+const popup = new Overlay(
+    {
+        element : popup_element,
+        positioning : 'center-center',
+        stopEvent : false,
+    }
+);
+map.addOverlay(popup);
+
+function show_popup(feature : FeatureLike) {
+    const geometry = feature.getGeometry();
+    if (!(geometry instanceof Point)) {
+        throw new Error('A popup can only be shown on a point.');
+    }
+    popup.setPosition(geometry.getCoordinates());
+    popup_element.style.display = 'block';
+    popup_element.innerText = feature.get('name');
+}
+
+function dismiss_popup() {
+    popup_element.style.display = 'none';
+}
+
+map.on(
+    'click'
+    , function (event) {
+        dismiss_popup();
+        map.forEachFeatureAtPixel(
+            event.pixel
+            , function (feature) {
+                if (feature.getGeometry() instanceof Point) {
+                    show_popup(feature);
+                    return true;
+                }
+                return undefined;
+            }
+        );
+    }
+);
+
+map.on(
+    'pointermove'
+    , function (event) {
+        const pixel = map.getEventPixel(event.originalEvent);
+        const features = map.getFeaturesAtPixel(pixel);
+        map_element.style.cursor = features.find(
+            feature => feature.getGeometry() instanceof Point
+        ) ? 'pointer' : '';
+    }
+);
+
+map.on('movestart', dismiss_popup);
 
 view.fit(source.getExtent(), {padding : [15, 15, 15, 15]});

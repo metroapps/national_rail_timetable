@@ -48,3 +48,12 @@ h1 {
     height: 80vh;
     padding: 1em;
 }
+
+#popup {
+    border: 1px black solid;
+    display: none;
+    background-color: white;
+    color: black;
+    padding: 0.2em;
+    font-size: x-small;
+}
