@@ -9,6 +9,7 @@ use Miklcct\NationalRailTimetable\Models\Date;
 use function implode;
 use function Miklcct\NationalRailTimetable\is_development;
 use function Miklcct\ThinPhpApp\Escaper\html;
+use function Safe\json_decode;
 
 function show_time(DateTimeImmutable $timestamp, Date $base, string $link = null) : string {
     $interval = $base->toDateTimeImmutable()->diff($timestamp->setTime(0, 0));
@@ -50,17 +51,28 @@ function show_activities(array $activities) : string {
     );
 }
 
-function show_script_tags(string $basename) : void {
+function show_script_tags(string $entry_point, bool $recursed = false) : void {
     if (is_development()) {
 ?>
         <script type="module" src="http://localhost:5173/@vite/client"></script>
-        <script type="module" src="http://localhost:5173/<?= html($basename) ?>.ts"></script>
+        <script type="module" src="http://localhost:5173/<?= html($entry_point) ?>"></script>
 <?php
     } else {
         $manifest = json_decode(file_get_contents(__DIR__ . '/../../public_html/dist/manifest.json'), true);
+        if (!$recursed) {
 ?>
-        <script type="module" src="/dist/<?= html($manifest["$basename.ts"]['file']) ?>"></script>
-        <link rel="stylesheet" href="/dist/<?= html($manifest["$basename.css"]['file']) ?>" />
+        <script type="module" src="/dist/<?= html($manifest[$entry_point]['file']) ?>"></script>
+<?php
+        }
+        foreach ($manifest[$entry_point]["css"] as $css_file) {
+?>
+        <link rel="stylesheet" href="/dist/<?= html($css_file) ?>">
+<?php
+        }
+        foreach ($manifest[$entry_point]['imports'] ?? [] as $recursion) {
+            show_script_tags($recursion, true);
+        }
+?>
 <?php
     }
 }
