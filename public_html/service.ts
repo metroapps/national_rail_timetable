@@ -2,6 +2,7 @@ import $ from 'jquery';
 import {Feature, Overlay} from 'ol';
 import {FeatureLike} from 'ol/Feature';
 import {LineString, Point} from 'ol/geom';
+import {Icon, Style} from 'ol/style';
 import {initialise_map, osgb36_to_web_mercator, source} from './map';
 import './service.css';
 
@@ -17,23 +18,35 @@ const map_element = require_element('map');
 const map = initialise_map(map_element);
 
 const rendered = new Set();
+const request_stop_style = new Style(
+    {
+        image : new Icon(
+            {
+                src : '/images/hand.svg',
+                scale : 0.25,
+            }
+        )
+    }
+);
 $('tr[data-crs]').each(
     function (this : HTMLElement) {
         const $this = $(this);
         const crs = $this.attr('data-crs')
         if (!rendered.has(crs)) {
-            source.addFeature(
-                new Feature(
-                    {
-                        geometry : new Point(
-                            osgb36_to_web_mercator(
-                                [Number($this.attr('data-easting')), Number($this.attr('data-northing'))]
-                            )
-                        ),
-                        name : $this.attr('data-name'),
-                    }
-                )
+            const feature = new Feature(
+                {
+                    geometry : new Point(
+                        osgb36_to_web_mercator(
+                            [Number($this.attr('data-easting')), Number($this.attr('data-northing'))]
+                        )
+                    ),
+                    name : $this.attr('data-name'),
+                }
             );
+            if ($this.attr('data-request-stop')) {
+                feature.setStyle(request_stop_style);
+            }
+            source.addFeature(feature);
             rendered.add(crs);
         }
     }

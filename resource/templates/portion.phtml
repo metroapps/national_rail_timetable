@@ -25,14 +25,16 @@ foreach ($points as $i => $point) {
         $show_arrival = $i !== 0 && $point instanceof HasArrival && $point->getPublicArrival() !== null;
         $show_departure = $i !== count($points) - 1 && $point instanceof HasDeparture && $point->getPublicDeparture() !== null;
 
-        $easting_northing = $point->location instanceof Station
+        $easting_northing = (
+            $point->location instanceof Station
             ? sprintf(
                 'data-crs="%s" data-name="%s" data-easting="%d" data-northing="%d"',
                 html($point->location->getCrsCode()),
                 html($point->location->getShortName()),
                 $point->location->easting,
                 $point->location->northing
-            ) : '';
+            ) : ''
+        ) . (in_array(Activity::REQUEST_STOP, $point->activities, true) ? ' data-request-stop="1"' : '');
         if (($point instanceof OriginPoint || $point instanceof IntermediatePoint) && $point->serviceProperty !== null && $point->serviceProperty != $service_property && $i !== count($points) - 1) {
             $service_property = $point->serviceProperty;
 
