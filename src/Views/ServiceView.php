@@ -7,7 +7,6 @@ use DateInterval;
 use DateTimeImmutable;
 use LogicException;
 use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
-use Miklcct\NationalRailTimetable\Enums\Activity;
 use Miklcct\NationalRailTimetable\Enums\AssociationCategory;
 use Miklcct\NationalRailTimetable\Exceptions\UnreachableException;
 use Miklcct\NationalRailTimetable\Models\Date;
@@ -15,18 +14,10 @@ use Miklcct\NationalRailTimetable\Models\DatedService;
 use Miklcct\NationalRailTimetable\Models\FullService;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\Points\DestinationPoint;
-use Miklcct\NationalRailTimetable\Models\Points\HasArrival;
-use Miklcct\NationalRailTimetable\Models\Points\HasDeparture;
-use Miklcct\NationalRailTimetable\Models\Points\IntermediatePoint;
-use Miklcct\NationalRailTimetable\Models\Points\OriginPoint;
-use Miklcct\NationalRailTimetable\Models\Points\TimingPoint;
 use Miklcct\NationalRailTimetable\Models\Service;
-use Miklcct\NationalRailTimetable\Models\ServiceProperty;
-use Miklcct\NationalRailTimetable\Models\Station;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 use function http_build_query;
-use function Miklcct\ThinPhpApp\Escaper\html;
 
 class ServiceView extends PhpTemplate {
     public function __construct(
@@ -77,41 +68,6 @@ class ServiceView extends PhpTemplate {
         );
     }
 
-    protected function showRsidWithPortionDescription(string $rsid) : string {
-        $main = substr($rsid, 0, 6);
-        $suffix = (int)substr($rsid, 6, 2);
-        if ($suffix === 0) {
-            return '<span class="train_number">' . html($main) . '</span>';
-        }
-        $portions = [];
-        for ($i = 0; $i < 8; ++$i) {
-            if ($suffix & 1 << $i) {
-                $portions[] = $i + 1;
-            }
-        }
-        return '<span class="train_number">' . html($main) . '</span>' . ' (Portion ' . implode(' & ', $portions) . ')';
-    }
-
-    protected function showTime(Date $date, Date $board_date, TimingPoint $point, bool $departure_to_arrival_board) : string {
-        $time = $departure_to_arrival_board 
-            ? ($point instanceof HasDeparture ? $point->getPublicDeparture() : null) 
-            : ($point instanceof HasArrival ? $point->getPublicArrival() : null);
-        if ($time === null) {
-            return '';
-        }
-        return show_time(
-            $date->toDateTimeImmutable($time)
-            , $board_date
-            , $point->location instanceof LocationWithCrs
-                ? $this->getBoardLink(
-                    $date->toDateTimeImmutable($time)
-                    , $point->location
-                    , $departure_to_arrival_board
-                ) 
-                : null
-        );
-    }
-
     protected function getBoardLink(DateTimeImmutable $timestamp, LocationWithCrs $location, bool $arrival_mode) : ?string {
         return (
             new BoardQuery(
@@ -127,8 +83,8 @@ class ServiceView extends PhpTemplate {
         )->getUrl(BoardView::URL);
     }
 
-    protected function splitIntoPortions(FullService $dated_service, bool $recursed = false) : array {
-        if (!$recursed) {
+    protected function splitIntoPortions(DatedService $dated_service, bool $recursed = false) : array {
+        if (!$recursed && $dated_service instanceof FullService) {
             // assume that a train won't be split from a previous service and merge into an afterward service
             if ($dated_service->divideFrom !== null) {
                 return $this->splitIntoPortions($dated_service->divideFrom->primaryService);
@@ -143,196 +99,34 @@ class ServiceView extends PhpTemplate {
         foreach ($dated_service->service->points as $point) {
             $result[$index][0][] = $point;
             $new_portion = false;
-            foreach ($dated_service->dividesJoinsEnRoute as $dated_association) {
-                $association_point = $dated_service->service->getAssociationPoint($dated_association->association);
-                if ($point->location->tiploc === $association_point->location->tiploc && $point->locationSuffix === $association_point->locationSuffix) {
-                    if (!$new_portion) {
-                        $result[++$index][0][0] = $point;
-                        $result[$index][0]['dated_service'] = $dated_service;
-                        $new_portion = true;
-                    }
-                    $other_portion = $this->splitIntoPortions($dated_association->secondaryService, true);
-                    switch ($dated_association->association->category) {
-                    case AssociationCategory::DIVIDE:
-                        $result[$index][] = $other_portion;
-                        break;
-                    case AssociationCategory::JOIN:
-                        $result[$index - 1][] = $other_portion;
-                        break;
-                    default:
-                        throw new UnreachableException();
+            if ($dated_service instanceof FullService) {
+                foreach ($dated_service->dividesJoinsEnRoute as $dated_association) {
+                    $association_point = $dated_service->service->getAssociationPoint($dated_association->association);
+                    if (
+                        $point->location->tiploc === $association_point->location->tiploc
+                        && $point->locationSuffix
+                        === $association_point->locationSuffix
+                    ) {
+                        if (!$new_portion) {
+                            $result[++$index][0][0] = $point;
+                            $result[$index][0]['dated_service'] = $dated_service;
+                            $new_portion = true;
+                        }
+                        $other_portion = $this->splitIntoPortions($dated_association->secondaryService, true);
+                        switch ($dated_association->association->category) {
+                        case AssociationCategory::DIVIDE:
+                            $result[$index][] = $other_portion;
+                            break;
+                        case AssociationCategory::JOIN:
+                            $result[$index - 1][] = $other_portion;
+                            break;
+                        default:
+                            throw new UnreachableException();
+                        }
                     }
                 }
             }
         }
         return $result;
-    }
-
-    protected function showPortions(array $portions) : void {
-?>
-<table class="portion">
-<?php
-        foreach ($portions as $segment) {
-?>
-    <tr>
-        <td>
-            <table class="portion">
-                <tr>
-<?php
-            foreach ($segment as $i => $portion) {
-?>
-                    <td>
-<?php
-                if ($i === 0) {
-                    $this->showCallingPoints($portion);
-                } else {
-                    $this->showPortions($portion);
-                }
-?>
-                    </td>
-<?php
-            }
-?>
-                </tr>
-            </table>
-        </td>
-    </tr>
-<?php
-        }
-?>
-</table>
-<?php
-    }
-
-    /**
-     * @param (DatedService|TimingPoint)[] $points
-     * @return void
-     */
-    protected function showCallingPoints(array $points) : void {
-        $line = [];
-        foreach ($points as $point) {
-            if ($point instanceof TimingPoint && $point->location instanceof Station) {
-                $line[] = [$point->location->easting, $point->location->northing];
-            }
-        }
-?>
-        <table class="calling_points" data-line="<?= html(json_encode($line)) ?>">
-<?php
-        $service_property = null;
-        foreach ($points as $i => $point) {
-            if ($i !== 'dated_service') {
-                $show_arrival = $i !== 0 && $point instanceof HasArrival && $point->getPublicArrival() !== null;
-                $show_departure = $i !== count($points) - 2 && $point instanceof HasDeparture && $point->getPublicDeparture() !== null;
-
-                $easting_northing = $point->location instanceof Station
-                    ? sprintf(
-                        'data-crs="%s" data-name="%s" data-easting="%d" data-northing="%d"',
-                        html($point->location->getCrsCode()),
-                        html($point->location->getShortName()),
-                        $point->location->easting,
-                        $point->location->northing
-                    ) : '';
-                if (($point instanceof OriginPoint || $point instanceof IntermediatePoint) && $point->serviceProperty !== null && $point->serviceProperty != $service_property && $i !== count($points) - 2) {
-                    $service_property = $point->serviceProperty;
-
-                    if ($show_arrival && $point->isPublicCall()) {
-?>
-            <tr <?= $easting_northing ?>>
-                <td><?= html($point->location->getShortName()) ?></td>
-                <td><?= html($point->platform) ?></td>
-                <td class="time"><?= $this->showTime($points['dated_service']->date, $this->getOriginPortion()->date, $point, false) ?></td>
-                <td class="time"></td>
-                <td><?= implode('<br/>', array_filter(array_map(
-                        static fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
-            </tr>
-
-<?php
-                    }
-                    $this->showServiceInformation($points['dated_service'], $point->serviceProperty);
-                    if ($show_departure && $point->isPublicCall()) {
-?>
-            <tr <?= $easting_northing ?>>
-                <td><?= html($point->location->getShortName()) ?></td>
-                <td><?= html($point->platform) ?></td>
-                <td class="time"></td>
-                <td class="time"><?= $this->showTime($points['dated_service']->date, $this->getOriginPortion()->date, $point, true) ?></td>
-                <td><?= implode('<br/>', array_filter(array_map(
-                        static fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
-            </tr>
-<?php
-                    }
-                } elseif ($point->isPublicCall()) {
-?>
-            <tr <?= $easting_northing ?>>
-                <td><?= html($point->location->getShortName()) ?></td>
-                <td><?= html($point->platform) ?></td>
-                <td class="time"><?= $show_arrival ? $this->showTime($points['dated_service']->date, $this->getOriginPortion()->date, $point, false) : '' ?></td>
-                <td class="time"><?= $show_departure ? $this->showTime($points['dated_service']->date, $this->getOriginPortion()->date, $point, true) : '' ?></td>
-                <td><?= implode('<br/>', array_filter(array_map(
-                        static fn(Activity $activity) => $activity->getDescription(), $point->activities))) ?></td>
-            </tr>
-<?php
-                }
-            }
-        }
-?>
-        </table>
-<?php
-    }
-
-    protected function showServiceInformation(DatedService $dated_service, ServiceProperty $service_property) : void {
-?>
-            <tr>
-                <td colspan="5" class="train_info">
-                    <?=
-                        implode(
-                            '<br/>'
-                            , array_filter(
-                                [
-                                    $this->showRsidWithPortionDescription($service_property->rsid)
-                                    , html(
-                                        implode(
-                                            ', '
-                                            , array_filter(
-                                                [
-                                                    $service_property->trainCategory->getDescription(),
-                                                    $service_property->identity !== '' ? 'ID ' . $service_property->identity : '',
-                                                    $service_property->headcode !== '' ? 'Headcode ' . $service_property->headcode : '',
-                                                ]
-                                            )
-                                        )
-                                    ),
-                                    $service_property->doo ? 'Driver-only operated' : '',
-                                    html(
-                                        implode(
-                                            ', '
-                                            , array_filter(
-                                                [
-                                                    $service_property->power->getDescription(),
-                                                    $service_property->timingLoad ? 'Class ' . $service_property->timingLoad : '',
-                                                    $service_property->speedMph ? html($service_property->speedMph . ' mph max') : '',
-                                                ]
-                                            )
-                                        )
-                                    ),
-                                    html(
-                                        implode(
-                                            ', '
-                                            , [
-                                                $dated_service->service->shortTermPlanning->getDescription(),
-                                                $dated_service->service->period->from->__toString() . ' to ' . $dated_service->service->period->to->__toString(),
-                                                implode(array_intersect_key(['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'], array_filter($dated_service->service->period->weekdays))),
-                                            ]
-                                        )
-                                    ),
-                                    $service_property->showIcons(),
-                                ]
-                            )
-                        )
-                    ?>
-                </td>
-            </tr>
-            <tr><th>Station</th><th>Pl.</th><th>Arrive</th><th>Depart</th><th>Notes</th></tr>
-<?php
     }
 }

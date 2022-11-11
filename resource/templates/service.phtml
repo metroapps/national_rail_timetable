@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use Miklcct\NationalRailTimetable\Views\Components\AllPortions;
 use Miklcct\NationalRailTimetable\Views\ServiceView;
 use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\NationalRailTimetable\Views\show_script_tags;
@@ -37,7 +38,7 @@ if ($this->permanentOnly) {
         <div id="map"><div id="popup"></div></div>
 
 <?php
-$this->showPortions($this->splitIntoPortions($this->datedService));
+echo new AllPortions($this->getStreamFactory(), $this->getOriginPortion()->date, $this->splitIntoPortions($this->datedService), $this->permanentOnly);
 require __DIR__ . '/footer.phtml';
 ?>
     </body>
