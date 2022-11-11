@@ -12,6 +12,5 @@
         "noEmit": true,
         "noImplicitReturns": true,
         "skipLibCheck": true
-    },
-    "include": ["scripts"]
+    }
 }

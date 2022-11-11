@@ -60,7 +60,7 @@ function osgb36_to_web_mercator(coordinate : Coordinate) : Coordinate {
 
 let rendered = new Set();
 $('tr[data-crs]').each(
-    function () {
+    function (this : HTMLElement) {
         const $this = $(this);
         const crs = $this.attr('data-crs')
         if (!rendered.has(crs)) {
@@ -81,7 +81,7 @@ $('tr[data-crs]').each(
     }
 );
 $('table[data-line]').each(
-    function () {
+    function (this : HTMLElement) {
         let array = JSON.parse($(this).attr('data-line') ?? '');
         if (array instanceof Array) {
             source.addFeature(
