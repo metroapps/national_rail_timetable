@@ -3,10 +3,15 @@ declare(strict_types = 1);
 
 namespace Miklcct\NationalRailTimetable\Views;
 
+use DateInterval;
 use DateTimeImmutable;
+use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
 use Miklcct\NationalRailTimetable\Enums\Activity;
 use Miklcct\NationalRailTimetable\Models\Date;
+use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
+use Miklcct\NationalRailTimetable\Models\ServiceCall;
 use function implode;
+use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\NationalRailTimetable\is_development;
 use function Miklcct\ThinPhpApp\Escaper\html;
 use function Safe\json_decode;
@@ -16,7 +21,8 @@ function show_time(DateTimeImmutable $timestamp, Date $base, string $link = null
     $day_offset = $interval->days * ($interval->invert ? -1 : 1);
     $time_string = $timestamp->format('H:i') 
         . ((int)$timestamp->format('s') > 30 ? '½' : '');
-    return ($link !== null 
+    /** @noinspection HtmlUnknownTarget */
+    return ($link !== null
         ? sprintf('<a href="%s">%s</a>', html($link), html($time_string))
         : html($time_string)
     )
@@ -75,4 +81,35 @@ function show_script_tags(string $entry_point, bool $recursed = false) : void {
 ?>
 <?php
     }
+}
+
+function show_toc(string $toc) : string {
+    return sprintf('<abbr title="%s">%s</abbr>', html(get_all_tocs()[$toc] ?? ''), html($toc));
+}
+
+function show_facilities(ServiceCall $service_call) : string {
+    return $service_call->mode->showIcon() . $service_call->serviceProperty->showIcons();
+}
+
+function get_arrival_link(string $url, ServiceCall $service_call, BoardQuery $query) : ?string {
+    $location = $service_call->call->location;
+    if (!$location instanceof LocationWithCrs) {
+        return null;
+    }
+    return (
+        new BoardQuery(
+            $query->arrivalMode
+            , $location
+            , []
+            , []
+            , Date::fromDateTimeInterface(
+                $service_call->timestamp->sub(
+                    new DateInterval($query->arrivalMode ? 'PT4H30M' : 'P0D')
+                )
+            )
+            , $service_call->timestamp
+            , $service_call->toc
+            , $query->permanentOnly
+        )
+    )->getUrl($url);
 }

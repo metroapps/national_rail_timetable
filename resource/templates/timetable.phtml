@@ -2,22 +2,24 @@
 declare(strict_types = 1);
 
 use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
-use Miklcct\NationalRailTimetable\Models\DepartureBoard;
+use Miklcct\NationalRailTimetable\Controllers\TimetableController;
 use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\ServiceCallWithDestination;
 use Miklcct\NationalRailTimetable\Models\Timetable;
+use Miklcct\NationalRailTimetable\Views\Components\Timetable as TimetableView;
 use Miklcct\NationalRailTimetable\Views\ServiceView;
-use Miklcct\NationalRailTimetable\Views\TimetableView;
 use Miklcct\NationalRailTimetable\Views\ViewMode;
+use function Miklcct\NationalRailTimetable\Views\get_arrival_link;
 use function Miklcct\NationalRailTimetable\Views\show_activities;
+use function Miklcct\NationalRailTimetable\Views\show_facilities;
 use function Miklcct\NationalRailTimetable\Views\show_time;
+use function Miklcct\NationalRailTimetable\Views\show_toc;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 /** @var TimetableView $this */
 ?>
 <?php
-    /** @var DepartureBoard $board */
     foreach ($this->boards as $board) {
         $timetable = Timetable::generateFromBoard($board);
         $stations = $timetable->stations;
@@ -27,6 +29,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
         $get_colspan = static function(array $array, int $i) {
             $call = $array[$i];
             $colspan = 0;
+            /** @noinspection TypeUnsafeComparisonInspection */
             while (
                 isset($array[$i])
                 && $array[$i]->uid === $call->uid
@@ -72,6 +75,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
                 <?= !$this->query->arrivalMode && $destinations ? ' towards ' . html(implode(', ', array_map(static fn(Location $location) => $location->getShortName(), $destinations))) : '' ?>
             </h2>
             <div class="container">
+                <!--suppress Annotator, Annotator -->
                 <table class="timetable">
                     <thead>
                         <tr class="info">
@@ -83,7 +87,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
             $colspan = $get_colspan($calls[0], $i);
 ?>
                             <th class="service" colspan=<?= $colspan ?> data-timestamp="<?= html($calls[0][$i]->timestamp->getTimestamp()) ?>">
-                                <?= $this->showToc($call->toc) ?>
+                                <?= show_toc($call->toc) ?>
                             </th>
 <?php
             $i += $colspan;
@@ -95,7 +99,6 @@ use function Miklcct\ThinPhpApp\Escaper\html;
 <?php
         $i = 0;
         while (isset($calls[0][$i])) {
-            /** @var ServiceCallWithDestination $call */
             $call = $calls[0][$i];
             $colspan = $get_colspan($calls[0], $i);
             $i += $colspan;
@@ -190,25 +193,23 @@ use function Miklcct\ThinPhpApp\Escaper\html;
 <?php
         $i = 0;
         while (isset($calls[0][$i])) {
-            /** @var ServiceCallWithDestination $call */
             $call = $calls[0][$i];
             $colspan = $get_colspan($calls[0], $i);
             $i += $colspan;
 ?>
-                            <td colspan=<?= $colspan ?>><?= $this->showFacilities($call) ?></td>
+                            <td colspan=<?= $colspan ?>><?= show_facilities($call) ?></td>
 <?php
         }
 ?>
                         </tr>
 <?php
-        $show_platforms = function () use ($get_colspan, $calls) {
+        $show_platforms = static function () use ($get_colspan, $calls) {
 ?>
             <tr class="info">
                 <td class="station_column">Platform</td>
 <?php
             $i = 0;
             while (isset($calls[0][$i])) {
-                /** @var ServiceCallWithDestination $call */
                 $call = $calls[0][$i];
                 $colspan = $get_colspan($calls[0], $i);
                 $i += $colspan;
@@ -257,7 +258,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
             if ($i !== 0) {
 ?>
                                         <a href="<?= html((new BoardQuery($this->query->arrivalMode, $this->query->station, [$station], $this->query->inverseFilter, $this->query->date, $this->query->connectingTime, $this->query->connectingToc, $this->query->permanentOnly))->getUrl(
-                                            TimetableView::URL
+                                            TimetableController::URL
                                         )) ?>">
 <?php
             }
@@ -302,7 +303,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
                     $colspan = $get_colspan($calls[$i], $j);
                     $link = $i === 0
                         ? ServiceView::getServiceUrl($call->uid, $call->date, $this->query->permanentOnly, ViewMode::TIMETABLE)
-                        : $this->getArrivalLink($calls[$i][$j]);
+                        : get_arrival_link(TimetableController::URL, $calls[$i][$j], $this->query);
 ?>
                            <td class="<?= $connection_class ?>" colspan=<?= $colspan ?>><?= show_time($call->timestamp, $this->date, $link) . show_activities($call->call->activities) ?></td>
 <?php

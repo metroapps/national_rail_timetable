@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 use Miklcct\NationalRailTimetable\Models\Station;
+use Miklcct\NationalRailTimetable\Views\Components\FixedLink;
+use Miklcct\NationalRailTimetable\Views\Components\Footer;
 use Miklcct\NationalRailTimetable\Views\Components\Form;
 use Miklcct\NationalRailTimetable\Views\ScheduleView;
 use function Miklcct\NationalRailTimetable\Views\show_script_tags;
@@ -69,11 +71,10 @@ if ($this instanceof ScheduleView) {
         </table>
 <?php
         }
-        (function () {require __DIR__ . '/fixed_link.phtml';})();
+        echo new FixedLink($this->getStreamFactory(), $this->fixedLinks, $this->query, $this->date, $this->getUrl());
     }
-    $include_path = $this->getIncludePath();
-    (function () use ($include_path) {require $include_path;})();
-    (function () {require __DIR__ . '/footer.phtml';})();
+    echo $this->boardOrTimetableView;
+    echo new Footer($this->getStreamFactory(), $this->generated);
 } else {
 ?>
         <p>Click a station in the map to fill in the station field:</p>

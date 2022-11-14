@@ -92,4 +92,5 @@ if (map_element) {
     map.getView().fit(
         osgb36_to_web_mercator([-103976.3, -16703.87]).concat(osgb36_to_web_mercator([652897.98, 1199851.44]))
         , {padding : [15, 15, 15, 15]}
-    );}
+    );
+}

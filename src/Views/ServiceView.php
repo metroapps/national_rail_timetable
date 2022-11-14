@@ -6,6 +6,7 @@ namespace Miklcct\NationalRailTimetable\Views;
 use DateInterval;
 use DateTimeImmutable;
 use LogicException;
+use Miklcct\NationalRailTimetable\Controllers\BoardController;
 use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
 use Miklcct\NationalRailTimetable\Enums\AssociationCategory;
 use Miklcct\NationalRailTimetable\Exceptions\UnreachableException;
@@ -90,7 +91,7 @@ class ServiceView extends PhpTemplate {
                 , $this->datedService->service->toc
                 , $this->permanentOnly
             )
-        )->getUrl(BoardView::URL);
+        )->getUrl(BoardController::URL);
     }
 
     protected function splitIntoPortions(DatedService $dated_service, bool $recursed = false) : array {

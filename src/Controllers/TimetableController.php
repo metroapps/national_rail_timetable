@@ -13,7 +13,8 @@ use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
 use Miklcct\NationalRailTimetable\Views\ScheduleFormView;
-use Miklcct\NationalRailTimetable\Views\TimetableView;
+use Miklcct\NationalRailTimetable\Views\Components\Timetable;
+use Miklcct\NationalRailTimetable\Views\ScheduleView;
 use Miklcct\NationalRailTimetable\Views\ViewMode;
 use Miklcct\ThinPhpApp\Controller\Application;
 use Miklcct\ThinPhpApp\Response\ViewResponseFactoryInterface;
@@ -26,6 +27,7 @@ class TimetableController extends Application {
     use ScheduleTrait;
 
     // this number must be greater than the maximum number of calls for a train
+    public const URL = '/timetable.php';
     private const MULTIPLIER = 1000;
 
     public function __construct(
@@ -63,15 +65,20 @@ class TimetableController extends Application {
         );
 
         return ($this->viewResponseFactory)(
-            new TimetableView(
+            new ScheduleView(
                 $this->streamFactory
-                , $date
-                , $board->groupServices()
-                , $query
                 , $this->locationRepository->getAllStations()
+                , $date
+                , $query
                 , $this->getFixedLinks($query)
                 , $service_repository->getGeneratedDate()
                 , $this->config->siteName
+                , new Timetable(
+                    $this->streamFactory
+                    , $date
+                    , $board->groupServices()
+                    , $query
+                )
             )
         );
     }

@@ -13,8 +13,9 @@ use Miklcct\NationalRailTimetable\Models\Time;
 use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
 use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
-use Miklcct\NationalRailTimetable\Views\BoardView;
+use Miklcct\NationalRailTimetable\Views\Components\Board;
 use Miklcct\NationalRailTimetable\Views\ScheduleFormView;
+use Miklcct\NationalRailTimetable\Views\ScheduleView;
 use Miklcct\NationalRailTimetable\Views\ViewMode;
 use Miklcct\ThinPhpApp\Controller\Application;
 use Miklcct\ThinPhpApp\Response\ViewResponseFactoryInterface;
@@ -25,6 +26,8 @@ use Teapot\StatusCode\WebDAV;
 
 class BoardController extends Application {
     use ScheduleTrait;
+
+    public const URL = '/board.php';
 
     public function __construct(
         private readonly ViewResponseFactoryInterface $viewResponseFactory
@@ -72,15 +75,20 @@ class BoardController extends Application {
         );
 
         return ($this->viewResponseFactory)(
-            new BoardView(
-                new StreamFactory()
+            new ScheduleView(
+                $this->streamFactory
                 , $this->locationRepository->getAllStations()
-                , $board
                 , $date
                 , $query
                 , $this->getFixedLinks($query)
                 , $service_repository->getGeneratedDate()
                 , $this->config->siteName
+                , new Board(
+                    $this->streamFactory
+                    , $board
+                    , $date
+                    , $query
+                )
             )
         );
     }

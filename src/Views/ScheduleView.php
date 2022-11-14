@@ -6,13 +6,18 @@ namespace Miklcct\NationalRailTimetable\Views;
 use DateInterval;
 use DateTimeImmutable;
 use LogicException;
+use Miklcct\NationalRailTimetable\Controllers\BoardController;
 use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
+use Miklcct\NationalRailTimetable\Controllers\TimetableController;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\DepartureBoard;
 use Miklcct\NationalRailTimetable\Models\FixedLink;
 use Miklcct\NationalRailTimetable\Models\Location;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\ServiceCall;
+use Miklcct\NationalRailTimetable\Views\Components\Board;
+use Miklcct\ThinPhpApp\View\PhpTemplate;
+use Miklcct\ThinPhpApp\View\View;
 use Psr\Http\Message\StreamFactoryInterface;
 use function array_map;
 use function assert;
@@ -22,7 +27,7 @@ use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\ThinPhpApp\Escaper\html;
 use function sprintf;
 
-abstract class ScheduleView extends ScheduleBaseView {
+class ScheduleView extends PhpTemplate {
     /**
      * @param StreamFactoryInterface $streamFactory
      * @param array $stations
@@ -34,14 +39,15 @@ abstract class ScheduleView extends ScheduleBaseView {
      */
     public function __construct(
         StreamFactoryInterface $streamFactory
-        , array $stations
+        , protected readonly array $stations
         , protected readonly Date $date
         , protected readonly BoardQuery $query
         , protected readonly ?array $fixedLinks
         , protected readonly ?Date $generated
-        , string $siteName
+        , protected readonly string $siteName
+        , protected readonly View $boardOrTimetableView
     ) {
-        parent::__construct($streamFactory, $stations, $siteName);
+        parent::__construct($streamFactory);
     }
 
     protected function getTitle() : string {
@@ -100,36 +106,8 @@ abstract class ScheduleView extends ScheduleBaseView {
         return $this->query->toArray();
     }
 
-    protected function getArrivalLink(ServiceCall $service_call) : ?string {
-        $location = $service_call->call->location;
-        if (!$location instanceof LocationWithCrs) {
-            return null;
-        }
-        return (
-        new BoardQuery(
-            $this->query->arrivalMode
-            , $location
-            , []
-            , []
-            , Date::fromDateTimeInterface($service_call->timestamp->sub(new DateInterval($this->query->arrivalMode ? 'PT4H30M' : 'P0D')))
-            , $service_call->timestamp
-            , $service_call->toc
-            , $this->query->permanentOnly
-        )
-        )->getUrl($this->getUrl());
-    }
-
-    protected function getDayOffsetLink(int $days) : string {
-        return (new BoardQuery(
-            $this->query->arrivalMode
-            , $this->query->station
-            , $this->query->filter
-            , $this->query->inverseFilter
-            , $this->date->addDays($days)
-            , $this->query->connectingTime
-            , $this->query->connectingToc
-            , $this->query->permanentOnly
-        ))->getUrl($this->getUrl());
+    protected static function getArrivalLink(string $url, ServiceCall $service_call, BoardQuery $query) : ?string {
+        return get_arrival_link($url, $service_call, $query);
     }
 
     protected function showToc(string $toc) : string {
@@ -156,27 +134,18 @@ abstract class ScheduleView extends ScheduleBaseView {
         ))->getUrl($this->getUrl());
     }
 
-    abstract protected function getIncludePath();
-
-    protected function getFixedLinkUrl(FixedLink $fixed_link, ?DateTimeImmutable $departure_time) : string {
-        return (
-        new BoardQuery(
-            $this->query->arrivalMode
-            , $this->query->arrivalMode ? $fixed_link->origin : $fixed_link->destination
-            , []
-            , []
-            , $this->query->connectingTime !== null
-                ? Date::fromDateTimeInterface(
-                    $this->query->connectingTime->sub(new DateInterval($this->query->arrivalMode ? 'PT4H30M' : 'P0D'))
-                )
-                : $this->query->date ?? Date::today()
-            , $departure_time === null
-                ? null
-                : $fixed_link->getArrivalTime($departure_time, $this->query->arrivalMode)
-            , null
-            , $this->query->permanentOnly
-        )
-        )->getUrl($this->getUrl());
+    protected function getViewMode() : ViewMode {
+        return $this->boardOrTimetableView instanceof Board ? ViewMode::BOARD : ViewMode::TIMETABLE;
     }
 
+    protected function getPathToTemplate() : string {
+        return __DIR__ . '/../../resource/templates/schedule.phtml';
+    }
+
+    protected function getUrl() : string {
+        return match($this->getViewMode()) {
+            ViewMode::TIMETABLE => TimetableController::URL,
+            ViewMode::BOARD => BoardController::URL,
+        };
+    }
 }
