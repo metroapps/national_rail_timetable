@@ -45,7 +45,7 @@ class ScheduleView extends PhpTemplate {
         , protected readonly ?array $fixedLinks
         , protected readonly ?Date $generated
         , protected readonly string $siteName
-        , protected readonly View $boardOrTimetableView
+        , protected readonly View $innerView
     ) {
         parent::__construct($streamFactory);
     }
@@ -102,22 +102,6 @@ class ScheduleView extends PhpTemplate {
         return $result;
     }
 
-    protected function getFormData(): array {
-        return $this->query->toArray();
-    }
-
-    protected static function getArrivalLink(string $url, ServiceCall $service_call, BoardQuery $query) : ?string {
-        return get_arrival_link($url, $service_call, $query);
-    }
-
-    protected function showToc(string $toc) : string {
-        return sprintf('<abbr title="%s">%s</abbr>', html(get_all_tocs()[$toc] ?? ''), html($toc));
-    }
-
-    protected function showFacilities(ServiceCall $service_call) : string {
-        return $service_call->mode->showIcon() . $service_call->serviceProperty->showIcons();
-    }
-
     protected function getReverseDirectionLink() : string {
         if (count($this->query->filter) !== 1) {
             throw new LogicException('Reversing is only allowed when filter count is exactly 1.');
@@ -135,7 +119,7 @@ class ScheduleView extends PhpTemplate {
     }
 
     protected function getViewMode() : ViewMode {
-        return $this->boardOrTimetableView instanceof Board ? ViewMode::BOARD : ViewMode::TIMETABLE;
+        return $this->innerView instanceof Board ? ViewMode::BOARD : ViewMode::TIMETABLE;
     }
 
     protected function getPathToTemplate() : string {

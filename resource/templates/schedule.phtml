@@ -7,6 +7,7 @@ use Miklcct\NationalRailTimetable\Views\Components\Footer;
 use Miklcct\NationalRailTimetable\Views\Components\Form;
 use Miklcct\NationalRailTimetable\Views\ScheduleView;
 use function Miklcct\NationalRailTimetable\Views\show_script_tags;
+use function Miklcct\NationalRailTimetable\Views\show_toc;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 /** @var ScheduleView $this */
@@ -26,30 +27,28 @@ show_script_tags('schedule.ts');
 <?php
 echo new Form($this->getStreamFactory(), $this->stations, $this->getViewMode(), $this->query ?? null, $this->errorMessage ?? null);
 
-if ($this instanceof ScheduleView) {
-    $view = $this;
-?>  
+?>
         <h1><?= html($this->getHeading()) ?></h1>
 <?php
-    $query = $this->query;
-    if (count($query->filter) === 1) {
+$query = $this->query;
+if (count($query->filter) === 1) {
 ?>
 
         <p><a href="<?= $this->getReverseDirectionLink() ?>">Show return timetable</a></p>
 <?php
-    }
-    if ($query->permanentOnly) {
+}
+if ($query->permanentOnly) {
 ?>
         <p id="permanent_warning">Warning: Permanent timetable instead of actual timetable shown</p>
 <?php
-    }
-    $station = $query->station;
-    if ($station instanceof Station) {
+}
+$station = $query->station;
+if ($station instanceof Station) {
 ?>
         <p>Minimum connection time is <span class="time"><?= html(
                     $station->minimumConnectionTime . ($station->minimumConnectionTime === 1 ? ' minute' : ' minutes')) ?></span><?= $station->tocConnectionTimes === [] ? '.' : ', with the exception of the following:' ?></p>
 <?php
-        if ($station->tocConnectionTimes !== []) {
+    if ($station->tocConnectionTimes !== []) {
 ?>
         <table>
             <thead>
@@ -57,30 +56,24 @@ if ($this instanceof ScheduleView) {
             </thead>
             <tbody>
 <?php
-            foreach ($station->tocConnectionTimes as $entry) {
+        foreach ($station->tocConnectionTimes as $entry) {
 ?>
                 <tr>
-                    <td><?= $this->showToc($entry->arrivingToc) ?></td>
-                    <td><?= $this->showToc($entry->departingToc) ?></td>
+                    <td><?= show_toc($entry->arrivingToc) ?></td>
+                    <td><?= show_toc($entry->departingToc) ?></td>
                     <td><?= html($entry->connectionTime) ?></td>
                 </tr>
 <?php
-            }
+        }
 ?>
             </tbody>
         </table>
 <?php
-        }
-        echo new FixedLink($this->getStreamFactory(), $this->fixedLinks, $this->query, $this->date, $this->getUrl());
     }
-    echo $this->boardOrTimetableView;
-    echo new Footer($this->getStreamFactory(), $this->generated);
-} else {
-?>
-        <p>Click a station in the map to fill in the station field:</p>
-        <div id="map"></div>
-<?php
+    echo new FixedLink($this->getStreamFactory(), $this->fixedLinks, $this->query, $this->date, $this->getUrl());
 }
+echo $this->innerView;
+echo new Footer($this->getStreamFactory(), $this->generated);
 ?>
     </body>
 </html>

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable\Views;
 
+use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Psr\Http\Message\StreamFactoryInterface;
 
@@ -17,22 +18,19 @@ class ScheduleFormView extends ScheduleBaseView {
         , array $stations
         , protected readonly ViewMode $viewMode
         , string $siteName
+        , protected readonly Date $generated
         , protected readonly ?string $errorMessage = null
     ) {
         parent::__construct($streamFactory, $stations, $siteName);
     }
 
     protected function getPathToTemplate() : string {
-        return __DIR__ . '/../../resource/templates/schedule.phtml';
+        return __DIR__ . '/../../resource/templates/schedule_form.phtml';
     }
 
     protected function getTitle() : string {
         return ($this->viewMode === ViewMode::TIMETABLE ? 'Timetable' : 'Departure board')
             . ' - ' . $this->siteName;
-    }
-
-    protected function getStylesheets() : array {
-        return [$this->viewMode === ViewMode::TIMETABLE ? '/timetable.css' : '/board.css'];
     }
 
     public function getViewMode() : ViewMode {

@@ -6,6 +6,7 @@ namespace Miklcct\NationalRailTimetable\Controllers;
 use Miklcct\NationalRailTimetable\Config\Config;
 use Miklcct\NationalRailTimetable\Enums\TimeType;
 use Miklcct\NationalRailTimetable\Exceptions\StationNotFound;
+use Miklcct\NationalRailTimetable\Middlewares\CacheMiddleware;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\Time;
@@ -22,35 +23,17 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Teapot\StatusCode\WebDAV;
+use function assert;
 
-class TimetableController extends Application {
-    use ScheduleTrait;
-
+class TimetableController extends ScheduleController {
     // this number must be greater than the maximum number of calls for a train
     public const URL = '/timetable.php';
     private const MULTIPLIER = 1000;
 
-    public function __construct(
-        private readonly ViewResponseFactoryInterface $viewResponseFactory
-        , private readonly StreamFactoryInterface $streamFactory
-        , private readonly ServiceRepositoryFactoryInterface $serviceRepositoryFactory
-        , private readonly LocationRepositoryInterface $locationRepository
-        , private readonly FixedLinkRepositoryInterface $fixedLinkRepository
-        , private readonly Config $config
-    ) {}
-
-    public function runWithoutCache(ServerRequestInterface $request, BoardQuery $query) : ResponseInterface {
+    protected function getInnerView() : Timetable {
+        $query = $this->getQuery();
         $station = $query->station;
-        if ($station === null) {
-            return ($this->viewResponseFactory)(
-                new ScheduleFormView(
-                    $this->streamFactory
-                    , $this->locationRepository->getAllStations()
-                    , ViewMode::TIMETABLE
-                    , $this->config->siteName
-                )
-            );
-        }
+        assert($station instanceof LocationWithCrs);
         $date = $query->date ?? Date::today();
         $service_repository = ($this->serviceRepositoryFactory)($query->permanentOnly);
         $board = $service_repository->getDepartureBoard(
@@ -64,34 +47,15 @@ class TimetableController extends Application {
             , array_map(static fn(LocationWithCrs $location) => $location->getCrsCode(), $query->inverseFilter)
         );
 
-        return ($this->viewResponseFactory)(
-            new ScheduleView(
-                $this->streamFactory
-                , $this->locationRepository->getAllStations()
-                , $date
-                , $query
-                , $this->getFixedLinks($query)
-                , $service_repository->getGeneratedDate()
-                , $this->config->siteName
-                , new Timetable(
-                    $this->streamFactory
-                    , $date
-                    , $board->groupServices()
-                    , $query
-                )
-            )
+        return new Timetable(
+            $this->streamFactory
+            , $date
+            , $board->groupServices()
+            , $query
         );
     }
 
-    private function createStationNotFoundResponse(StationNotFound $e) : ResponseInterface {
-        return ($this->viewResponseFactory)(
-            new ScheduleFormView(
-                $this->streamFactory
-                , $this->locationRepository->getAllStations()
-                , ViewMode::TIMETABLE
-                , $this->config->siteName
-                , $e->getMessage()
-            )
-        )->withStatus(WebDAV::UNPROCESSABLE_ENTITY);
+    protected function getViewMode() : ViewMode {
+        return ViewMode::TIMETABLE;
     }
 }
