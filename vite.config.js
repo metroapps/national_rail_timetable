@@ -7,7 +7,7 @@ export default defineConfig({
         manifest : true,
         rollupOptions : {
             // overwrite default .html entry
-            input: ['/service.ts', '/schedule.ts', 'schedule_form.ts']
+            input: ['/service.ts', '/schedule.ts', '/schedule_form.ts']
         },
         target : 'esnext',
     },
