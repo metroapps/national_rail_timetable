@@ -70,7 +70,7 @@ function show_script_tags(string $entry_point, bool $recursed = false) : void {
         <script type="module" src="/dist/<?= html($manifest[$entry_point]['file']) ?>"></script>
 <?php
         }
-        foreach ($manifest[$entry_point]["css"] as $css_file) {
+        foreach ($manifest[$entry_point]['css'] ?? [] as $css_file) {
 ?>
         <link rel="stylesheet" href="/dist/<?= html($css_file) ?>">
 <?php
