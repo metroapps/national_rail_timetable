@@ -5,6 +5,7 @@ namespace Miklcct\NationalRailTimetable\Controllers;
 
 use DateInterval;
 use DateTimeImmutable;
+use Miklcct\NationalRailTimetable\Exceptions\StationNotFound;
 use Miklcct\NationalRailTimetable\Models\Date;
 use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
 use Miklcct\NationalRailTimetable\Models\Station;
@@ -13,8 +14,6 @@ use function array_filter;
 use function array_map;
 
 class BoardQuery {
-    use QueryTrait;
-
     /**
      * @param bool $arrivalMode
      * @param LocationWithCrs|null $station
@@ -87,5 +86,17 @@ class BoardQuery {
                     new DateInterval(sprintf('PT%dM', $this->station->minimumConnectionTime))
                 )
             : null;
+    }
+
+    private static function getQueryStation(string $name_or_crs, LocationRepositoryInterface $location_repository) : ?LocationWithCrs {
+        if ($name_or_crs === '') {
+            return null;
+        }
+        $station = $location_repository->getLocationByCrs($name_or_crs)
+            ?? $location_repository->getLocationByName($name_or_crs);
+        if (!$station instanceof LocationWithCrs) {
+            throw new StationNotFound($name_or_crs);
+        }
+        return $station;
     }
 }
