@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Miklcct\NationalRailTimetable\Models\Station;
+use Miklcct\NationalRailTimetable\Views\Components\Form;
 use Miklcct\NationalRailTimetable\Views\ScheduleView;
 use function Miklcct\NationalRailTimetable\Views\show_script_tags;
 use function Miklcct\ThinPhpApp\Escaper\html;
@@ -21,7 +22,7 @@ show_script_tags('schedule.ts');
     <body>
         <button id="go_to_top">🔝</button>
 <?php
-require __DIR__ . '/form.phtml';
+echo new Form($this->getStreamFactory(), $this->stations, $this->getViewMode(), $this->query ?? null, $this->errorMessage ?? null);
 
 if ($this instanceof ScheduleView) {
     $view = $this;
