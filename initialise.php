@@ -28,7 +28,7 @@ use Whoops\Handler\PlainTextHandler;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 use function DI\autowire;
-use function Miklcct\NationalRailTimetable\get_generated;
+use function Miklcct\RailOpenTimetableData\get_generated;
 
 /**
  * Return the 2 databases defined in the application
@@ -83,6 +83,10 @@ function get_container() : ContainerInterface {
         ->build();
     }
     return $container;
+}
+
+function is_development() : bool {
+    return $_SERVER['SERVER_NAME'] === 'gbtt.localhost';
 }
 
 require_once __DIR__ . '/vendor/autoload.php';

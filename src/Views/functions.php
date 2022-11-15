@@ -15,8 +15,7 @@ use Miklcct\RailOpenTimetableData\Models\LocationWithCrs;
 use Miklcct\RailOpenTimetableData\Models\ServiceCall;
 use Miklcct\RailOpenTimetableData\Models\ServiceProperty;
 use function implode;
-use function Miklcct\NationalRailTimetable\get_all_tocs;
-use function Miklcct\NationalRailTimetable\is_development;
+use function Miklcct\RailOpenTimetableData\get_all_tocs;
 use function Miklcct\ThinPhpApp\Escaper\html;
 use function Safe\json_decode;
 

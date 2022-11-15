@@ -11,7 +11,7 @@ use Miklcct\RailOpenTimetableData\Repositories\MongodbFixedLinkRepository;
 use Miklcct\RailOpenTimetableData\Repositories\MongodbLocationRepository;
 use Miklcct\RailOpenTimetableData\Repositories\MongodbServiceRepository;
 use Psr\SimpleCache\CacheInterface;
-use function Miklcct\NationalRailTimetable\get_generated;
+use function Miklcct\RailOpenTimetableData\get_generated;
 use function Safe\glob;
 
 require __DIR__ . '/../initialise.php';
