@@ -56,11 +56,11 @@ abstract class ScheduleController extends Application {
             return $this->createEmptyFormResponse($e);
         }
 
+        $this->cacheMiddleware->query = $this->query;
         if ($this->query->station === null) {
             return $this->createEmptyFormResponse(null);
         }
 
-        $this->cacheMiddleware->query = $this->query;
 
         $date = $query->date ?? Date::today();
         $service_repository = ($this->serviceRepositoryFactory)($this->query->permanentOnly);
