@@ -9,7 +9,7 @@ use LogicException;
 use Miklcct\NationalRailTimetable\Controllers\BoardController;
 use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
 use Miklcct\RailOpenTimetableData\Enums\AssociationCategory;
-use Miklcct\NationalRailTimetable\Exceptions\UnreachableException;
+use Miklcct\RailOpenTimetableData\Exceptions\UnreachableException;
 use Miklcct\RailOpenTimetableData\Models\Date;
 use Miklcct\RailOpenTimetableData\Models\DatedService;
 use Miklcct\RailOpenTimetableData\Models\FullService;
