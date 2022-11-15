@@ -15,7 +15,9 @@ latest journey planner data.
 ## Installation
 1. Copy `config.example.php` to `config.php` and set its values
 2. Run `composer install`
-3. Point the web root to `public_html` folder
+3. Run `yarn install`
+4. Run `yarn vite build`
+5. Point the web root to `public_html` folder
 
 ## Loading data
 Run `bin/update.bash` with EMAIL and PASSWORD environment variables set to your
