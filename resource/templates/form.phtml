@@ -41,7 +41,7 @@ foreach (['departures', 'arrivals'] as $mode) {
 <?php
 }
 ?>
-        <label>at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="26" value="<?= html($query['station'] ?? null)?>"/></label><br/>
+        <label>at: <input autocomplete="off" list="stations" required="required" type="text" name="station" size="26" value="<?= html($query['station'] ?? null)?>" placeholder="Full name or CRS code"/></label><br/>
         <label>only trains calling at (optional):
 <?php
 for ($i = 0; $i < 5; ++$i) {
