@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable\Views;
 
-use Miklcct\NationalRailTimetable\Models\Date;
-use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
+use Miklcct\RailOpenTimetableData\Models\Date;
+use Miklcct\RailOpenTimetableData\Models\LocationWithCrs;
 use Psr\Http\Message\StreamFactoryInterface;
 
 class ScheduleFormView extends ScheduleBaseView {

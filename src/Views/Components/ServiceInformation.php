@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable\Views\Components;
 
-use Miklcct\NationalRailTimetable\Models\Service;
-use Miklcct\NationalRailTimetable\Models\ServiceProperty;
+use Miklcct\RailOpenTimetableData\Models\Service;
+use Miklcct\RailOpenTimetableData\Models\ServiceProperty;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 use function Miklcct\ThinPhpApp\Escaper\html;

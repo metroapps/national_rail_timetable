@@ -5,7 +5,6 @@ namespace Miklcct\NationalRailTimetable\Views;
 
 use Miklcct\NationalRailTimetable\Controllers\BoardController;
 use Miklcct\NationalRailTimetable\Controllers\TimetableController;
-use Miklcct\NationalRailTimetable\Views\Components\Timetable;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 

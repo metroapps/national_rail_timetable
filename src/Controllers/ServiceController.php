@@ -4,9 +4,9 @@ declare(strict_types = 1);
 namespace Miklcct\NationalRailTimetable\Controllers;
 
 use LogicException;
-use Miklcct\NationalRailTimetable\Models\Date;
-use Miklcct\NationalRailTimetable\Models\ServiceCancellation;
-use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
+use Miklcct\RailOpenTimetableData\Models\Date;
+use Miklcct\RailOpenTimetableData\Models\ServiceCancellation;
+use Miklcct\RailOpenTimetableData\Repositories\ServiceRepositoryFactoryInterface;
 use Miklcct\NationalRailTimetable\Views\ServiceView;
 use Miklcct\NationalRailTimetable\Views\ViewMode;
 use Miklcct\ThinPhpApp\Controller\Application;

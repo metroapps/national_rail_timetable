@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Test\Miklcct\NationalRailTimetable\Parser;
 
-use Miklcct\NationalRailTimetable\Parsers\Helper;
+use Miklcct\RailOpenTimetableData\Parsers\Helper;
 use PHPUnit\Framework\TestCase;
 
 class HelperTest extends TestCase {

@@ -3,10 +3,10 @@ declare(strict_types = 1);
 
 namespace Miklcct\NationalRailTimetable\Controllers;
 
-use Miklcct\NationalRailTimetable\Enums\TimeType;
-use Miklcct\NationalRailTimetable\Models\Date;
-use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
-use Miklcct\NationalRailTimetable\Models\Time;
+use Miklcct\RailOpenTimetableData\Enums\TimeType;
+use Miklcct\RailOpenTimetableData\Models\Date;
+use Miklcct\RailOpenTimetableData\Models\LocationWithCrs;
+use Miklcct\RailOpenTimetableData\Models\Time;
 use Miklcct\NationalRailTimetable\Views\Components\Board;
 use Miklcct\NationalRailTimetable\Views\ViewMode;
 

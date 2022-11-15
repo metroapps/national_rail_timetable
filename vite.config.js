@@ -1,4 +1,6 @@
 // vite.config.js
+// noinspection JSUnusedGlobalSymbols
+
 import {defineConfig} from 'vite';
 
 export default defineConfig({

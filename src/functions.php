@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable;
 
-use Miklcct\NationalRailTimetable\Models\Date;
+use Miklcct\RailOpenTimetableData\Models\Date;
 use MongoDB\Database;
 use function Safe\file_get_contents;
 use function Safe\json_decode;

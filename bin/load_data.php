@@ -2,14 +2,14 @@
 <?php
 declare(strict_types=1);
 
-use Miklcct\NationalRailTimetable\Models\Date;
-use Miklcct\NationalRailTimetable\Parsers\FixedLinkParser;
-use Miklcct\NationalRailTimetable\Parsers\Helper;
-use Miklcct\NationalRailTimetable\Parsers\StationParser;
-use Miklcct\NationalRailTimetable\Parsers\TimetableParser;
-use Miklcct\NationalRailTimetable\Repositories\MongodbFixedLinkRepository;
-use Miklcct\NationalRailTimetable\Repositories\MongodbLocationRepository;
-use Miklcct\NationalRailTimetable\Repositories\MongodbServiceRepository;
+use Miklcct\RailOpenTimetableData\Models\Date;
+use Miklcct\RailOpenTimetableData\Parsers\FixedLinkParser;
+use Miklcct\RailOpenTimetableData\Parsers\Helper;
+use Miklcct\RailOpenTimetableData\Parsers\StationParser;
+use Miklcct\RailOpenTimetableData\Parsers\TimetableParser;
+use Miklcct\RailOpenTimetableData\Repositories\MongodbFixedLinkRepository;
+use Miklcct\RailOpenTimetableData\Repositories\MongodbLocationRepository;
+use Miklcct\RailOpenTimetableData\Repositories\MongodbServiceRepository;
 use Psr\SimpleCache\CacheInterface;
 use function Miklcct\NationalRailTimetable\get_generated;
 use function Safe\glob;

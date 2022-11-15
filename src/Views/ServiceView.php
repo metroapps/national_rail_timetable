@@ -8,14 +8,14 @@ use DateTimeImmutable;
 use LogicException;
 use Miklcct\NationalRailTimetable\Controllers\BoardController;
 use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
-use Miklcct\NationalRailTimetable\Enums\AssociationCategory;
+use Miklcct\RailOpenTimetableData\Enums\AssociationCategory;
 use Miklcct\NationalRailTimetable\Exceptions\UnreachableException;
-use Miklcct\NationalRailTimetable\Models\Date;
-use Miklcct\NationalRailTimetable\Models\DatedService;
-use Miklcct\NationalRailTimetable\Models\FullService;
-use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
-use Miklcct\NationalRailTimetable\Models\Points\DestinationPoint;
-use Miklcct\NationalRailTimetable\Models\Service;
+use Miklcct\RailOpenTimetableData\Models\Date;
+use Miklcct\RailOpenTimetableData\Models\DatedService;
+use Miklcct\RailOpenTimetableData\Models\FullService;
+use Miklcct\RailOpenTimetableData\Models\LocationWithCrs;
+use Miklcct\RailOpenTimetableData\Models\Points\DestinationPoint;
+use Miklcct\RailOpenTimetableData\Models\Service;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 use function http_build_query;
@@ -36,7 +36,7 @@ class ServiceView extends PhpTemplate {
         , Date $date
         , bool $permanent_only
         , ViewMode $view_mode
-    ) {
+    ) : string {
         return '/service.php?' . http_build_query(
             [
                 'uid' => $uid,

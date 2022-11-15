@@ -6,10 +6,14 @@ namespace Miklcct\NationalRailTimetable\Views;
 use DateInterval;
 use DateTimeImmutable;
 use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
-use Miklcct\NationalRailTimetable\Enums\Activity;
-use Miklcct\NationalRailTimetable\Models\Date;
-use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
-use Miklcct\NationalRailTimetable\Models\ServiceCall;
+use Miklcct\RailOpenTimetableData\Enums\Activity;
+use Miklcct\RailOpenTimetableData\Enums\Catering;
+use Miklcct\RailOpenTimetableData\Enums\Mode;
+use Miklcct\RailOpenTimetableData\Enums\Reservation;
+use Miklcct\RailOpenTimetableData\Models\Date;
+use Miklcct\RailOpenTimetableData\Models\LocationWithCrs;
+use Miklcct\RailOpenTimetableData\Models\ServiceCall;
+use Miklcct\RailOpenTimetableData\Models\ServiceProperty;
 use function implode;
 use function Miklcct\NationalRailTimetable\get_all_tocs;
 use function Miklcct\NationalRailTimetable\is_development;
@@ -88,7 +92,7 @@ function show_toc(string $toc) : string {
 }
 
 function show_facilities(ServiceCall $service_call) : string {
-    return $service_call->mode->showIcon() . $service_call->serviceProperty->showIcons();
+    return show_facility_icon($service_call->mode) . show_service_property_icons($service_call->serviceProperty);
 }
 
 function get_arrival_link(string $url, ServiceCall $service_call, BoardQuery $query) : ?string {
@@ -112,4 +116,35 @@ function get_arrival_link(string $url, ServiceCall $service_call, BoardQuery $qu
             , $query->permanentOnly
         )
     )->getUrl($url);
+}
+
+function show_facility_icon(Catering|Mode|Reservation $item) : string {
+    return match($item) {
+        Catering::BUFFET => '<img class="facility" src="/images/buffet.png" alt="buffet" title="Buffet" />',
+        Catering::FIRST_CLASS_RESTAURANT => '<img class="facility" src="/images/first_class_restaurant.png" alt="first class restaurant" title="Restaurant for first class passengers" />',
+        Catering::HOT_FOOD => '<img class="facility" src="/images/first_class_restaurant.png" alt="hot food" title="Hot food" />',
+        Catering::RESTAURANT => '<img class="facility" src="/images/restaurant.png" alt="restaurant" title="Restaurant" />',
+        Catering::TROLLEY => '<img class="facility" src="/images/trolley.png" alt="restaurant" title="Trolley" />',
+        Mode::BUS => '<img class="mode" src="/images/bus.png" alt="bus" title="Bus service" /><br/>',
+        Mode::SHIP => '<img class="mode" src="/images/ship.png" alt="ship" title="Ferry service" /><br/>',
+        Reservation::AVAILABLE => '<img class="facility" src="/images/reservation_available.png" alt="reservation available" title="Reservation available" />',
+        Reservation::RECOMMENDED => '<img class="facility" src="/images/reservation_recommended.png" alt="reservation recommended" title="Reservation recommended" />',
+        Reservation::COMPULSORY => '<img class="facility" src="/images/reservation_compulsory.png" alt="reservation compulsory" title="Reservation compulsory" />',
+        default => '',
+    };
+}
+
+function show_service_property_icons(ServiceProperty $service_property) : string {
+    $result = '';
+    foreach ($service_property->caterings as $catering) {
+        $result .= show_facility_icon($catering);
+    }
+    $result .= show_facility_icon($service_property->reservation);
+    if ($service_property->seatingClasses[1]) {
+        $result .= '<img class="facility" src="/images/first_class.png" alt="first class" title="First class available" />';
+    }
+    if (array_filter($service_property->sleeperClasses)) {
+        $result .= '<img class="facility" src="/images/sleeper.png" alt="sleeper" title="Sleeper available" />';
+    }
+    return $result;
 }

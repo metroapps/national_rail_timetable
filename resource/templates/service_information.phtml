@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 use Miklcct\NationalRailTimetable\Views\Components\ServiceInformation;
+use function Miklcct\NationalRailTimetable\Views\show_service_property_icons;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 /** @var ServiceInformation $this */
@@ -49,7 +50,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
                             ]
                         )
                     ),
-                    $this->serviceProperty->showIcons(),
+                    show_service_property_icons($this->serviceProperty),
                 ]
             )
         )

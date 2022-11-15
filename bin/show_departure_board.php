@@ -2,11 +2,11 @@
 <?php
 declare(strict_types=1);
 
-use Miklcct\NationalRailTimetable\Enums\TimeType;
-use Miklcct\NationalRailTimetable\Models\Date;
-use Miklcct\NationalRailTimetable\Models\Points\TimingPoint;
-use Miklcct\NationalRailTimetable\Models\Time;
-use Miklcct\NationalRailTimetable\Repositories\MongodbServiceRepository;
+use Miklcct\RailOpenTimetableData\Enums\TimeType;
+use Miklcct\RailOpenTimetableData\Models\Date;
+use Miklcct\RailOpenTimetableData\Models\Points\TimingPoint;
+use Miklcct\RailOpenTimetableData\Models\Time;
+use Miklcct\RailOpenTimetableData\Repositories\MongodbServiceRepository;
 use Safe\DateTimeImmutable;
 use function Safe\getopt;
 

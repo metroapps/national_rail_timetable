@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-use Miklcct\NationalRailTimetable\Enums\Activity;
-use Miklcct\NationalRailTimetable\Models\Points\HasArrival;
-use Miklcct\NationalRailTimetable\Models\Points\HasDeparture;
-use Miklcct\NationalRailTimetable\Models\Points\IntermediatePoint;
-use Miklcct\NationalRailTimetable\Models\Points\OriginPoint;
-use Miklcct\NationalRailTimetable\Models\Service;
-use Miklcct\NationalRailTimetable\Models\Station;
+use Miklcct\RailOpenTimetableData\Enums\Activity;
+use Miklcct\RailOpenTimetableData\Models\Points\HasArrival;
+use Miklcct\RailOpenTimetableData\Models\Points\HasDeparture;
+use Miklcct\RailOpenTimetableData\Models\Points\IntermediatePoint;
+use Miklcct\RailOpenTimetableData\Models\Points\OriginPoint;
+use Miklcct\RailOpenTimetableData\Models\Service;
+use Miklcct\RailOpenTimetableData\Models\Station;
 use Miklcct\NationalRailTimetable\Views\Components\Portion;
 use Miklcct\NationalRailTimetable\Views\Components\ServiceInformation;
 use function Miklcct\ThinPhpApp\Escaper\html;
@@ -35,6 +35,8 @@ foreach ($points as $i => $point) {
                 $point->location->northing
             ) : ''
         ) . (in_array(Activity::REQUEST_STOP, $point->activities, true) ? ' data-request-stop="1"' : '');
+        /** @noinspection TypeUnsafeComparisonInspection */
+        /** @noinspection PhpNonStrictObjectEqualityInspection */
         if (($point instanceof OriginPoint || $point instanceof IntermediatePoint) && $point->serviceProperty !== null && $point->serviceProperty != $service_property && $i !== count($points) - 1) {
             $service_property = $point->serviceProperty;
 

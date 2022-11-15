@@ -6,8 +6,8 @@ namespace Miklcct\NationalRailTimetable\Views\Components;
 use DateInterval;
 use DateTimeImmutable;
 use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
-use Miklcct\NationalRailTimetable\Models\Date;
-use Miklcct\NationalRailTimetable\Models\FixedLink as Model;
+use Miklcct\RailOpenTimetableData\Models\Date;
+use Miklcct\RailOpenTimetableData\Models\FixedLink as Model;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 

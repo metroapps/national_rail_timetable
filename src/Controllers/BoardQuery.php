@@ -6,10 +6,10 @@ namespace Miklcct\NationalRailTimetable\Controllers;
 use DateInterval;
 use DateTimeImmutable;
 use Miklcct\NationalRailTimetable\Exceptions\StationNotFound;
-use Miklcct\NationalRailTimetable\Models\Date;
-use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
-use Miklcct\NationalRailTimetable\Models\Station;
-use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
+use Miklcct\RailOpenTimetableData\Models\Date;
+use Miklcct\RailOpenTimetableData\Models\LocationWithCrs;
+use Miklcct\RailOpenTimetableData\Models\Station;
+use Miklcct\RailOpenTimetableData\Repositories\LocationRepositoryInterface;
 use function array_filter;
 use function array_map;
 
@@ -49,7 +49,7 @@ class BoardQuery {
             )
             , empty($query['date']) ? null : Date::fromDateTimeInterface(new \Safe\DateTimeImmutable($query['date']))
             , empty($query['connecting_time']) ? null : new \Safe\DateTimeImmutable($query['connecting_time'])
-            , ($query['connecting_toc'] ?? '') ?: null
+            , $query['connecting_toc'] ?? '' ?: null
             , !empty($query['permanent_only'])
         );
     }

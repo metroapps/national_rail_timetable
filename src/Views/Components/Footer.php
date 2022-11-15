@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable\Views\Components;
 
-use Miklcct\NationalRailTimetable\Models\Date;
+use Miklcct\RailOpenTimetableData\Models\Date;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 

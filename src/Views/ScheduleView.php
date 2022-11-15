@@ -3,18 +3,14 @@ declare(strict_types=1);
 
 namespace Miklcct\NationalRailTimetable\Views;
 
-use DateInterval;
-use DateTimeImmutable;
 use LogicException;
 use Miklcct\NationalRailTimetable\Controllers\BoardController;
 use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
 use Miklcct\NationalRailTimetable\Controllers\TimetableController;
-use Miklcct\NationalRailTimetable\Models\Date;
-use Miklcct\NationalRailTimetable\Models\DepartureBoard;
-use Miklcct\NationalRailTimetable\Models\FixedLink;
-use Miklcct\NationalRailTimetable\Models\Location;
-use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
-use Miklcct\NationalRailTimetable\Models\ServiceCall;
+use Miklcct\RailOpenTimetableData\Models\Date;
+use Miklcct\RailOpenTimetableData\Models\DepartureBoard;
+use Miklcct\RailOpenTimetableData\Models\FixedLink;
+use Miklcct\RailOpenTimetableData\Models\Location;
 use Miklcct\NationalRailTimetable\Views\Components\Board;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Miklcct\ThinPhpApp\View\View;
@@ -23,8 +19,6 @@ use function array_map;
 use function assert;
 use function count;
 use function implode;
-use function Miklcct\NationalRailTimetable\get_all_tocs;
-use function Miklcct\ThinPhpApp\Escaper\html;
 use function sprintf;
 
 class ScheduleView extends PhpTemplate {
@@ -83,7 +77,7 @@ class ScheduleView extends PhpTemplate {
             $result .= ' calling at ' . implode(
                     ', '
                     , array_map(
-                        fn(Location $location) => $location->name
+                        static fn(Location $location) => $location->name
                         , $filter
                     )
                 );
@@ -93,7 +87,7 @@ class ScheduleView extends PhpTemplate {
             $result .= ' but not ' . implode(
                     ', '
                     , array_map(
-                        fn(Location $location) => $location->name
+                        static fn(Location $location) => $location->name
                         , $inverse_filter
                     )
                 );

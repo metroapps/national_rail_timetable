@@ -3,32 +3,16 @@ declare(strict_types = 1);
 
 namespace Miklcct\NationalRailTimetable\Controllers;
 
-use Miklcct\NationalRailTimetable\Config\Config;
-use Miklcct\NationalRailTimetable\Enums\TimeType;
-use Miklcct\NationalRailTimetable\Exceptions\StationNotFound;
-use Miklcct\NationalRailTimetable\Middlewares\CacheMiddleware;
-use Miklcct\NationalRailTimetable\Models\Date;
-use Miklcct\NationalRailTimetable\Models\LocationWithCrs;
-use Miklcct\NationalRailTimetable\Models\Time;
-use Miklcct\NationalRailTimetable\Repositories\FixedLinkRepositoryInterface;
-use Miklcct\NationalRailTimetable\Repositories\LocationRepositoryInterface;
-use Miklcct\NationalRailTimetable\Repositories\ServiceRepositoryFactoryInterface;
-use Miklcct\NationalRailTimetable\Views\ScheduleFormView;
+use Miklcct\RailOpenTimetableData\Enums\TimeType;
+use Miklcct\RailOpenTimetableData\Models\Date;
+use Miklcct\RailOpenTimetableData\Models\LocationWithCrs;
+use Miklcct\RailOpenTimetableData\Models\Time;
 use Miklcct\NationalRailTimetable\Views\Components\Timetable;
-use Miklcct\NationalRailTimetable\Views\ScheduleView;
 use Miklcct\NationalRailTimetable\Views\ViewMode;
-use Miklcct\ThinPhpApp\Controller\Application;
-use Miklcct\ThinPhpApp\Response\ViewResponseFactoryInterface;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Message\StreamFactoryInterface;
-use Teapot\StatusCode\WebDAV;
 use function assert;
 
 class TimetableController extends ScheduleController {
-    // this number must be greater than the maximum number of calls for a train
     public const URL = '/timetable.php';
-    private const MULTIPLIER = 1000;
 
     protected function getInnerView() : Timetable {
         $query = $this->getQuery();
