@@ -2,6 +2,13 @@
 <project version="4">
   <component name="PublishConfigData" serverName="gbtt.uk" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
+      <paths name="gbtt.localhost">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$/public_html" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
       <paths name="gbtt.uk">
         <serverdata>
           <mappings>

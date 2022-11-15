@@ -9,6 +9,9 @@
           </advancedOptions>
         </fileTransfer>
       </webServer>
+      <webServer id="57493ee7-4da6-4876-bcf3-e5922ab1387d" name="gbtt.localhost" url="http://gbtt.localhost">
+        <fileTransfer accessType="LOCAL" port="0" />
+      </webServer>
     </option>
   </component>
 </project>
