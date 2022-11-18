@@ -62,7 +62,7 @@ abstract class ScheduleController extends Application {
         }
 
 
-        $date = $query->date ?? Date::today();
+        $date = $this->query->date ?? Date::today();
         $service_repository = ($this->serviceRepositoryFactory)($this->query->permanentOnly);
         return ($this->viewResponseFactory)(
             new ScheduleView(
