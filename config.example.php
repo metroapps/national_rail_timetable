@@ -3,7 +3,7 @@
 
 declare(strict_types = 1);
 
-use Miklcct\NationalRailTimetable\Config\Config;
+use Metroapps\NationalRailTimetable\Config\Config;
 
 return new Config(
     null

@@ -1,14 +1,14 @@
 <?php
 declare(strict_types = 1);
 
-namespace Miklcct\NationalRailTimetable\Controllers;
+namespace Metroapps\NationalRailTimetable\Controllers;
 
 use LogicException;
 use Miklcct\RailOpenTimetableData\Models\Date;
 use Miklcct\RailOpenTimetableData\Models\ServiceCancellation;
 use Miklcct\RailOpenTimetableData\Repositories\ServiceRepositoryFactoryInterface;
-use Miklcct\NationalRailTimetable\Views\ServiceView;
-use Miklcct\NationalRailTimetable\Views\ViewMode;
+use Metroapps\NationalRailTimetable\Views\ServiceView;
+use Metroapps\NationalRailTimetable\Views\ViewMode;
 use Miklcct\ThinPhpApp\Controller\Application;
 use Miklcct\ThinPhpApp\Response\ViewResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;

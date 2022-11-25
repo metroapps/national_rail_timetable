@@ -1,5 +1,5 @@
 {
-    "name" : "miklcct/national_rail_timetable",
+    "name" : "metroapps/national_rail_timetable",
     "description" : "National Rail Timetable on the web",
     "type" : "project",
     "license" : "AGPL-3.0-or-later",
@@ -22,7 +22,7 @@
     },
     "autoload" : {
         "psr-4" : {
-            "Miklcct\\NationalRailTimetable\\" : "src/"
+            "Metroapps\\NationalRailTimetable\\" : "src/"
         },
         "files" : [
             "src/Views/functions.php"

@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailTimetable\Views\Components;
+namespace Metroapps\NationalRailTimetable\Views\Components;
 
 use DateInterval;
 use DateTimeImmutable;
-use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
+use Metroapps\NationalRailTimetable\Controllers\BoardQuery;
 use Miklcct\RailOpenTimetableData\Models\Date;
 use Miklcct\RailOpenTimetableData\Models\DatedService;
 use Miklcct\RailOpenTimetableData\Models\LocationWithCrs;
@@ -14,11 +14,11 @@ use Miklcct\RailOpenTimetableData\Models\Points\HasDeparture;
 use Miklcct\RailOpenTimetableData\Models\Points\TimingPoint;
 use Miklcct\RailOpenTimetableData\Models\Service;
 use Miklcct\RailOpenTimetableData\Models\Station;
-use Miklcct\NationalRailTimetable\Views\ViewMode;
+use Metroapps\NationalRailTimetable\Views\ViewMode;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 use RuntimeException;
-use function Miklcct\NationalRailTimetable\Views\show_time;
+use function Metroapps\NationalRailTimetable\Views\show_time;
 
 class Portion extends PhpTemplate {
 

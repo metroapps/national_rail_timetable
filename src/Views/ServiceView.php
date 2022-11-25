@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailTimetable\Views;
+namespace Metroapps\NationalRailTimetable\Views;
 
 use DateInterval;
 use DateTimeImmutable;
 use LogicException;
-use Miklcct\NationalRailTimetable\Controllers\BoardController;
-use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
+use Metroapps\NationalRailTimetable\Controllers\BoardController;
+use Metroapps\NationalRailTimetable\Controllers\BoardQuery;
 use Miklcct\RailOpenTimetableData\Enums\AssociationCategory;
 use Miklcct\RailOpenTimetableData\Exceptions\UnreachableException;
 use Miklcct\RailOpenTimetableData\Models\Date;

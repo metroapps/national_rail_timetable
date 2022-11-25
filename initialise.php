@@ -4,7 +4,7 @@ declare(strict_types = 1);
 use DI\ContainerBuilder;
 use Http\Factory\Guzzle\ResponseFactory;
 use Http\Factory\Guzzle\StreamFactory;
-use Miklcct\NationalRailTimetable\Config\Config;
+use Metroapps\NationalRailTimetable\Config\Config;
 use Miklcct\RailOpenTimetableData\Models\Date;
 use Miklcct\RailOpenTimetableData\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\RailOpenTimetableData\Repositories\LocationRepositoryInterface;

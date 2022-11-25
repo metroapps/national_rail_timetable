@@ -1,14 +1,14 @@
 <?php
 declare(strict_types = 1);
 
-namespace Miklcct\NationalRailTimetable\Controllers;
+namespace Metroapps\NationalRailTimetable\Controllers;
 
 use Miklcct\RailOpenTimetableData\Enums\TimeType;
 use Miklcct\RailOpenTimetableData\Models\Date;
 use Miklcct\RailOpenTimetableData\Models\LocationWithCrs;
 use Miklcct\RailOpenTimetableData\Models\Time;
-use Miklcct\NationalRailTimetable\Views\Components\Timetable;
-use Miklcct\NationalRailTimetable\Views\ViewMode;
+use Metroapps\NationalRailTimetable\Views\Components\Timetable;
+use Metroapps\NationalRailTimetable\Views\ViewMode;
 use function assert;
 
 class TimetableController extends ScheduleController {

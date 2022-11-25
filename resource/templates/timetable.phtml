@@ -1,20 +1,20 @@
 <?php
 declare(strict_types = 1);
 
-use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
-use Miklcct\NationalRailTimetable\Controllers\TimetableController;
+use Metroapps\NationalRailTimetable\Controllers\BoardQuery;
+use Metroapps\NationalRailTimetable\Controllers\TimetableController;
 use Miklcct\RailOpenTimetableData\Models\Location;
 use Miklcct\RailOpenTimetableData\Models\LocationWithCrs;
 use Miklcct\RailOpenTimetableData\Models\ServiceCallWithDestination;
 use Miklcct\RailOpenTimetableData\Models\Timetable;
-use Miklcct\NationalRailTimetable\Views\Components\Timetable as TimetableView;
-use Miklcct\NationalRailTimetable\Views\ServiceView;
-use Miklcct\NationalRailTimetable\Views\ViewMode;
-use function Miklcct\NationalRailTimetable\Views\get_arrival_link;
-use function Miklcct\NationalRailTimetable\Views\show_activities;
-use function Miklcct\NationalRailTimetable\Views\show_facilities;
-use function Miklcct\NationalRailTimetable\Views\show_time;
-use function Miklcct\NationalRailTimetable\Views\show_toc;
+use Metroapps\NationalRailTimetable\Views\Components\Timetable as TimetableView;
+use Metroapps\NationalRailTimetable\Views\ServiceView;
+use Metroapps\NationalRailTimetable\Views\ViewMode;
+use function Metroapps\NationalRailTimetable\Views\get_arrival_link;
+use function Metroapps\NationalRailTimetable\Views\show_activities;
+use function Metroapps\NationalRailTimetable\Views\show_facilities;
+use function Metroapps\NationalRailTimetable\Views\show_time;
+use function Metroapps\NationalRailTimetable\Views\show_toc;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
 /** @var TimetableView $this */

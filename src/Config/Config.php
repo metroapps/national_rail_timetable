@@ -1,7 +1,7 @@
 <?php
 declare(strict_types = 1);
 
-namespace Miklcct\NationalRailTimetable\Config;
+namespace Metroapps\NationalRailTimetable\Config;
 class Config {
     public function __construct(
         public readonly ?string $mongodbUri

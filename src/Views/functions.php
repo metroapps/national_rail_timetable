@@ -1,11 +1,11 @@
 <?php
 declare(strict_types = 1);
 
-namespace Miklcct\NationalRailTimetable\Views;
+namespace Metroapps\NationalRailTimetable\Views;
 
 use DateInterval;
 use DateTimeImmutable;
-use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
+use Metroapps\NationalRailTimetable\Controllers\BoardQuery;
 use Miklcct\RailOpenTimetableData\Enums\Activity;
 use Miklcct\RailOpenTimetableData\Enums\Catering;
 use Miklcct\RailOpenTimetableData\Enums\Mode;

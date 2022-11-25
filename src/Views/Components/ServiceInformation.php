@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailTimetable\Views\Components;
+namespace Metroapps\NationalRailTimetable\Views\Components;
 
 use Miklcct\RailOpenTimetableData\Models\Service;
 use Miklcct\RailOpenTimetableData\Models\ServiceProperty;

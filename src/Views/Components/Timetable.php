@@ -1,13 +1,13 @@
 <?php
 declare(strict_types = 1);
 
-namespace Miklcct\NationalRailTimetable\Views\Components;
+namespace Metroapps\NationalRailTimetable\Views\Components;
 
-use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
+use Metroapps\NationalRailTimetable\Controllers\BoardQuery;
 use Miklcct\RailOpenTimetableData\Models\Date;
 use Miklcct\RailOpenTimetableData\Models\DepartureBoard;
 use Miklcct\RailOpenTimetableData\Models\LocationWithCrs;
-use Miklcct\NationalRailTimetable\Views\ViewMode;
+use Metroapps\NationalRailTimetable\Views\ViewMode;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 

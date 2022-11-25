@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailTimetable\Views;
+namespace Metroapps\NationalRailTimetable\Views;
 
-use Miklcct\NationalRailTimetable\Controllers\BoardController;
-use Miklcct\NationalRailTimetable\Controllers\TimetableController;
+use Metroapps\NationalRailTimetable\Controllers\BoardController;
+use Metroapps\NationalRailTimetable\Controllers\TimetableController;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 

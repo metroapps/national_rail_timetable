@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailTimetable\Views\Components;
-use Miklcct\NationalRailTimetable\Controllers\BoardQuery;
-use Miklcct\NationalRailTimetable\Views\ViewMode;
+namespace Metroapps\NationalRailTimetable\Views\Components;
+use Metroapps\NationalRailTimetable\Controllers\BoardQuery;
+use Metroapps\NationalRailTimetable\Views\ViewMode;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 

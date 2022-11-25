@@ -1,3 +1,7 @@
+## [2.0.0] - 2022-11-25
+* takeover by Metroapps - no functionality change from 1.0.2, major bump
+required for changing namespace
+
 ## [1.0.2] - 2022-11-18
 * fix wrong date shown in title and heading
 

@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailTimetable\Controllers;
+namespace Metroapps\NationalRailTimetable\Controllers;
 
 use DateInterval;
 use DateTimeImmutable;
-use Miklcct\NationalRailTimetable\Exceptions\StationNotFound;
+use Metroapps\NationalRailTimetable\Exceptions\StationNotFound;
 use Miklcct\RailOpenTimetableData\Models\Date;
 use Miklcct\RailOpenTimetableData\Models\LocationWithCrs;
 use Miklcct\RailOpenTimetableData\Models\Station;

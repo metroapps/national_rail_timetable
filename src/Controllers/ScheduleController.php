@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Miklcct\NationalRailTimetable\Controllers;
+namespace Metroapps\NationalRailTimetable\Controllers;
 
-use Miklcct\NationalRailTimetable\Config\Config;
-use Miklcct\NationalRailTimetable\Exceptions\StationNotFound;
-use Miklcct\NationalRailTimetable\Middlewares\CacheMiddleware;
+use Metroapps\NationalRailTimetable\Config\Config;
+use Metroapps\NationalRailTimetable\Exceptions\StationNotFound;
+use Metroapps\NationalRailTimetable\Middlewares\CacheMiddleware;
 use Miklcct\RailOpenTimetableData\Models\Date;
 use Miklcct\RailOpenTimetableData\Models\FixedLink;
 use Miklcct\RailOpenTimetableData\Models\LocationWithCrs;
@@ -13,9 +13,9 @@ use Miklcct\RailOpenTimetableData\Models\Station;
 use Miklcct\RailOpenTimetableData\Repositories\FixedLinkRepositoryInterface;
 use Miklcct\RailOpenTimetableData\Repositories\LocationRepositoryInterface;
 use Miklcct\RailOpenTimetableData\Repositories\ServiceRepositoryFactoryInterface;
-use Miklcct\NationalRailTimetable\Views\ScheduleFormView;
-use Miklcct\NationalRailTimetable\Views\ScheduleView;
-use Miklcct\NationalRailTimetable\Views\ViewMode;
+use Metroapps\NationalRailTimetable\Views\ScheduleFormView;
+use Metroapps\NationalRailTimetable\Views\ScheduleView;
+use Metroapps\NationalRailTimetable\Views\ViewMode;
 use Miklcct\ThinPhpApp\Controller\Application;
 use Miklcct\ThinPhpApp\Response\ViewResponseFactoryInterface;
 use Miklcct\ThinPhpApp\View\View;
