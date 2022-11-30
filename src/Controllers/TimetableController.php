@@ -12,7 +12,7 @@ use Metroapps\NationalRailTimetable\Views\ViewMode;
 use function assert;
 
 class TimetableController extends ScheduleController {
-    public const URL = '/timetable.php';
+    public const URL = '/timetable';
 
     protected function getInnerView() : Timetable {
         $query = $this->getQuery();

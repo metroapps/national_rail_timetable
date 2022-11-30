@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Metroapps\NationalRailTimetable\Controllers;
 
+use GuzzleHttp\Psr7\Response;
 use Metroapps\NationalRailTimetable\Config\Config;
 use Metroapps\NationalRailTimetable\Exceptions\StationNotFound;
 use Metroapps\NationalRailTimetable\Middlewares\CacheMiddleware;
@@ -50,10 +51,31 @@ abstract class ScheduleController extends Application {
     }
 
     protected function run(ServerRequestInterface $request) : ResponseInterface {
+        $query = $request->getQueryParams();
+        $path_info = explode('/', trim($request->getServerParams()['PATH_INFO'] ?? '', '/'));
+        $station_assigned = false;
+        foreach ($path_info as $segment) {
+            if (\Safe\preg_match('/^\d{4}-\d{2}-\d{2}$/', $segment)) {
+                $query['date'] ??= $segment;
+            } elseif (!$station_assigned) {
+                $query['station'] ??= $segment;
+                $station_assigned = true;
+            } else {
+                $query['filter'][] = $segment;
+            }
+        }
         try {
-            $this->query = BoardQuery::fromArray($request->getQueryParams(), $this->locationRepository);
+            $this->query = BoardQuery::fromArray($query, $this->locationRepository);
         } catch (StationNotFound $e) {
             return $this->createEmptyFormResponse($e);
+        }
+
+        $canonical_url = $this->query->getUrl(static::URL);
+        if ($request->getServerParams()['REQUEST_URI'] !== $canonical_url) {
+            return new Response(
+                Http::PERMANENT_REDIRECT
+                , ['Location' => $canonical_url]
+            );
         }
 
         $this->cacheMiddleware->query = $this->query;

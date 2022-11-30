@@ -16,7 +16,7 @@ if ($this->errorMessage !== null) {
 
 $query = $this->query?->toArray() ?? [];
 ?>
-<form action="board.php" method="GET">
+<form action="/board.php" method="GET">
     <datalist id="stations">
 <?php
 foreach ($this->stations as $station) {
@@ -101,7 +101,7 @@ foreach (get_all_tocs() as $code => $name) {
 <?php
 if ($this->viewMode === ViewMode::TIMETABLE) {
 ?>
-        <button type="submit" formaction="timetable.php">Show timetable</button>
+        <button type="submit" formaction="/timetable.php">Show timetable</button>
 <?php
 }
 ?>
@@ -109,7 +109,7 @@ if ($this->viewMode === ViewMode::TIMETABLE) {
 <?php
 if ($this->viewMode !== ViewMode::TIMETABLE) {
 ?>
-        <button type="submit" formaction="timetable.php">Show timetable</button>
+        <button type="submit" formaction="/timetable.php">Show timetable</button>
 <?php
 }
 ?>

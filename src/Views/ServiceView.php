@@ -37,15 +37,12 @@ class ServiceView extends PhpTemplate {
         , bool $permanent_only
         , ViewMode $view_mode
     ) : string {
-        return '/service.php?' . http_build_query(
-            [
-                'uid' => $uid,
-                'date' => $date->__toString(),
-                'from' => match ($view_mode) {
-                    ViewMode::TIMETABLE => 'timetable',
-                    ViewMode::BOARD => 'board',
-                }
-            ] + ($permanent_only ? ['permanent_only' => '1'] : [])
+        return rtrim(
+            "/service/$uid/$date?" . http_build_query(
+                ($view_mode === ViewMode::BOARD ? ['from' => 'board'] : [])
+                + ($permanent_only ? ['permanent_only' => '1'] : [])
+            )
+            , '?'
         );
     }
 

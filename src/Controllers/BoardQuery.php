@@ -33,6 +33,7 @@ class BoardQuery {
         , public readonly ?DateTimeImmutable $connectingTime = null
         , public readonly ?string $connectingToc = null
         , public readonly bool $permanentOnly = false
+        , public readonly array $otherQueryArguments = []
     ) {}
 
     public static function fromArray(array $query, LocationRepositoryInterface $location_repository) : static {
@@ -51,29 +52,52 @@ class BoardQuery {
             , empty($query['connecting_time']) ? null : new \Safe\DateTimeImmutable($query['connecting_time'])
             , $query['connecting_toc'] ?? '' ?: null
             , !empty($query['permanent_only'])
+            , array_diff_key($query, ['mode', 'station', 'filter', 'inverse_filter', 'date', 'connecting_time', 'connecting_toc', 'permanent_only'])
         );
     }
 
     public function toArray() : array {
-        return [
-            'mode' => $this->arrivalMode ? 'arrivals' : 'departures',
-            'station' => $this->station?->getCrsCode(),
-            'filter' => array_map(
-                static fn(LocationWithCrs $location) => $location->getCrsCode()
-                , $this->filter
-            ),
-            'inverse_filter' => array_map(
-                static fn(LocationWithCrs $location) => $location->getCrsCode()
-                , $this->inverseFilter
-            ),
-            'date' => $this->date?->__toString() ?? '',
-            'connecting_time' => substr($this->connectingTime?->format('c') ?? '', 0, 16),
-            'connecting_toc' => $this->connectingToc ?? '',
-        ] + ($this->permanentOnly ? ['permanent_only' => '1'] : []);
+        $filter = static function (array $array) use (&$filter) {
+            return array_filter(
+                array_map(
+                    static fn($item) => is_array($item) ? $filter($item) : $item
+                    , $array
+                )
+                , static fn($item) => $item !== [] && $item !== ''
+            );
+        };
+        return $filter(
+            [
+                'mode' => $this->arrivalMode ? 'arrivals' : '',
+                'station' => $this->station?->getCrsCode(),
+                'filter' => array_map(
+                    static fn(LocationWithCrs $location) => $location->getCrsCode()
+                    , $this->filter
+                ),
+                'inverse_filter' => array_map(
+                    static fn(LocationWithCrs $location) => $location->getCrsCode()
+                    , $this->inverseFilter
+                ),
+                'date' => $this->date?->__toString() ?? '',
+                'connecting_time' => substr($this->connectingTime?->format('c') ?? '', 0, 16),
+                'connecting_toc' => $this->connectingTime === null ? '' : $this->connectingToc ?? '',
+            ] + ($this->permanentOnly ? ['permanent_only' => '1'] : []) + $this->otherQueryArguments
+        );
     }
 
     public function getUrl(string $base_url) : string {
-        return $base_url . '?' . http_build_query($this->toArray());
+        $array = $this->toArray();
+        return rtrim(
+            sprintf(
+                "%s/%s%s%s?%s",
+                $base_url,
+                $array['station'],
+                implode(array_map(static fn(string $s) => "/$s", $array['filter'] ?? [])),
+                !empty($array['date']) ? "/$array[date]" : '',
+                http_build_query(array_diff_key($array, ['station' => null, 'date' => null, 'filter' => null]))
+            )
+            , '?'
+        );
     }
 
     public function getFixedLinkDepartureTime() : ?DateTimeImmutable {

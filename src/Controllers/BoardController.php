@@ -11,7 +11,7 @@ use Metroapps\NationalRailTimetable\Views\Components\Board;
 use Metroapps\NationalRailTimetable\Views\ViewMode;
 
 class BoardController extends ScheduleController {
-    public const URL = '/board.php';
+    public const URL = '/board';
 
     protected function getInnerView() : Board {
         $query = $this->getQuery();
