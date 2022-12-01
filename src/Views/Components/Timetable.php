@@ -8,6 +8,7 @@ use Miklcct\RailOpenTimetableData\Models\Date;
 use Miklcct\RailOpenTimetableData\Models\DepartureBoard;
 use Miklcct\RailOpenTimetableData\Models\LocationWithCrs;
 use Metroapps\NationalRailTimetable\Views\ViewMode;
+use Miklcct\RailOpenTimetableData\Models\Timetable as TimetableModel;
 use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 
@@ -39,5 +40,36 @@ class Timetable extends PhpTemplate {
 
     public function getViewMode() : ViewMode {
         return ViewMode::TIMETABLE;
+    }
+
+    /**
+     * @param TimetableModel $timetable
+     * @return LocationWithCrs[]
+     */
+    protected function getShownRows(TimetableModel $timetable) : array {
+        $filter_crs = array_map(
+            static fn(LocationWithCrs $filter_station) => $filter_station->getCrsCode()
+            , $this->query->filter
+        );
+        return array_filter(
+            $timetable->stations
+            , fn(LocationWithCrs $station, int $key) =>
+                $this->query->filter === []
+                || $key === 0
+                || in_array($station->getCrsCode(), $filter_crs, true)
+                || array_filter(
+                    $timetable->stations
+                    , fn(LocationWithCrs $other_station, int $other_key) =>
+                        ($this->query->arrivalMode ? $other_key < $key : $other_key > $key)
+                        && in_array($other_station->getCrsCode(), $filter_crs, true)
+                        && array_filter(
+                            $timetable->calls[$key]
+                            , static fn(string $uid_date) => isset($timetable->calls[$other_key][$uid_date])
+                            , ARRAY_FILTER_USE_KEY
+                        ) !== []
+                    , ARRAY_FILTER_USE_BOTH
+                ) !== []
+            , ARRAY_FILTER_USE_BOTH
+        );
     }
 }

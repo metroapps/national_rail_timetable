@@ -1,3 +1,6 @@
+## [2.1.1] - 2022-12-01
+* Don't show useless rows when multiple filters are given
+
 ## [2.1.0] - 2022-11-30
 * Short URLs
 * Index of all stations

@@ -42,31 +42,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
         };
         $via = $board->getDestinations(true);
         $destinations = $board->getDestinations();
-        $stations_from = 1;
-        $stations_to = count($stations) - 1;
-        if ($this->query->filter) {
-            if ($this->query->arrivalMode) {
-                while (
-                    !in_array(
-                        $stations[$stations_from]->getCrsCode()
-                        , array_map(static fn(LocationWithCrs $location) => $location->getCrsCode(), $this->query->filter)
-                        , true
-                    )
-                ) {
-                    ++$stations_from;
-                }
-            } else {
-                while (
-                    !in_array(
-                        $stations[$stations_to]->getCrsCode()
-                        , array_map(static fn(LocationWithCrs $location) => $location->getCrsCode(), $this->query->filter)
-                        , true
-                    )
-                ) {
-                    --$stations_to;
-                }
-            }
-        }
+        $shown_stations = $this->getShownRows($timetable);
 ?>
         <section>
             <h2>Trains
@@ -226,14 +202,14 @@ use function Miklcct\ThinPhpApp\Escaper\html;
         }
 ?>
 <?php
-        foreach (array_merge([0], range($stations_from, $stations_to)) as $i) {
+        foreach (array_keys($shown_stations) as $row_number => $i) {
             $station = $stations[$i];
             if ($i === 0 && $this->query->arrivalMode) {
 ?>
                     </thead>
                     <tfoot>
 <?php
-            } elseif ($i === $stations_from) {
+            } elseif ($row_number === 1) {
                 if ($this->query->arrivalMode) {
                     $show_platforms();
 ?>
