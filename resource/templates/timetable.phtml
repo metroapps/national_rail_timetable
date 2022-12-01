@@ -42,6 +42,22 @@ use function Miklcct\ThinPhpApp\Escaper\html;
         };
         $via = $board->getDestinations(true);
         $destinations = $board->getDestinations();
+        if ($destinations === []) {
+            // no destinations are found - probably because trains both run A-B-C and A-C-B
+            // load the last 2 locations where trains terminate
+            $first_index = $this->query->arrivalMode ? 1 : count($timetable->stations) - 1;
+            $index = $this->query->arrivalMode ? 2 : $first_index - 1;
+            while (
+                array_filter(
+                    $calls[$index]
+                    , static fn(string $uid_date) => !isset($calls[$first_index][$uid_date]),
+                    ARRAY_FILTER_USE_KEY
+                ) === []
+            ) {
+                $index += $this->query->arrivalMode ? 1 : -1;
+            }
+            $destinations = [$stations[$first_index], $stations[$index]];
+        }
         $shown_stations = $this->getShownRows($timetable);
 ?>
         <section>

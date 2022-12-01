@@ -1,3 +1,7 @@
+## [2.1.2] - 2022-12-01
+* Make up destinations from the timetable when there is no destination given
+from the departure board due to trains going beyond everywhere.
+
 ## [2.1.1] - 2022-12-01
 * Don't show useless rows when multiple filters are given
 
