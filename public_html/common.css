@@ -93,6 +93,10 @@ header :link {
     color: #e0e0ff;
 }
 
+header :visited {
+    color: #ffe0e0;
+}
+
 header > :link {
     text-decoration: none;
 }
