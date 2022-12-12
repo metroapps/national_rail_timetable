@@ -14,6 +14,7 @@ class Form extends PhpTemplate {
         , public readonly ViewMode $viewMode
         , public readonly ?BoardQuery $query
         , public readonly ?string $errorMessage
+        , public readonly bool $hidden = false
     ) {
         parent::__construct($streamFactory);
     }

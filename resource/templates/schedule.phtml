@@ -25,8 +25,14 @@ show_script_tags('schedule.ts');
     <body>
         <button id="go_to_top">🔝</button>
 <?php
-echo new Form($this->getStreamFactory(), $this->stations, $this->getViewMode(), $this->query ?? null, $this->errorMessage ?? null);
-
+echo new Form(
+    $this->getStreamFactory()
+    , $this->stations
+    , $this->getViewMode()
+    , $this->query
+    , null
+    , true
+);
 ?>
         <h1><?= html($this->getHeading()) ?></h1>
 <?php

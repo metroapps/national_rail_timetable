@@ -15,6 +15,14 @@ if ($this->errorMessage !== null) {
 }
 
 $query = $this->query?->toArray() ?? [];
+if ($this->hidden) {
+?>
+<details>
+    <summary>
+        Change your query
+    </summary>
+<?php
+}
 ?>
 <form action="/board.php" method="GET">
     <datalist id="stations">
@@ -117,4 +125,11 @@ if ($this->viewMode !== ViewMode::TIMETABLE) {
         <a class="help_link" href="/stations.php">Station index</a>
     </p>
 </form>
+<?php
+if ($this->hidden) {
+?>
+</details>
+<?php
+}
+?>
 <p id="permanent_warning">Warning: This website shows the scheduled train times without on-the-day alternations. Always check with <a href="https://www.nationalrail.co.uk/">National Rail Enquiries</a> on the day of travel to get up-to-date real time information.</p>

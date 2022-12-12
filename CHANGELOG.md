@@ -1,3 +1,6 @@
+## [2.2.0] - 2022-12-12
+* Hide query form when viewing departure board / timetable
+
 ## [2.1.2] - 2022-12-01
 * Make up destinations from the timetable when there is no destination given
 from the departure board due to trains going beyond everywhere.
