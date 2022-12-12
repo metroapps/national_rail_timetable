@@ -140,6 +140,10 @@ footer {
     font-size: x-small;
 }
 
+html {
+    background-color: #e0e0e0;
+}
+
 main table {
     margin: auto;
 }
