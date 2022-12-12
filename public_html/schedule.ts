@@ -47,6 +47,8 @@ $('#go_to_top').on('click', () => window.scrollTo(0, 0));
 
 const $query_form = $('#query_form');
 const $query_form_toggle = $('#query_form_toggle');
+const $label = $('label[for="query_form_toggle"]');
+$label.css('display', 'initial');
 
 $query_form.css('display', 'none');
 
@@ -54,6 +56,7 @@ function handle_query_form_toggle() {
     let toggle = $query_form_toggle[0];
     if (toggle instanceof HTMLInputElement) {
         $query_form.css('display', toggle.checked ? 'block' : 'none');
+        $label.text(toggle.checked ? 'Hide query box' : 'Change your query');
     }
 }
 handle_query_form_toggle();
