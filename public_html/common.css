@@ -131,6 +131,7 @@ label[for="query_form_toggle"] {
 
 main {
     padding: 0.5em;
+    flex-grow: 1;
 }
 
 footer {
@@ -140,8 +141,10 @@ footer {
     font-size: x-small;
 }
 
-html {
-    background-color: #e0e0e0;
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 main table {
