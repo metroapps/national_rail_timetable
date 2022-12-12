@@ -8,7 +8,7 @@ use Miklcct\ThinPhpApp\View\PhpTemplate;
 use Psr\Http\Message\StreamFactoryInterface;
 
 class Footer extends PhpTemplate {
-    public function __construct(StreamFactoryInterface $streamFactory, protected readonly Date $generated) {
+    public function __construct(StreamFactoryInterface $streamFactory, protected readonly ?Date $generated) {
         parent::__construct($streamFactory);
     }
 

@@ -6,9 +6,15 @@ use Metroapps\NationalRailTimetable\Views\Components\Footer;
 /** @var Footer $this */
 ?>
 <footer>
+<?php
+if ($this->generated !== null) {
+?>
     <p>
         Data updated: <?= $this->generated ?><br/>
     </p>
+<?php
+}
+?>
     <div id="logo_container">
         <a href="https://www.nationalrail.co.uk"><img id="nre_logo" src="/images/NRE_Powered_logo.png" alt="Powered by National Rail Enquiries" /></a>
     </div>

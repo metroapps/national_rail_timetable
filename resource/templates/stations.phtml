@@ -4,6 +4,7 @@ declare(strict_types=1);
 use Metroapps\NationalRailTimetable\Controllers\BoardQuery;
 use Metroapps\NationalRailTimetable\Controllers\TimetableController;
 use Metroapps\NationalRailTimetable\Views\AllStationsView;
+use Metroapps\NationalRailTimetable\Views\Components\Footer;
 use function Metroapps\NationalRailTimetable\Views\show_script_tags;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
@@ -20,25 +21,33 @@ show_script_tags('schedule_form.ts');
         <title>All stations</title>
     </head>
     <body>
-        <table>
-            <thead>
-                <tr>
-                    <th>Station</th><th>Departures</th><th>Arrivals</th>
-                </tr>
-            </thead>
-            <tbody>
+        <header>
+            <h1>All stations</h1>
+        </header>
+        <main>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Station</th><th>Departures</th><th>Arrivals</th>
+                    </tr>
+                </thead>
+                <tbody>
 <?php
 foreach ($this->stations as $station) {
 ?>
-                <tr>
-                    <td><?= html($station->name) ?></td>
-                    <td><a href="<?= html((new BoardQuery(false, $station))->getUrl(TimetableController::URL)) ?>">Departures</a></td>
-                    <td><a href="<?= html((new BoardQuery(true, $station))->getUrl(TimetableController::URL)) ?>">Arrivals</a></td>
-                </tr>
+                    <tr>
+                        <td><?= html($station->name) ?></td>
+                        <td><a href="<?= html((new BoardQuery(false, $station))->getUrl(TimetableController::URL)) ?>">Departures</a></td>
+                        <td><a href="<?= html((new BoardQuery(true, $station))->getUrl(TimetableController::URL)) ?>">Arrivals</a></td>
+                    </tr>
 <?php
 }
 ?>
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </main>
+<?php
+echo new Footer($this->getStreamFactory(), null);
+?>
     </body>
 </html>
