@@ -29,8 +29,7 @@ class ScheduleFormView extends ScheduleBaseView {
     }
 
     protected function getTitle() : string {
-        return ($this->viewMode === ViewMode::TIMETABLE ? 'Timetable' : 'Departure board')
-            . ' - ' . $this->siteName;
+        return $this->siteName;
     }
 
     public function getViewMode() : ViewMode {

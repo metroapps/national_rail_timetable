@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use Metroapps\NationalRailTimetable\Views\ViewMode;
 use Miklcct\RailOpenTimetableData\Models\Station;
 use Metroapps\NationalRailTimetable\Views\Components\FixedLink;
 use Metroapps\NationalRailTimetable\Views\Components\Footer;
@@ -24,6 +25,9 @@ show_script_tags('schedule.ts');
     </head>
     <body>
         <button id="go_to_top">🔝</button>
+        <header>
+            <?= $this->showHeading() ?>
+            <a href="<?= html($this->getViewMode()->getUrl()) ?>">Home</a>
 <?php
 echo new Form(
     $this->getStreamFactory()
@@ -34,8 +38,10 @@ echo new Form(
     , true
 );
 ?>
-        <h1><?= html($this->getHeading()) ?></h1>
-<?php
+        </header>
+        <main>
+            <p id="permanent_warning">Warning: This website shows the scheduled train times without on-the-day alternations. Always check with <a href="https://www.nationalrail.co.uk/">National Rail Enquiries</a> on the day of travel to get up-to-date real time information.</p>
+            <?php
 $query = $this->query;
 if (count($query->filter) === 1) {
 ?>
@@ -51,7 +57,7 @@ if ($query->permanentOnly) {
 $station = $query->station;
 if ($station instanceof Station) {
 ?>
-        <p>Minimum connection time is <span class="time"><?= html(
+        <p class="mct_paragraph">Minimum connection time is <span class="time"><?= html(
                     $station->minimumConnectionTime . ($station->minimumConnectionTime === 1 ? ' minute' : ' minutes')) ?></span><?= $station->tocConnectionTimes === [] ? '.' : ', with the exception of the following:' ?></p>
 <?php
     if ($station->tocConnectionTimes !== []) {
@@ -79,6 +85,9 @@ if ($station instanceof Station) {
     echo new FixedLink($this->getStreamFactory(), $this->fixedLinks, $this->query, $this->date, $this->getUrl());
 }
 echo $this->innerView;
+?>
+        </main>
+<?php
 echo new Footer($this->getStreamFactory(), $this->generated);
 ?>
     </body>

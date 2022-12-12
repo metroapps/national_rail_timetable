@@ -48,7 +48,7 @@ class ScheduleView extends PhpTemplate {
         return sprintf(
             '%s at %s %s %s %s%s - %s'
             , $this->query->arrivalMode ? 'Arrivals' : 'Departures'
-            , $this->query->station->name
+            , $this->query->station->name ?? ''
             , $this->query->filter !== []
                 ? ($this->query->arrivalMode ? 'from ' : 'to ') . implode(
                     ', '
@@ -67,33 +67,30 @@ class ScheduleView extends PhpTemplate {
         );
     }
 
-    protected function getHeading() : string {
+    protected function showHeading() : string {
         $location = $this->query->station;
         assert($location instanceof Location);
-        $result = ($this->query->arrivalMode ? 'Arrivals at ' : 'Departures at ') . $location->name;
-
         $filter = $this->query->filter;
-        if ($filter !== []) {
-            $result .= ' calling at ' . implode(
-                    ', '
-                    , array_map(
-                        static fn(Location $location) => $location->name
-                        , $filter
-                    )
-                );
-        }
         $inverse_filter = $this->query->inverseFilter;
-        if ($inverse_filter !== []) {
-            $result .= ' but not ' . implode(
-                    ', '
-                    , array_map(
-                        static fn(Location $location) => $location->name
-                        , $inverse_filter
-                    )
-                );
-        }
-        $result .= ' on ' . $this->date;
-        return $result;
+        return sprintf(
+            '<div class="heading"><h1>%s %s</h1><p>%s %s</p></div>'
+            , ($this->query->arrivalMode ? 'Arrivals at ' : 'Departures at ') . $location->name
+            , ' on ' . $this->date
+            , $filter !== [] ? 'calling at ' . implode(
+                ', '
+                , array_map(
+                    static fn(Location $location) => $location->name
+                    , $filter
+                )
+            ) : ''
+            , $inverse_filter !== [] ? 'but not ' . implode(
+                ', '
+                , array_map(
+                    static fn(Location $location) => $location->name
+                    , $inverse_filter
+                )
+            ) : ''
+        );
     }
 
     protected function getReverseDirectionLink() : string {

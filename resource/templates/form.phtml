@@ -17,14 +17,14 @@ if ($this->errorMessage !== null) {
 $query = $this->query?->toArray() ?? [];
 if ($this->hidden) {
 ?>
-<details>
-    <summary>
-        Change your query
-    </summary>
+<label for="query_form_toggle">
+    Change your query
+</label>
+<input id="query_form_toggle" type="checkbox"/>
 <?php
 }
 ?>
-<form action="/board.php" method="GET">
+<form action="/board.php" method="GET" id="query_form">
     <datalist id="stations">
 <?php
 foreach ($this->stations as $station) {
@@ -128,8 +128,7 @@ if ($this->viewMode !== ViewMode::TIMETABLE) {
 <?php
 if ($this->hidden) {
 ?>
-</details>
+</label>
 <?php
 }
 ?>
-<p id="permanent_warning">Warning: This website shows the scheduled train times without on-the-day alternations. Always check with <a href="https://www.nationalrail.co.uk/">National Rail Enquiries</a> on the day of travel to get up-to-date real time information.</p>

@@ -26,17 +26,23 @@ show_script_tags('service.ts');
         </title>
     </head>
     <body>
-        <h1><?= html($this->getTitle()) ?></h1>
-        <p><?= html(get_all_tocs()[$service->toc] ?? '') ?></p>
+        <header>
+            <div class="heading">
+                <h1><?= html($this->getTitle()) ?></h1>
+                <p><?= html(get_all_tocs()[$service->toc] ?? '') ?></p>
+            </div>
+            <a href="<?= html($this->fromViewMode->getUrl()) ?>">Home</a>
+        </header>
+        <main>
 <?php
 if ($this->permanentOnly) {
 ?>
-        <p id="permanent_warning">Warning: Permanent timetable instead of actual timetable shown</p>
+            <p id="permanent_warning">Warning: Permanent timetable instead of actual timetable shown</p>
 <?php
 }
 ?>
-        <div id="map"><div id="popup"></div></div>
-
+            <div id="map"><div id="popup"></div></div>
+        </main>
 <?php
 echo new AllPortions(
     $this->getStreamFactory()

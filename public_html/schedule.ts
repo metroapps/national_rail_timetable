@@ -43,4 +43,21 @@ $('.container').each(
     }
 )
 
-$('#go_to_top').click(() => window.scrollTo(0, 0));
+$('#go_to_top').on('click', () => window.scrollTo(0, 0));
+
+const $query_form = $('#query_form');
+const $query_form_toggle = $('#query_form_toggle');
+
+$query_form.css('display', 'none');
+
+function handle_query_form_toggle() {
+    let toggle = $query_form_toggle[0];
+    if (toggle instanceof HTMLInputElement) {
+        $query_form.css('display', toggle.checked ? 'block' : 'none');
+    }
+}
+handle_query_form_toggle();
+$query_form_toggle.on(
+    'change'
+    , handle_query_form_toggle
+);

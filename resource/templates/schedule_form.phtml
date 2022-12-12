@@ -20,11 +20,21 @@ show_script_tags('schedule_form.ts');
         <title><?= html($this->getTitle()) ?></title>
     </head>
     <body>
+        <header>
+            <div class="heading">
+                <h1><?= html($this->siteName) ?> - Train timetables and departure board</h1>
+            </div>
+
+
 <?php
 echo new Form($this->getStreamFactory(), $this->stations, $this->getViewMode(), $this->query ?? null, $this->errorMessage ?? null);
 ?>
-        <p>Click a station in the map to fill in the station field:</p>
-        <div id="map"></div>
+        </header>
+        <main>
+            <p id="permanent_warning">Warning: This website shows the scheduled train times without on-the-day alternations. Always check with <a href="https://www.nationalrail.co.uk/">National Rail Enquiries</a> on the day of travel to get up-to-date real time information.</p>
+            <p>Click a station in the map to fill in the station field:</p>
+            <div id="map"></div>
+        </main>
 <?php echo new Footer($this->getStreamFactory(), $this->generated); ?>
     </body>
 </html>

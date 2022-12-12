@@ -1,3 +1,6 @@
+## [2.3.0] - 2022-12-12
+* New style for the whole site
+
 ## [2.2.0] - 2022-12-12
 * Hide query form when viewing departure board / timetable
 
