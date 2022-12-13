@@ -24,18 +24,16 @@ class CacheMiddleware implements MiddlewareInterface {
         if ($this->query === null || $response->getStatusCode() !== Http::OK) {
             return $response;
         }
-        return $this->query->station === null
-            ? $response->withAddedHeader('Cache-Control', 'public')->withAddedHeader('Cache-Control', 'max-age=604800')
-            : ($this->query->date === null
-                ? $response->withAddedHeader('Cache-Control', 'public')->withAddedHeader(
-                    'Expires',
-                    str_replace(
-                        '+0000',
-                        'GMT',
-                        (new SafeDateTimeImmutable('tomorrow'))->setTimezone(new DateTimeZone('UTC'))->format('r')
-                    )
+        $response = $response->withAddedHeader('Cache-Control', 'public')->withAddedHeader('Cache-Control', 'max-age=7200');
+        return $this->query->station !== null && $this->query->date === null
+            ? $response->withAddedHeader('Cache-Control', 'public')->withAddedHeader(
+                'Expires',
+                str_replace(
+                    '+0000',
+                    'GMT',
+                    (new SafeDateTimeImmutable('tomorrow'))->setTimezone(new DateTimeZone('UTC'))->format('r')
                 )
-                : $response->withAddedHeader('Cache-Control', 'public')
-                    ->withAddedHeader('Cache-Control', 'max-age=21600'));
+            )
+            : $response;
     }
 }

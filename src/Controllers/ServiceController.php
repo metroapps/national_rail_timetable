@@ -73,10 +73,10 @@ class ServiceController extends Application {
                 , $service_repository->getGeneratedDate()
                 , $query['from'] ?? null === 'board' ? ViewMode::BOARD : ViewMode::TIMETABLE
             )
-        );
+        )->withAddedHeader('Cache-Control', ['public', 'max-age=7200']);
         return !empty($query['date'])
-            ? $response->withAddedHeader('Cache-Control', ['public', 'max-age=21600'])
-            : $response->withAddedHeader('Cache-Control', 'public')->withAddedHeader(
+            ? $response
+            : $response->withAddedHeader(
                 'Expires',
                 str_replace(
                     '+0000',
