@@ -7,13 +7,8 @@ use Metroapps\NationalRailTimetable\Views\ViewMode;
 use function Miklcct\RailOpenTimetableData\get_all_tocs;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
-/** @var Form $this */
-if ($this->errorMessage !== null) {
 ?>
-<p class="error"><?= html($this->errorMessage) ?></p>
 <?php
-}
-
 $query = $this->query?->toArray() ?? [];
 if ($this->hidden) {
 ?>
@@ -25,6 +20,14 @@ if ($this->hidden) {
 }
 ?>
 <form action="/board.php" method="GET" id="query_form">
+<?php
+/** @var Form $this */
+if ($this->errorMessage !== null) {
+?>
+    <p class="error"><?= html($this->errorMessage) ?></p>
+<?php
+}
+?>
     <datalist id="stations">
 <?php
 foreach ($this->stations as $station) {
@@ -125,10 +128,3 @@ if ($this->viewMode !== ViewMode::TIMETABLE) {
         <a class="help_link" href="/stations.php">Station index</a>
     </p>
 </form>
-<?php
-if ($this->hidden) {
-?>
-</label>
-<?php
-}
-?>
