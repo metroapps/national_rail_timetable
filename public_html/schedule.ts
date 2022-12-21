@@ -1,5 +1,6 @@
 import $ from 'jquery';
 import './schedule.css';
+import {initialise_form} from './form';
 
 const query = new URLSearchParams(window.location.search.substring(1));
 const mode = query.get('mode');
@@ -52,6 +53,7 @@ $label.css('display', 'initial');
 
 $query_form.css('display', 'none');
 
+initialise_form();
 function handle_query_form_toggle() {
     let toggle = $query_form_toggle[0];
     if (toggle instanceof HTMLInputElement) {

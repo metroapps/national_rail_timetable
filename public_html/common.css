@@ -155,3 +155,20 @@ main table {
 .mct_paragraph {
     text-align: center;
 }
+
+#current_location {
+    padding: 2px;
+    display: none;
+}
+
+.locate img {
+    display: block;
+    margin: auto;
+    width: 1em;
+    height: 1em;
+}
+
+.locate {
+    top: 6em;
+    left: .5em;
+}

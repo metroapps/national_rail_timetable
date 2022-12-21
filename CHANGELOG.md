@@ -1,3 +1,6 @@
+## [2.4.0] - 2022-12-21
+* Add geolocation button into maps and query form
+
 ## [2.3.0] - 2022-12-12
 * New style for the whole site
 

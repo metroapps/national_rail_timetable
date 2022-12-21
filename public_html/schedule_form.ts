@@ -1,9 +1,11 @@
 import $ from 'jquery';
 import {Feature} from 'ol';
 import {Point} from 'ol/geom';
+import {initialise_form} from './form';
 import {initialise_map, osgb36_to_web_mercator, source} from './map';
 import './schedule.css';
 
+initialise_form();
 const map_element = document.getElementById('map');
 if (map_element) {
     const map = initialise_map(map_element);

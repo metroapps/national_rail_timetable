@@ -1,0 +1,6 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Home page" type="JavascriptDebugType" uri="http://gbtt.localhost/" useFirstLineBreakpoints="true">
+    <mapping url="http://http:" local-file="$PROJECT_DIR$/public_html" />
+    <method v="2" />
+  </configuration>
+</component>
