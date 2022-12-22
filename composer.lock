@@ -291,43 +291,47 @@
         },
         {
             "name": "guzzlehttp/psr7",
-            "version": "1.9.0",
+            "version": "2.4.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/psr7.git",
-                "reference": "e98e3e6d4f86621a9b75f623996e6bbdeb4b9318"
+                "reference": "67c26b443f348a51926030c83481b85718457d3d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/psr7/zipball/e98e3e6d4f86621a9b75f623996e6bbdeb4b9318",
-                "reference": "e98e3e6d4f86621a9b75f623996e6bbdeb4b9318",
+                "url": "https://api.github.com/repos/guzzle/psr7/zipball/67c26b443f348a51926030c83481b85718457d3d",
+                "reference": "67c26b443f348a51926030c83481b85718457d3d",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.4.0",
-                "psr/http-message": "~1.0",
-                "ralouphie/getallheaders": "^2.0.5 || ^3.0.0"
+                "php": "^7.2.5 || ^8.0",
+                "psr/http-factory": "^1.0",
+                "psr/http-message": "^1.0",
+                "ralouphie/getallheaders": "^3.0"
             },
             "provide": {
+                "psr/http-factory-implementation": "1.0",
                 "psr/http-message-implementation": "1.0"
             },
             "require-dev": {
-                "ext-zlib": "*",
-                "phpunit/phpunit": "~4.8.36 || ^5.7.27 || ^6.5.14 || ^7.5.20 || ^8.5.8 || ^9.3.10"
+                "bamarni/composer-bin-plugin": "^1.8.1",
+                "http-interop/http-factory-tests": "^0.9",
+                "phpunit/phpunit": "^8.5.29 || ^9.5.23"
             },
             "suggest": {
                 "laminas/laminas-httphandlerrunner": "Emit PSR-7 responses"
             },
             "type": "library",
             "extra": {
+                "bamarni-bin": {
+                    "bin-links": true,
+                    "forward-command": false
+                },
                 "branch-alias": {
-                    "dev-master": "1.9-dev"
+                    "dev-master": "2.4-dev"
                 }
             },
             "autoload": {
-                "files": [
-                    "src/functions_include.php"
-                ],
                 "psr-4": {
                     "GuzzleHttp\\Psr7\\": "src/"
                 }
@@ -366,6 +370,11 @@
                     "name": "Tobias Schultze",
                     "email": "webmaster@tubo-world.de",
                     "homepage": "https://github.com/Tobion"
+                },
+                {
+                    "name": "Márk Sági-Kazár",
+                    "email": "mark.sagikazar@gmail.com",
+                    "homepage": "https://sagikazarmark.hu"
                 }
             ],
             "description": "PSR-7 message implementation that also provides common utility methods",
@@ -381,7 +390,7 @@
             ],
             "support": {
                 "issues": "https://github.com/guzzle/psr7/issues",
-                "source": "https://github.com/guzzle/psr7/tree/1.9.0"
+                "source": "https://github.com/guzzle/psr7/tree/2.4.3"
             },
             "funding": [
                 {
@@ -397,7 +406,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-06-20T21:43:03+00:00"
+            "time": "2022-10-26T14:07:24+00:00"
         },
         {
             "name": "http-interop/http-factory-guzzle",
@@ -623,16 +632,16 @@
         },
         {
             "name": "miklcct/rail_open_timetable_data",
-            "version": "1.2.4",
+            "version": "1.2.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/miklcct/rail_open_timetable_data.git",
-                "reference": "0d66e9af2bfac93c649d4c313144bd52e2b635c6"
+                "reference": "300af82825bfa9eb896b207b5fa26740b790cecc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/miklcct/rail_open_timetable_data/zipball/0d66e9af2bfac93c649d4c313144bd52e2b635c6",
-                "reference": "0d66e9af2bfac93c649d4c313144bd52e2b635c6",
+                "url": "https://api.github.com/repos/miklcct/rail_open_timetable_data/zipball/300af82825bfa9eb896b207b5fa26740b790cecc",
+                "reference": "300af82825bfa9eb896b207b5fa26740b790cecc",
                 "shasum": ""
             },
             "require": {
@@ -663,22 +672,22 @@
             "description": "Library for handling rail open timetable data",
             "support": {
                 "issues": "https://github.com/miklcct/rail_open_timetable_data/issues",
-                "source": "https://github.com/miklcct/rail_open_timetable_data/tree/1.2.4"
+                "source": "https://github.com/miklcct/rail_open_timetable_data/tree/1.2.5"
             },
-            "time": "2022-12-20T00:43:00+00:00"
+            "time": "2022-12-22T00:08:35+00:00"
         },
         {
             "name": "miklcct/thin_php_app",
-            "version": "0.6.1",
+            "version": "0.6.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/miklcct/thin_php_app.git",
-                "reference": "6bd84f0ea867d395d36ff5404a15c3d29522437c"
+                "reference": "bcf047a55a539bd0833d69cc882538b2d739038b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/miklcct/thin_php_app/zipball/6bd84f0ea867d395d36ff5404a15c3d29522437c",
-                "reference": "6bd84f0ea867d395d36ff5404a15c3d29522437c",
+                "url": "https://api.github.com/repos/miklcct/thin_php_app/zipball/bcf047a55a539bd0833d69cc882538b2d739038b",
+                "reference": "bcf047a55a539bd0833d69cc882538b2d739038b",
                 "shasum": ""
             },
             "require": {
@@ -688,7 +697,7 @@
                 "psr/http-factory": "^1.0",
                 "psr/http-server-handler": "^1.0",
                 "psr/http-server-middleware": "^1.0",
-                "ralouphie/getallheaders": "^2.0",
+                "ralouphie/getallheaders": "^2.0|^3.0",
                 "shrikeh/teapot": "^2.3",
                 "symfony/polyfill-php73": "^1.13"
             },
@@ -732,9 +741,9 @@
             ],
             "support": {
                 "issues": "https://github.com/miklcct/thin_php_app/issues",
-                "source": "https://github.com/miklcct/thin_php_app/tree/0.6.1"
+                "source": "https://github.com/miklcct/thin_php_app/tree/0.6.2"
             },
-            "time": "2021-10-05T16:02:08+00:00"
+            "time": "2022-12-21T12:00:53+00:00"
         },
         {
             "name": "mongodb/mongodb",
@@ -1453,24 +1462,24 @@
         },
         {
             "name": "ralouphie/getallheaders",
-            "version": "2.0.5",
+            "version": "3.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ralouphie/getallheaders.git",
-                "reference": "5601c8a83fbba7ef674a7369456d12f1e0d0eafa"
+                "reference": "120b605dfeb996808c31b6477290a714d356e822"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ralouphie/getallheaders/zipball/5601c8a83fbba7ef674a7369456d12f1e0d0eafa",
-                "reference": "5601c8a83fbba7ef674a7369456d12f1e0d0eafa",
+                "url": "https://api.github.com/repos/ralouphie/getallheaders/zipball/120b605dfeb996808c31b6477290a714d356e822",
+                "reference": "120b605dfeb996808c31b6477290a714d356e822",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3"
+                "php": ">=5.6"
             },
             "require-dev": {
-                "phpunit/phpunit": "~3.7.0",
-                "satooshi/php-coveralls": ">=1.0"
+                "php-coveralls/php-coveralls": "^2.1",
+                "phpunit/phpunit": "^5 || ^6.5"
             },
             "type": "library",
             "autoload": {
@@ -1491,9 +1500,9 @@
             "description": "A polyfill for getallheaders.",
             "support": {
                 "issues": "https://github.com/ralouphie/getallheaders/issues",
-                "source": "https://github.com/ralouphie/getallheaders/tree/2.0.5"
+                "source": "https://github.com/ralouphie/getallheaders/tree/develop"
             },
-            "time": "2016-02-11T07:05:27+00:00"
+            "time": "2019-03-08T08:55:37+00:00"
         },
         {
             "name": "shrikeh/teapot",
@@ -2307,12 +2316,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Roave/SecurityAdvisories.git",
-                "reference": "ae56b0972de9f8ab3a86e47aac977ce048ecdaeb"
+                "reference": "58046a3fc3555eda6567a2bdae7195be6aa9babe"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/ae56b0972de9f8ab3a86e47aac977ce048ecdaeb",
-                "reference": "ae56b0972de9f8ab3a86e47aac977ce048ecdaeb",
+                "url": "https://api.github.com/repos/Roave/SecurityAdvisories/zipball/58046a3fc3555eda6567a2bdae7195be6aa9babe",
+                "reference": "58046a3fc3555eda6567a2bdae7195be6aa9babe",
                 "shasum": ""
             },
             "conflict": {
@@ -2779,7 +2788,7 @@
                 "yiisoft/yii2-bootstrap": "<2.0.4",
                 "yiisoft/yii2-dev": "<2.0.43",
                 "yiisoft/yii2-elasticsearch": "<2.0.5",
-                "yiisoft/yii2-gii": "<2.0.4",
+                "yiisoft/yii2-gii": "<=2.2.4",
                 "yiisoft/yii2-jui": "<2.0.4",
                 "yiisoft/yii2-redis": "<2.0.8",
                 "yikesinc/yikes-inc-easy-mailchimp-extender": "<6.8.6",
@@ -2846,7 +2855,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-12-19T22:05:01+00:00"
+            "time": "2022-12-21T06:05:00+00:00"
         }
     ],
     "aliases": [],
