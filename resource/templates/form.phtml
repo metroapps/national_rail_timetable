@@ -35,7 +35,7 @@ foreach ($this->stations as $station) {
         ? sprintf('data-easting="%d" data-northing="%d"', $station->easting, $station->northing)
         : '';
 ?>
-        <option <?= $easting_northing ?> value="<?= html($station->getCrsCode()) ?>"><?= html($station->name) ?></option>
+        <option <?= $easting_northing ?> data-name="<?= html($station->name) ?>" value="<?= html($station->getCrsCode()) ?>"><?= html($station->name) ?></option>
 <?php
 }
 ?>

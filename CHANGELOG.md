@@ -1,3 +1,6 @@
+## [2.5.0] - 2023-01-06
+* Order station list by distance after geolocation in the form
+
 ## [2.4.0] - 2022-12-21
 * Add geolocation button into maps and query form
 
