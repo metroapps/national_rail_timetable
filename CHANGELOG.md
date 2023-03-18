@@ -1,3 +1,6 @@
+## [2.5.1] - 2023-03-18
+* Don't show a via station in the timetable if it is the destination
+
 ## [2.5.0] - 2023-01-06
 * Order station list by distance after geolocation in the form
 

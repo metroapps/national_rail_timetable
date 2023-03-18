@@ -40,8 +40,17 @@ use function Miklcct\ThinPhpApp\Escaper\html;
             }
             return $colspan;
         };
-        $via = $board->getDestinations(true);
         $destinations = $board->getDestinations();
+        // if the via point is a destination don't show it
+        $via = array_filter(
+            $board->getDestinations(true)
+            , static fn(LocationWithCrs $station) =>
+                !in_array(
+                    $station->getCrsCode()
+                    , array_map(static fn(LocationWithCrs $destination) => $destination->getCrsCode(), $destinations)
+                    , true
+                )
+        );
         if ($destinations === []) {
             // no destinations are found - probably because trains both run A-B-C and A-C-B
             // load the last 2 locations where trains terminate
