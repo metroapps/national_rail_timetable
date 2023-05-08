@@ -41,8 +41,8 @@ if (!empty($this->fixedLinks)) {
 <?php
     foreach ($this->fixedLinks as $link) {
         if ($fixed_link_time) {
-            $kgx_hack = $station->crsCode === 'KGX' && $link->destination->crsCode === 'STP'
-                || $station->crsCode === 'STP' && $link->destination->crsCode === 'KGX';
+            $kgx_hack = $station->crsCode === 'KGX' && in_array('STP', [$link->destination->crsCode, $link->origin->crsCode], true)
+                || $station->crsCode === 'STP' && in_array('KGX', [$link->destination->crsCode, $link->origin->crsCode], true);
             $departure_time = $kgx_hack && $query->connectingTime !== null
                 ? $query->arrivalMode ? $query->connectingTime->sub(new DateInterval('PT5M')) : $query->connectingTime->add(new DateInterval('PT5M'))
                 : $fixed_link_time;
