@@ -2,6 +2,10 @@
 
 # set environment variables EMAIL and PASSWORD to use this script
 
+cleanup() {
+    rm -fr "$TMPDIR"
+}
+
 set -e
 DIR="$(dirname "$(realpath "$0")")"
 token=$(curl -f --location \
@@ -11,10 +15,10 @@ token=$(curl -f --location \
      --data-urlencode "username=$EMAIL" \
      --data-urlencode "password=$PASSWORD" | jq -r .token)
 TMPDIR="$(mktemp -d)"
+trap cleanup EXIT
 pushd "$TMPDIR"
 curl -f --location -H "X-Auth-Token: $token" https://opendata.nationalrail.co.uk/api/staticfeeds/3.0/timetable -o timetables.zip
 unzip timetables.zip
 "$DIR"/load_data.php .
 popd
-rm -fr "$TMPDIR"
 "$DIR"/cache_boards.bash
