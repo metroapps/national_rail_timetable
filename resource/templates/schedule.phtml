@@ -20,12 +20,13 @@ use function Miklcct\ThinPhpApp\Escaper\html;
         <link rel="stylesheet" href="/common.css" />
 <?php
 show_script_tags('schedule.ts');
+$query = $this->query;
 ?>
         <title><?= html($this->getTitle()) ?></title>
     </head>
     <body>
         <button id="go_to_top">🔝</button>
-        <header>
+        <header class="<?= html($query->permanentOnly ? 'permanent' : '') ?>">
             <?= $this->showHeading() ?>
             <a href="<?= html($this->getViewMode()->getUrl()) ?>">Home</a>
 <?php
@@ -42,7 +43,6 @@ echo new Form(
         <main>
             <p id="permanent_warning">Warning: This website shows the scheduled train times without on-the-day alternations. Always check with <a href="https://www.nationalrail.co.uk/">National Rail Enquiries</a> on the day of travel to get up-to-date real time information.</p>
             <?php
-$query = $this->query;
 if (count($query->filter) === 1) {
 ?>
 

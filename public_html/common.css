@@ -89,6 +89,10 @@ header {
     flex-wrap: wrap;
 }
 
+header.permanent {
+    background-color: #400000;
+}
+
 header :link {
     color: #e0e0ff;
 }

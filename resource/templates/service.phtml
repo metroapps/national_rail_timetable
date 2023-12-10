@@ -26,7 +26,7 @@ show_script_tags('service.ts');
         </title>
     </head>
     <body>
-        <header>
+        <header class="<?= html($this->permanentOnly ? 'permanent' : '') ?>">
             <div class="heading">
                 <h1><?= html($this->getTitle()) ?></h1>
                 <p><?= html(get_all_tocs()[$service->toc] ?? '') ?></p>
