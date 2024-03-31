@@ -20,7 +20,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
 use function Safe\json_decode;
 
 function show_time(DateTimeImmutable $timestamp, Date $base, string $link = null) : string {
-    $interval = $base->toDateTimeImmutable()->diff($timestamp->setTime(0, 0));
+    $interval = $base->toDateTimeImmutable(null, $timestamp->getTimezone())->diff($timestamp->setTime(0, 0));
     $day_offset = $interval->days * ($interval->invert ? -1 : 1);
     $time_string = $timestamp->format('H:i') 
         . ((int)$timestamp->format('s') > 30 ? '½' : '');
