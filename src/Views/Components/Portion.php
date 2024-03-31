@@ -59,11 +59,11 @@ class Portion extends PhpTemplate {
             return '';
         }
         return show_time(
-            $this->datedService->date->toDateTimeImmutable($time)
+            $this->datedService->date->toDateTimeImmutable($time, $this->datedService->getAbsoluteTimeZone())
             , $this->dateFromOrigin
             , $point->location instanceof LocationWithCrs
             ? $this->getBoardLink(
-                $this->datedService->date->toDateTimeImmutable($time)
+                $this->datedService->date->toDateTimeImmutable($time, $this->datedService->getAbsoluteTimeZone())
                 , $point->location
                 , $departure_to_arrival_board
             )
