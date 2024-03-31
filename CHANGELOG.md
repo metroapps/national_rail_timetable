@@ -1,3 +1,7 @@
+## [2.5.2] - 2024-03-31
+* Fix DST change causing departure boards in wrong order
+  * Assume that trains always stick to the clock at departure
+
 ## [2.5.1] - 2023-03-18
 * Don't show a via station in the timetable if it is the destination
 
