@@ -78,7 +78,7 @@ for ($i = 0; $i < 5; ++$i) {
             <input type="date"
                    name="date"
                    value="<?= html($query['date'] ?? null) ?>"
-                   min="<?= html((new DateTimeImmutable('-7 days'))->format('Y-m-d')) ?>"
+                   min="<?= html((new DateTimeImmutable('today'))->format('Y-m-d')) ?>"
                    max="<?= html((new DateTimeImmutable('+84 days'))->format('Y-m-d')) ?>"
             />
         </label>
@@ -89,7 +89,7 @@ for ($i = 0; $i < 5; ++$i) {
                 type="datetime-local"
                 name="connecting_time"
                 value="<?= html($query['connecting_time'] ?? null) ?>"
-                min="<?= html(substr((new DateTimeImmutable('today -7 days'))->format('c'), 0, 16)) ?>"
+                min="<?= html(substr((new DateTimeImmutable('today'))->format('c'), 0, 16)) ?>"
                 max="<?= html(substr((new DateTimeImmutable('today +85 days'))->format('c'), 0, 16)) ?>"
             />
         </label>
