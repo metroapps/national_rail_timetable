@@ -23,6 +23,7 @@ use Miklcct\ThinPhpApp\View\View;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Teapot\HttpException;
 use Teapot\StatusCode\Http;
 use Teapot\StatusCode\WebDAV;
 use function array_map;
@@ -85,6 +86,9 @@ abstract class ScheduleController extends Application {
 
 
         $date = $this->query->date ?? Date::today();
+        if ($date->toDateTimeImmutable()->getTimestamp() < time() - 7 * 24 * 60 * 60) {
+            throw new HttpException('The timetable more than a week ago is no longer available.', Http::GONE);
+        }
         $service_repository = ($this->serviceRepositoryFactory)($this->query->permanentOnly);
         return ($this->viewResponseFactory)(
             new ScheduleView(
