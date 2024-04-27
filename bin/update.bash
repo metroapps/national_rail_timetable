@@ -19,6 +19,6 @@ trap cleanup EXIT
 pushd "$TMPDIR"
 curl -f --location -H "X-Auth-Token: $token" https://opendata.nationalrail.co.uk/api/staticfeeds/3.0/timetable -o timetables.zip
 unzip timetables.zip
-"$DIR"/load_data.php .
+php "$DIR"/load_data.php .
 popd
 "$DIR"/cache_boards.bash
