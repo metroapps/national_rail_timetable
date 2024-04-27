@@ -28,7 +28,6 @@
       <path value="$PROJECT_DIR$/vendor/shrikeh/teapot" />
       <path value="$PROJECT_DIR$/vendor/mongodb/mongodb" />
       <path value="$PROJECT_DIR$/vendor/miklcct/thin_php_app" />
-      <path value="$PROJECT_DIR$/vendor/miklcct/rail_open_timetable_data" />
       <path value="$PROJECT_DIR$/vendor/laravel/serializable-closure" />
       <path value="$PROJECT_DIR$/vendor/teapot/status-code" />
       <path value="$PROJECT_DIR$/vendor/php-di/phpdoc-reader" />
@@ -47,6 +46,7 @@
       <path value="$PROJECT_DIR$/vendor/psr/cache" />
       <path value="$PROJECT_DIR$/vendor/composer" />
       <path value="$PROJECT_DIR$/vendor/symfony/polyfill-php81" />
+      <path value="$PROJECT_DIR$/vendor/miklcct/rail_open_timetable_data" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.1" />

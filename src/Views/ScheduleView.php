@@ -19,6 +19,7 @@ use function array_map;
 use function assert;
 use function count;
 use function implode;
+use function Miklcct\ThinPhpApp\Escaper\html;
 use function sprintf;
 
 class ScheduleView extends PhpTemplate {
@@ -46,8 +47,9 @@ class ScheduleView extends PhpTemplate {
 
     protected function getTitle() : string {
         return sprintf(
-            '%s at %s %s %s %s%s - %s'
+            '%s %s at %s %s %s %s%s - %s'
             , $this->query->arrivalMode ? 'Arrivals' : 'Departures'
+            , strtolower($this->getViewMode()->name)
             , $this->query->station->name ?? ''
             , $this->query->filter !== []
                 ? ($this->query->arrivalMode ? 'from ' : 'to ') . implode(
@@ -73,8 +75,10 @@ class ScheduleView extends PhpTemplate {
         $filter = $this->query->filter;
         $inverse_filter = $this->query->inverseFilter;
         return sprintf(
-            '<div class="heading"><h1>%s %s</h1><p>%s %s</p></div>'
-            , ($this->query->arrivalMode ? 'Arrivals at ' : 'Departures at ') . $location->name
+            '<div class="heading"><h1>%s %s at %s</h1><p>%s %s</p></div>'
+            , $this->query->arrivalMode ? 'Arrivals' : 'Departures'
+            , strtolower($this->getViewMode()->name)
+            , html($location->name)
             , ' on ' . $this->date
             , $filter !== [] ? 'calling at ' . implode(
                 ', '
