@@ -96,6 +96,20 @@ use function Miklcct\ThinPhpApp\Escaper\html;
 ?>
                         </tr>
                         <tr class="info">
+                            <td class="station_column">Train ID</td>
+<?php
+        $i = 0;
+        while (isset($calls[0][$i])) {
+            $call = $calls[0][$i];
+            $colspan = $get_colspan($calls[0], $i);
+            $i += $colspan;
+?>
+                            <td colspan=<?= $colspan ?>><?= html($call->serviceProperty->identity) ?></td>
+<?php
+        }
+?>
+                        </tr>
+                        <tr class="info">
                             <td class="station_column">Headcode</td>
 <?php
         $i = 0;
