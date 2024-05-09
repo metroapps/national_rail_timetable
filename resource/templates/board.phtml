@@ -9,8 +9,10 @@ use Metroapps\NationalRailTimetable\Views\Components\Board;
 use Metroapps\NationalRailTimetable\Views\ServiceView;
 use Metroapps\NationalRailTimetable\Views\ViewMode;
 use function Metroapps\NationalRailTimetable\Views\get_arrival_link;
+use function Metroapps\NationalRailTimetable\Views\get_header_classes;
 use function Metroapps\NationalRailTimetable\Views\show_activities;
 use function Metroapps\NationalRailTimetable\Views\show_facilities;
+use function Metroapps\NationalRailTimetable\Views\show_short_term_planning;
 use function Metroapps\NationalRailTimetable\Views\show_time;
 use function Metroapps\NationalRailTimetable\Views\show_toc;
 use function Miklcct\ThinPhpApp\Escaper\html;
@@ -35,6 +37,7 @@ if ($query->arrivalMode) {
 }
 ?>
         <tr>
+            <th>STP</th>
             <th>Time</th>
             <th></th>
             <th>Pl.</th>
@@ -48,11 +51,11 @@ if ($query->arrivalMode) {
 <?php
 if ($query->arrivalMode) {
 ?>
-        <tr><th colspan="7"><a href="<?= $this->getDayOffsetLink(-1) ?>">Previous day</a></th></tr>
+        <tr><th colspan="8"><a href="<?= $this->getDayOffsetLink(-1) ?>">Previous day</a></th></tr>
 <?php
 } else {
 ?>
-        <tr><th colspan="7"><a href="<?= $this->getDayOffsetLink(1) ?>">Next day</a></th></tr>
+        <tr><th colspan="8"><a href="<?= $this->getDayOffsetLink(1) ?>">Next day</a></th></tr>
 <?php
 }
 ?>
@@ -80,7 +83,8 @@ foreach ($query->arrivalMode ? array_reverse($this->board->calls, true) : $this-
     $whole_train_overtaken = !in_array(false, $overtaken_portions, true);
     $day_offset = $timestamp->setTime(0, 0)->diff($this->date->toDateTimeImmutable())->days;
 ?>
-        <tr class="<?= $h % 2 ? 'odd' : 'even'?>" data-timestamp="<?= html($timestamp->getTimestamp()) ?>">
+        <tr class="<?= implode(' ', [$h % 2 ? 'odd' : 'even', get_header_classes($service_call)]) ?>" data-timestamp="<?= html($timestamp->getTimestamp()) ?>">
+            <td class="<?= $whole_train_overtaken ? 'overtaken' : ''?>" rowspan="<?= html($portions_count) ?>"><?= show_short_term_planning($service_call) ?></td>
             <td class="time <?=
             $query->connectingTime === null || !$station instanceof Station
                 ? ''

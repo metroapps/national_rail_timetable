@@ -123,6 +123,6 @@ p {
     font-size: x-small;
 }
 
-.stp {
-    background-color: #ffffc0;
+tbody tr:not(.odd):nth-child(even) .stp:not(.valid_connection):not(.invalid_connection), tbody tr.even .stp:not(.valid_connection):not(.invalid_connection) {
+    background-color: #ffffe0;
 }

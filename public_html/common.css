@@ -32,6 +32,10 @@
     background-color: #ffc0c0;
 }
 
+.stp:not(.valid_connection):not(.invalid_connection) {
+    background-color: #ffffc0;
+}
+
 .error {
     color: red;
     font-weight: bold;

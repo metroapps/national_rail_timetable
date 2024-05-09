@@ -10,6 +10,7 @@ use Miklcct\RailOpenTimetableData\Enums\Activity;
 use Miklcct\RailOpenTimetableData\Enums\Catering;
 use Miklcct\RailOpenTimetableData\Enums\Mode;
 use Miklcct\RailOpenTimetableData\Enums\Reservation;
+use Miklcct\RailOpenTimetableData\Enums\ShortTermPlanning;
 use Miklcct\RailOpenTimetableData\Models\Date;
 use Miklcct\RailOpenTimetableData\Models\LocationWithCrs;
 use Miklcct\RailOpenTimetableData\Models\ServiceCall;
@@ -90,6 +91,26 @@ function show_toc(string $toc) : string {
     return sprintf('<abbr title="%s">%s</abbr>', html(get_all_tocs()[$toc] ?? ''), html($toc));
 }
 
+function show_short_term_planning(ServiceCall $call) : string {
+    $description = html(
+        match ($call->shortTermPlanning) {
+            ShortTermPlanning::PERMANENT => '',
+            ShortTermPlanning::NEW => 'Short Term Planned',
+            ShortTermPlanning::OVERLAY => 'Overlay',
+            ShortTermPlanning::CANCEL => 'Cancellation',
+        }
+    );
+    $abbreviation = html(
+        match ($call->shortTermPlanning) {
+            ShortTermPlanning::PERMANENT => '',
+            ShortTermPlanning::NEW => 'STP',
+            ShortTermPlanning::OVERLAY => 'VAR',
+            ShortTermPlanning::CANCEL => 'CAN',
+        }
+    );
+    return "<abbr title=\"$description\">$abbreviation</abbr>";
+}
+
 function show_facilities(ServiceCall $service_call) : string {
     return show_facility_icon($service_call->mode) . show_service_property_icons($service_call->serviceProperty);
 }
@@ -146,4 +167,8 @@ function show_service_property_icons(ServiceProperty $service_property) : string
         $result .= '<img class="facility" src="/images/sleeper.png" alt="sleeper" title="Sleeper available" />';
     }
     return $result;
+}
+
+function get_header_classes(ServiceCall $call) {
+    return $call->shortTermPlanning !== ShortTermPlanning::PERMANENT ? 'stp' : '';
 }

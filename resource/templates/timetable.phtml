@@ -13,15 +13,13 @@ use Metroapps\NationalRailTimetable\Views\Components\Timetable as TimetableView;
 use Metroapps\NationalRailTimetable\Views\ServiceView;
 use Metroapps\NationalRailTimetable\Views\ViewMode;
 use function Metroapps\NationalRailTimetable\Views\get_arrival_link;
+use function Metroapps\NationalRailTimetable\Views\get_header_classes;
 use function Metroapps\NationalRailTimetable\Views\show_activities;
 use function Metroapps\NationalRailTimetable\Views\show_facilities;
+use function Metroapps\NationalRailTimetable\Views\show_short_term_planning;
 use function Metroapps\NationalRailTimetable\Views\show_time;
 use function Metroapps\NationalRailTimetable\Views\show_toc;
 use function Miklcct\ThinPhpApp\Escaper\html;
-
-function get_header_classes(ServiceCall $call) {
-    return $call->shortTermPlanning !== ShortTermPlanning::PERMANENT ? 'stp' : '';
-}
 
 /**
  * @param ServiceCall[] $array
@@ -116,23 +114,7 @@ function get_colspan(array $array, int $i) {
                                 $colspan = get_colspan($calls[0], $i);
                                 ?>
                                 <td class="<?= get_header_classes($call) ?>" colspan=<?= $colspan ?> data-timestamp="<?= html($calls[0][$i]->timestamp->getTimestamp()) ?>">
-                                    <abbr title="<?= html(
-                                        match ($call->shortTermPlanning) {
-                                            ShortTermPlanning::PERMANENT => '',
-                                            ShortTermPlanning::NEW => 'Short Term Planned',
-                                            ShortTermPlanning::OVERLAY => 'Overlay',
-                                            ShortTermPlanning::CANCEL => 'Cancellation',
-                                        }
-                                    ) ?>">
-                                        <?= html(
-                                            match ($call->shortTermPlanning) {
-                                                ShortTermPlanning::PERMANENT => '',
-                                                ShortTermPlanning::NEW => 'STP',
-                                                ShortTermPlanning::OVERLAY => 'VAR',
-                                                ShortTermPlanning::CANCEL => 'CAN',
-                                            }
-                                        ) ?>
-                                    </abbr>
+                                    <?= show_short_term_planning($call) ?>
                                 </td>
                                 <?php
                                 $i += $colspan;
@@ -324,9 +306,11 @@ function get_colspan(array $array, int $i) {
 <?php
             $j = 0;
             while (isset($calls[0][$j])) {
-                $connection_class = $this->query->connectingTime !== null
+                $connection_class =
+                    $this->query->connectingTime !== null
                     ? $calls[0][$j]->isValidConnection($this->query->connectingTime, $this->query->connectingToc)
-                    ? 'valid_connection' : 'invalid_connection'
+                        ? 'valid_connection'
+                        : 'invalid_connection'
                     : '';
                 if (
                     $i !== 0
@@ -337,6 +321,9 @@ function get_colspan(array $array, int $i) {
                     )
                 ) {
                     $connection_class .= ' overtaken';
+                }
+                if ($calls[0][$j]->shortTermPlanning !== ShortTermPlanning::PERMANENT) {
+                    $connection_class .= ' stp';
                 }
                 if (!isset($calls[$i][$j])) {
 ?>
