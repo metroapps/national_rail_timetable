@@ -49,7 +49,7 @@ function get_colspan(array $array, int $i) {
         $stations = $timetable->stations;
         /** @var ServiceCallWithDestination[][] $calls */
         $calls = $timetable->calls;
-        
+
         $destinations = $board->getDestinations();
         // if the via point is a destination don't show it
         $via = array_filter(
@@ -120,6 +120,20 @@ function get_colspan(array $array, int $i) {
                                 $i += $colspan;
                             }
                             ?>
+                        </tr>
+                        <tr class="info">
+                            <td class="station_column">Train ID</td>
+<?php
+        $i = 0;
+        while (isset($calls[0][$i])) {
+            $call = $calls[0][$i];
+            $colspan = get_colspan($calls[0], $i);
+            $i += $colspan;
+?>
+                            <td class="<?= get_header_classes($call) ?>" colspan=<?= $colspan ?>><?= html($call->serviceProperty->identity) ?></td>
+<?php
+        }
+?>
                         </tr>
                         <tr class="info">
                             <td class="station_column">Headcode</td>
