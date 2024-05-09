@@ -86,10 +86,11 @@ abstract class ScheduleController extends Application {
 
 
         $date = $this->query->date ?? Date::today();
-        if ($date->toDateTimeImmutable()->getTimestamp() < time() - 7 * 24 * 60 * 60) {
+        $service_repository = ($this->serviceRepositoryFactory)($this->query->permanentOnly);
+        $updated = $service_repository->getGeneratedDate();
+        if ($updated !== null && $date->toDateTimeImmutable()->getTimestamp() < $updated->toDateTimeImmutable()->getTimestamp() - 7 * 24 * 60 * 60) {
             throw new HttpException('The timetable more than a week ago is no longer available.', Http::GONE);
         }
-        $service_repository = ($this->serviceRepositoryFactory)($this->query->permanentOnly);
         return ($this->viewResponseFactory)(
             new ScheduleView(
                 $this->streamFactory
