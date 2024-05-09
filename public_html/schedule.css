@@ -122,3 +122,7 @@ p {
 .departure_arrival {
     font-size: x-small;
 }
+
+.stp {
+    background-color: #ffffc0;
+}

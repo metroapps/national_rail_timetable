@@ -3,8 +3,10 @@ declare(strict_types = 1);
 
 use Metroapps\NationalRailTimetable\Controllers\BoardQuery;
 use Metroapps\NationalRailTimetable\Controllers\TimetableController;
+use Miklcct\RailOpenTimetableData\Enums\ShortTermPlanning;
 use Miklcct\RailOpenTimetableData\Models\Location;
 use Miklcct\RailOpenTimetableData\Models\LocationWithCrs;
+use Miklcct\RailOpenTimetableData\Models\ServiceCall;
 use Miklcct\RailOpenTimetableData\Models\ServiceCallWithDestination;
 use Miklcct\RailOpenTimetableData\Models\Timetable;
 use Metroapps\NationalRailTimetable\Views\Components\Timetable as TimetableView;
@@ -17,6 +19,30 @@ use function Metroapps\NationalRailTimetable\Views\show_time;
 use function Metroapps\NationalRailTimetable\Views\show_toc;
 use function Miklcct\ThinPhpApp\Escaper\html;
 
+function get_header_classes(ServiceCall $call) {
+    return $call->shortTermPlanning !== ShortTermPlanning::PERMANENT ? 'stp' : '';
+}
+
+/**
+ * @param ServiceCall[] $array
+ * @param int $i
+ * @return int
+ */
+function get_colspan(array $array, int $i) {
+    $call = $array[$i];
+    $colspan = 0;
+    /** @noinspection TypeUnsafeComparisonInspection */
+    while (
+        isset($array[$i])
+        && $array[$i]->uid === $call->uid
+        && $array[$i]->timestamp == $call->timestamp
+    ) {
+        ++$colspan;
+        ++$i;
+    }
+    return $colspan;
+}
+
 /** @var TimetableView $this */
 ?>
 <?php
@@ -25,21 +51,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
         $stations = $timetable->stations;
         /** @var ServiceCallWithDestination[][] $calls */
         $calls = $timetable->calls;
-
-        $get_colspan = static function(array $array, int $i) {
-            $call = $array[$i];
-            $colspan = 0;
-            /** @noinspection TypeUnsafeComparisonInspection */
-            while (
-                isset($array[$i])
-                && $array[$i]->uid === $call->uid
-                && $array[$i]->timestamp == $call->timestamp
-            ) {
-                ++$colspan;
-                ++$i;
-            }
-            return $colspan;
-        };
+        
         $destinations = $board->getDestinations();
         // if the via point is a destination don't show it
         $via = array_filter(
@@ -85,9 +97,9 @@ use function Miklcct\ThinPhpApp\Escaper\html;
         $i = 0;
         while (isset($calls[0][$i])) {
             $call = $calls[0][$i];
-            $colspan = $get_colspan($calls[0], $i);
+            $colspan = get_colspan($calls[0], $i);
 ?>
-                            <th class="service" colspan=<?= $colspan ?> data-timestamp="<?= html($calls[0][$i]->timestamp->getTimestamp()) ?>">
+                            <th class="<?= get_header_classes($call) . ' service' ?>" colspan=<?= $colspan ?> data-timestamp="<?= html($calls[0][$i]->timestamp->getTimestamp()) ?>">
                                 <?= show_toc($call->toc) ?>
                             </th>
 <?php
@@ -96,15 +108,47 @@ use function Miklcct\ThinPhpApp\Escaper\html;
 ?>
                         </tr>
                         <tr class="info">
+                            <td class="station_column">STP</td>
+                            <?php
+                            $i = 0;
+                            while (isset($calls[0][$i])) {
+                                $call = $calls[0][$i];
+                                $colspan = get_colspan($calls[0], $i);
+                                ?>
+                                <td class="<?= get_header_classes($call) ?>" colspan=<?= $colspan ?> data-timestamp="<?= html($calls[0][$i]->timestamp->getTimestamp()) ?>">
+                                    <abbr title="<?= html(
+                                        match ($call->shortTermPlanning) {
+                                            ShortTermPlanning::PERMANENT => '',
+                                            ShortTermPlanning::NEW => 'Short Term Planned',
+                                            ShortTermPlanning::OVERLAY => 'Overlay',
+                                            ShortTermPlanning::CANCEL => 'Cancellation',
+                                        }
+                                    ) ?>">
+                                        <?= html(
+                                            match ($call->shortTermPlanning) {
+                                                ShortTermPlanning::PERMANENT => '',
+                                                ShortTermPlanning::NEW => 'STP',
+                                                ShortTermPlanning::OVERLAY => 'VAR',
+                                                ShortTermPlanning::CANCEL => 'CAN',
+                                            }
+                                        ) ?>
+                                    </abbr>
+                                </td>
+                                <?php
+                                $i += $colspan;
+                            }
+                            ?>
+                        </tr>
+                        <tr class="info">
                             <td class="station_column">Headcode</td>
 <?php
         $i = 0;
         while (isset($calls[0][$i])) {
             $call = $calls[0][$i];
-            $colspan = $get_colspan($calls[0], $i);
+            $colspan = get_colspan($calls[0], $i);
             $i += $colspan;
 ?>
-                            <td colspan=<?= $colspan ?>><?= html($call->serviceProperty->headcode) ?></td>
+                            <td class="<?= get_header_classes($call) ?>" colspan=<?= $colspan ?>><?= html($call->serviceProperty->headcode) ?></td>
 <?php
         }
 ?>
@@ -122,15 +166,15 @@ use function Miklcct\ThinPhpApp\Escaper\html;
                         $location = null;
                     }
 ?>
-                            <td><abbr title="<?=
+                            <td class="<?= get_header_classes($call) ?>"><abbr title="<?=
                                 html($location?->getShortName()) ?>"><?= html($location?->getCrsCode()) ?></abbr></td>
 <?php
                     ++$i;
                 }
             } else {
-                $colspan = $get_colspan($calls[0], $i);
+                $colspan = get_colspan($calls[0], $i);
 ?>
-                            <td colspan="<?= $colspan ?>">
+                            <td class="<?= get_header_classes($call) ?>" colspan="<?= $colspan ?>">
 <?php
                 foreach ($call->origins as $origin) {
                     $location = $origin->location;
@@ -162,15 +206,15 @@ use function Miklcct\ThinPhpApp\Escaper\html;
                         $location = null;
                     }
 ?>
-                            <td><abbr title="<?=
+                            <td class="<?= get_header_classes($call) ?>"><abbr title="<?=
                                 html($location?->getShortName()) ?>"><?= html($location?->getCrsCode()) ?></abbr></td>
 <?php
                     ++$i;
                 }
             } else {
-                $colspan = $get_colspan($calls[0], $i);
+                $colspan = get_colspan($calls[0], $i);
 ?>
-                            <td colspan="<?= $colspan ?>">
+                            <td class="<?= get_header_classes($call) ?>" colspan="<?= $colspan ?>">
 <?php
                 foreach ($call->destinations as $destination) {
                     $location = $destination->location;
@@ -195,16 +239,16 @@ use function Miklcct\ThinPhpApp\Escaper\html;
         $i = 0;
         while (isset($calls[0][$i])) {
             $call = $calls[0][$i];
-            $colspan = $get_colspan($calls[0], $i);
+            $colspan = get_colspan($calls[0], $i);
             $i += $colspan;
 ?>
-                            <td colspan=<?= $colspan ?>><?= show_facilities($call) ?></td>
+                            <td class="<?= get_header_classes($call) ?>" colspan=<?= $colspan ?>><?= show_facilities($call) ?></td>
 <?php
         }
 ?>
                         </tr>
 <?php
-        $show_platforms = static function () use ($get_colspan, $calls) {
+        $show_platforms = static function () use ($calls) {
 ?>
             <tr class="info">
                 <td class="station_column">Platform</td>
@@ -212,10 +256,10 @@ use function Miklcct\ThinPhpApp\Escaper\html;
             $i = 0;
             while (isset($calls[0][$i])) {
                 $call = $calls[0][$i];
-                $colspan = $get_colspan($calls[0], $i);
+                $colspan = get_colspan($calls[0], $i);
                 $i += $colspan;
 ?>
-                <td colspan=<?= $colspan ?>><?= html($call->call->platform) ?></td>
+                <td class="<?= get_header_classes($call) ?>" colspan=<?= $colspan ?>><?= html($call->call->platform) ?></td>
 <?php
             }
 ?>
@@ -301,7 +345,7 @@ use function Miklcct\ThinPhpApp\Escaper\html;
                     ++$j;
                 } else {
                     $call = $calls[$i][$j];
-                    $colspan = $get_colspan($calls[$i], $j);
+                    $colspan = get_colspan($calls[$i], $j);
                     $link = $i === 0
                         ? ServiceView::getServiceUrl($call->uid, $call->date, $this->query->permanentOnly, ViewMode::TIMETABLE)
                         : get_arrival_link(TimetableController::URL, $calls[$i][$j], $this->query);
