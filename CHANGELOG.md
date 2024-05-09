@@ -1,3 +1,6 @@
+## [2.6.0] - 2024-05-09
+* Add STP indicator into board and timetable
+
 ## [2.5.2] - 2024-03-31
 * Fix DST change causing departure boards in wrong order
   * Assume that trains always stick to the clock at departure
