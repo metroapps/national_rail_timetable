@@ -71,7 +71,7 @@ foreach ($points as $i => $point) {
     </tr>
 <?php
             }
-        } elseif ($point->isPublicCall()) {
+        } elseif ($point->isPublicCall() && ($show_arrival || $show_departure)) {
 ?>
     <tr <?= $easting_northing ?>>
         <td><?= html($point->location->getShortName()) ?></td>
