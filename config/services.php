@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'national_rail' => [
+        'username' => env('NATIONAL_RAIL_EMAIL'),
+        'password' => env('NATIONAL_RAIL_PASSWORD'),
+    ]
+
 ];

@@ -18,3 +18,7 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+.yarn/*
+!.yarn/releases
+!.yarn/plugins
+.pnp.*
