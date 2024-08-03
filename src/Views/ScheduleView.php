@@ -75,7 +75,7 @@ class ScheduleView extends PhpTemplate {
         $filter = $this->query->filter;
         $inverse_filter = $this->query->inverseFilter;
         return sprintf(
-            '<div class="heading"><h1>%s %s at %s</h1><p>%s %s</p></div>'
+            '<div class="heading"><h1>%s %s at %s %s</h1><p>%s %s</p></div>'
             , $this->query->arrivalMode ? 'Arrivals' : 'Departures'
             , strtolower($this->getViewMode()->name)
             , html($location->name)
