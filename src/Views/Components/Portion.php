@@ -39,9 +39,16 @@ class Portion extends PhpTemplate {
     ) {
         parent::__construct($streamFactory);
         $line = [];
+        $this->tiplocData = self::getTiplocData();
         foreach ($points as $point) {
-            if ($point instanceof TimingPoint && $point->location instanceof Station) {
-                $line[] = [$point->location->easting, $point->location->northing];
+            if ($point instanceof TimingPoint) {
+                $tiploc = $point->location->tiploc;
+                $tiploc_row = $this->tiplocData[$tiploc] ?? null;
+                if ($tiploc_row !== null) {
+                    $line[] = [$tiploc_row["easting"], $tiploc_row["northing"]];
+                } elseif ($point->location instanceof Station) {
+                    $line[] = [$point->location->easting, $point->location->northing];
+                }
             }
         }
         $this->line = $line;
@@ -89,6 +96,22 @@ class Portion extends PhpTemplate {
             )
         )->getUrl($this->fromViewMode->getUrl());
     }
+
+    private static function getTiplocData() : array {
+        $csv = array_map("str_getcsv", file(__DIR__ . '/../../../resource/tiplocs-merged.csv', FILE_SKIP_EMPTY_LINES));
+        $keys = array_shift($csv);
+        foreach ($csv as $i=>$row) {
+            $combined = array_combine($keys, $row);
+            settype($combined["stop_lon"], "float");
+            settype($combined["stop_lat"], "float");
+            settype($combined["easting"], "int");
+            settype($combined["northing"], "int");
+            $csv[$combined["stop_id"]] = $combined;
+        }
+        return $csv;
+    }
+
+    protected readonly array $tiplocData;
 
     /** @var int[][] */
     protected readonly array $line;

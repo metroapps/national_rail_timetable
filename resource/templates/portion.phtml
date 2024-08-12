@@ -25,14 +25,16 @@ foreach ($points as $i => $point) {
         $show_arrival = $i !== 0 && $point instanceof HasArrival && $point->getPublicArrival() !== null;
         $show_departure = $i !== count($points) - 1 && $point instanceof HasDeparture && $point->getPublicDeparture() !== null;
 
+        $tiploc_data = $this->tiplocData[$point->location->tiploc] ?? null;
+
         $easting_northing = (
             $point->location instanceof Station
             ? sprintf(
                 'data-crs="%s" data-name="%s" data-easting="%d" data-northing="%d"',
                 html($point->location->getCrsCode()),
                 html($point->location->getShortName()),
-                $point->location->easting,
-                $point->location->northing
+                $tiploc_data["easting"] ?? $point->location->easting,
+                $tiploc_data["northing"] ?? $point->location->northing
             ) : ''
         ) . (in_array(Activity::REQUEST_STOP, $point->activities, true) ? ' data-request-stop="1"' : '');
         /** @noinspection TypeUnsafeComparisonInspection */
