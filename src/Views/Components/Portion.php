@@ -44,7 +44,7 @@ class Portion extends PhpTemplate {
             if ($point instanceof TimingPoint) {
                 $tiploc = $point->location->tiploc;
                 $tiploc_row = $this->tiplocData[$tiploc] ?? null;
-                if ($tiploc_row !== null) {
+                if ($tiploc_row !== null && $tiploc_row["easting"] !== null && $tiploc_row["northing"] !== null) {
                     $line[] = [$tiploc_row["easting"], $tiploc_row["northing"]];
                 } elseif ($point->location instanceof Station) {
                     $line[] = [$point->location->easting, $point->location->northing];
@@ -102,10 +102,13 @@ class Portion extends PhpTemplate {
         $keys = array_shift($csv);
         foreach ($csv as $i=>$row) {
             $combined = array_combine($keys, $row);
-            settype($combined["stop_lon"], "float");
-            settype($combined["stop_lat"], "float");
-            settype($combined["easting"], "int");
-            settype($combined["northing"], "int");
+            foreach (["stop_lon" => "float", "stop_lat" => "float", "easting" => "int", "northing" => "int"] as $key => $type) {
+                if ($combined[$key] === "") {
+                    $combined[$key] = null;
+                } else {
+                    settype($combined[$key], $type);
+                }
+            }
             $csv[$combined["stop_id"]] = $combined;
         }
         return $csv;
