@@ -21,4 +21,4 @@ curl -f --location -H "X-Auth-Token: $token" https://opendata.nationalrail.co.uk
 unzip timetables.zip
 php "$DIR"/load_data.php .
 popd
-"$DIR"/cache_boards.bash
+# "$DIR"/cache_boards.bash
