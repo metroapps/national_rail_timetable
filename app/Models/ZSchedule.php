@@ -6,7 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Schedule extends BaseSchedule {
+class ZSchedule extends BaseSchedule {
     /**
      * The table associated with the model.
      *
@@ -20,12 +20,12 @@ class Schedule extends BaseSchedule {
     protected static function booted(): void
     {
         static::addGlobalScope('join_extra', static function (Builder $builder) {
-            $builder->join('schedule_extra', 'schedule.id', '=', 'schedule_extra.schedule');
+            $builder->join('z_schedule_extra', 'z_schedule.id', '=', 'z_schedule_extra.schedule');
         });
     }
 
     public function stopTimes(): HasMany {
-        return $this->hasMany(StopTime::class, 'schedule')
+        return $this->hasMany(ZStopTime::class, 'schedule')
             ->orderBy('id');
     }
 }

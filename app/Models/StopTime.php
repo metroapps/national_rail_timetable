@@ -3,14 +3,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Casts\Activities;
-use App\Casts\Allowance;
-use App\ValueObjects\Time;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
-class StopTime extends Model
-{
+class StopTime extends BaseStopTime {
     /**
      * The table associated with the model.
      *
@@ -18,34 +15,19 @@ class StopTime extends Model
      */
     protected $table = 'stop_time';
 
-    /**
-     * Indicates if the model should be timestamped.
-     *
-     * @var bool
-     */
-    public $timestamps = false;
-
-    public function schedule() : BelongsTo {
+    public function scheduleModel() : BelongsTo {
         return $this->belongsTo(Schedule::class, 'schedule');
     }
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'scheduled_arrival_time' => Time::class,
-            'scheduled_departure_time' => Time::class,
-            'scheduled_pass_time' => Time::class,
-            'public_arrival_time' => Time::class,
-            'public_departure_time' => Time::class,
-            'activity' => Activities::class,
-            'engineering_allowance' => Allowance::class,
-            'pathing_allowance' => Allowance::class,
-            'performance_allowance' => Allowance::class,
-        ];
+    public function tiploc() : BelongsTo {
+        return $this->belongsTo(Tiploc::class, 'location', 'tiploc_code');
+    }
+
+    public function physicalStation() : HasOneThrough {
+        return $this->hasOneThrough(PhysicalStation::class, Tiploc::class, 'tiploc_code', 'tiploc_code', 'location', 'tiploc_code');
+    }
+
+    public function serviceChange() : HasOne {
+        return $this->hasOne(ServiceChange::class, 'stop');
     }
 }
