@@ -320,9 +320,10 @@ function get_colspan(array $array, int $i) {
 <?php
             $j = 0;
             while (isset($calls[0][$j])) {
+                $colspan = isset($calls[$i][$j]) ? get_colspan($calls[$i], $j) : 1;
                 $connection_class =
                     $this->query->connectingTime !== null
-                    ? $calls[0][$j]->isValidConnection($this->query->connectingTime, $this->query->connectingToc)
+                    ? array_reduce(range($j, $j + $colspan - 1), fn($carry, $item) => $carry || $calls[0][$item]->isValidConnection($this->query->connectingTime, $this->query->connectingToc), false)
                         ? 'valid_connection'
                         : 'invalid_connection'
                     : '';
@@ -346,7 +347,6 @@ function get_colspan(array $array, int $i) {
                     ++$j;
                 } else {
                     $call = $calls[$i][$j];
-                    $colspan = get_colspan($calls[$i], $j);
                     $link = $i === 0
                         ? ServiceView::getServiceUrl($call->uid, $call->date, $this->query->permanentOnly, ViewMode::TIMETABLE)
                         : get_arrival_link(TimetableController::URL, $calls[$i][$j], $this->query);
